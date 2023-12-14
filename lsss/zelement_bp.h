@@ -119,6 +119,113 @@ public:
   bool isEqual(ZObject*) const;
 };
 
+/// \class  G1
+/// \brief  Class for G1 base field elements in ZML.
+class G1 : public ZObject {
+public:
+  g1_t m_G1;
+  bool isInit;
+  std::shared_ptr<BPGroup> bgroup;
+
+  G1(std::shared_ptr<BPGroup> bgroup) : bgroup(bgroup) {
+    g1_init(m_G1);
+    g1_set_infty(m_G1);
+    isInit = true;
+  }
+
+  G1(const G1 &w) : bgroup(w.bgroup) {
+    g1_init(m_G1);
+    g1_copy(m_G1, w.m_G1);
+    isInit = true;
+  }
+
+  ~G1() {
+    if (isInit) {
+      g1_free(m_G1);
+      isInit = false;
+    }
+  }
+
+  G1& operator*=(const G1 &x) {
+    G1 tmp(*this);
+    *this = tmp * x;
+    return *this;
+  }
+
+  G1& operator=(const G1 &w) {
+    bgroup = w.bgroup;
+    g1_copy(m_G1, w.m_G1);
+    return *this;
+  }
+
+  void setRandom() { if (isInit) g1_rand(this->m_G1); }
+  bool ismember() { return isInit && g1_is_valid(m_G1); }
+  G1 exp(ZP) {
+    G1 tmp(this->bgroup);
+    g1_mul(tmp.m_G1, this->m_G1, ZP.m_ZP);
+    return tmp;
+  }
+  friend G1 operator-(const G1 &x) {
+    G1 tmp(x.bgroup);
+    g1_neg(tmp.m_G1, x.m_G1);
+    return tmp;
+  }
+  friend G1 operator*(const G1 &x,const G1 &y) {
+    G1 tmp(x.bgroup);
+    g1_add(tmp.m_G1, x.m_G1, y.m_G1);
+    return tmp;
+  }
+  friend bool operator==(const G1 &x, const G1 &y) {
+    return (g1_cmp(x.m_G1, y.m_G1) == CMP_EQ);
+  }
+
+  bool isEqual(ZObject *z) const {
+    G1 *z1 = dynamic_cast<G1 *>(z);
+    return (z1 != NULL) && (*z1 == *this);
+  }
+};
+
+
+#if 0
+/// \class  GT
+/// \brief  Class for GT field elements in RELIC.
+class GT : public ZObject {
+public:
+  gt_t m_GT;
+  bool isInit;
+  std::shared_ptr<BPGroup> bgroup;
+
+  GT(std::shared_ptr<BPGroup> bgroup);
+  GT(const GT &w);
+  ~GT();
+  GT& operator*=(const GT &x);
+  GT& operator=(const GT &x);
+
+  void enableCompression() { shouldCompress_ = true; };
+  void disableCompression() { shouldCompress_ = false; };
+  //void setRandom(OpenABERNG *rng);
+  void setIdentity();
+  bool isInfinity();
+  bool ismember(bignum_t);
+  GT exp(ZP);
+
+  friend GT operator-(const GT&);
+  friend GT operator/(const GT&,const GT&);
+  friend GT operator*(const GT&,const GT&);
+  friend std::ostream& operator<<(std::ostream& s, const GT&);
+  friend bool operator==(const GT& x, const GT& y);
+  friend bool operator!=(const GT& x, const GT& y);
+
+  GT* clone() const { return new GT(*this); }
+  void serialize(OpenABEByteString &result) const;
+  void deserialize(OpenABEByteString &input);
+  bool isEqual(ZObject*) const;
+
+private:
+  bool shouldCompress_;
+};
+#endif
+
 /// \typedef    OpenABEElementList
 /// \brief      Vector or list of elements
 typedef std::vector<ZP> OpenABEElementList;
