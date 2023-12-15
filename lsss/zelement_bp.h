@@ -125,19 +125,10 @@ class G1 : public ZObject {
 public:
   g1_t m_G1;
   bool isInit;
-  std::shared_ptr<BPGroup> bgroup;
+  // std::shared_ptr<BPGroup> bgroup;
 
-  G1(std::shared_ptr<BPGroup> bgroup) : bgroup(bgroup) {
-    g1_init(m_G1);
-    g1_set_infty(m_G1);
-    isInit = true;
-  }
-
-  G1(const G1 &w) : bgroup(w.bgroup) {
-    g1_init(m_G1);
-    g1_copy(m_G1, w.m_G1);
-    isInit = true;
-  }
+  G1() { g1_init(m_G1); g1_set_infty(m_G1); isInit = true; }
+  G1(const G1 &w) { g1_init(m_G1); g1_copy(m_G1, w.m_G1); isInit = true; }
 
   ~G1() {
     if (isInit) {
@@ -153,36 +144,37 @@ public:
   }
 
   G1& operator=(const G1 &w) {
-    bgroup = w.bgroup;
     g1_copy(m_G1, w.m_G1);
     return *this;
   }
 
   void setRandom() { if (isInit) g1_rand(this->m_G1); }
   bool ismember() { return isInit && g1_is_valid(m_G1); }
-  G1 exp(ZP) {
-    G1 tmp(this->bgroup);
-    g1_mul(tmp.m_G1, this->m_G1, ZP.m_ZP);
+  G1 exp(ZP k) {
+    G1 tmp;
+    g1_mul(tmp.m_G1, this->m_G1, k.m_ZP);
     return tmp;
   }
   friend G1 operator-(const G1 &x) {
-    G1 tmp(x.bgroup);
+    G1 tmp;
     g1_neg(tmp.m_G1, x.m_G1);
     return tmp;
   }
   friend G1 operator*(const G1 &x,const G1 &y) {
-    G1 tmp(x.bgroup);
+    G1 tmp;
     g1_add(tmp.m_G1, x.m_G1, y.m_G1);
     return tmp;
   }
   friend bool operator==(const G1 &x, const G1 &y) {
-    return (g1_cmp(x.m_G1, y.m_G1) == CMP_EQ);
+    return (g1_cmp(x.m_G1, y.m_G1) == RLC_EQ);
   }
 
   bool isEqual(ZObject *z) const {
     G1 *z1 = dynamic_cast<G1 *>(z);
     return (z1 != NULL) && (*z1 == *this);
   }
+
+  G1* clone() const { return new G1(*this); }
 };
 
 
