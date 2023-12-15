@@ -86,4 +86,12 @@ void static inline zmbignum_init(bignum_t *b) {
   bn_new(*b);
 }
 
+/* EC helps functions */
+#define g1_init(p)                      g1_null(p); g1_new(p);
+#define g2_init(p)                      g2_null(p); g2_new(p);
+#define gt_init(p)                      gt_null(p); gt_new(p);
+
+
+
+
 #endif /* ifdef __ZELEMENT_H__ */

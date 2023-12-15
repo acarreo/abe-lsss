@@ -373,3 +373,269 @@ void ZP::getLengthAndByteString(OpenABEByteString &z) const
   z.pack16bits((uint16_t)length);
   z.appendArray(data, length);
 }
+
+
+#if 0
+/********************************************************************************
+ * Implementation of the GT class
+ ********************************************************************************/
+
+GT::GT(std::shared_ptr<BPGroup> bgroup)
+{
+    this->isInit = true;
+    this->bgroup = bgroup;
+    // does init and sets the point to infinity
+    gt_set_to_infinity(GET_BP_GROUP(this->bgroup), &this->m_GT);
+    shouldCompress_ = true;
+}
+
+GT::GT(const GT& w)
+{
+    if (w.bgroup != nullptr) {
+        this->bgroup = w.bgroup;
+    } else {
+        throw OpenABE_ERROR_INVALID_GROUP_PARAMS;
+    }
+    gt_init(GET_BP_GROUP(this->bgroup), &this->m_GT);
+    gt_copy_const(this->m_GT, w.m_GT);
+    this->isInit = true;
+    this->shouldCompress_ = w.shouldCompress_;
+}
+
+GT&
+GT::operator=(const GT& w)
+{
+    if (this->isInit) {
+        if(w.bgroup != nullptr) {
+            this->bgroup = w.bgroup;
+        }
+        if (is_elem_null(this->m_GT)) {
+            if (this->bgroup)
+                gt_init(GET_BP_GROUP(this->bgroup), &this->m_GT);
+            else
+                ro_error();
+        }
+        gt_copy_const(this->m_GT, w.m_GT);
+        this->shouldCompress_ = w.shouldCompress_;
+    }
+    else ro_error();
+    return *this;
+}
+
+GT::~GT()
+{
+    if (this->isInit) {
+        gt_element_free(this->m_GT);
+        this->isInit = false;
+    }
+}
+
+
+GT operator*(const GT& x,const GT& y)
+{
+	GT z = x; // , y1 = y;
+	gt_mul_op(GET_BP_GROUP(z.bgroup), z.m_GT, z.m_GT, const_cast<GT&>(y).m_GT);
+	return z;
+}
+
+GT&
+GT::operator*=(const GT& x)
+{
+	GT r(*this);
+	*this = r * x;
+	return *this;
+}
+
+GT operator/(const GT& x,const GT& y)
+{
+	GT z = x;
+	// z = x * y^-1
+	gt_div_op(GET_BP_GROUP(z.bgroup), z.m_GT, const_cast<GT&>(x).m_GT, const_cast<GT&>(y).m_GT);
+	return z;
+}
+
+GT GT::exp(ZP z)
+{
+	GT gt(*this);
+#if defined(BP_WITH_OPENSSL)
+    GT_ELEM_exp(GET_BP_GROUP(gt.bgroup), gt.m_GT, gt.m_GT, z.m_ZP, NULL);
+    //ASSERT(rc == 1, OpenABE_ERROR_INVALID_INPUT);
+#else
+    gt_exp(gt.m_GT, gt.m_GT, z.m_ZP);
+#endif
+	return gt;
+}
+
+GT operator-(const GT& g)
+{
+	GT gt(g);
+#if defined(BP_WITH_OPENSSL)
+	GT_ELEM_inv(GET_BP_GROUP(gt.bgroup), gt.m_GT, gt.m_GT, NULL);
+#else
+	gt_inv(gt.m_GT, gt.m_GT);
+#endif
+	return gt;
+}
+
+void GT::setIdentity()
+{
+#if defined(BP_WITH_OPENSSL)
+    GT_ELEM_set_to_unity(GET_BP_GROUP(this->bgroup), this->m_GT);
+    //ASSERT(rc == 1, oabe::OpenABE_ERROR_INVALID_INPUT);
+#else
+    gt_set_unity(this->m_GT);
+#endif
+}
+
+bool GT::isInfinity()
+{
+    return gt_is_unity_check(GET_BP_GROUP(this->bgroup), this->m_GT);
+}
+
+bool GT::ismember(bignum_t order)
+{
+	bool result;
+	gt_ptr r;
+	gt_init(GET_BP_GROUP(this->bgroup), &r);
+	gt_exp_op(GET_BP_GROUP(this->bgroup), r, this->m_GT, order);
+	result = gt_is_unity_check(GET_BP_GROUP(this->bgroup), r);
+	gt_element_free(r);
+	return result;
+}
+
+ostream& operator<<(ostream& os, const GT& gt)
+{
+#if defined(BP_WITH_OPENSSL)
+    OpenABEByteString s;
+    gt_convert_to_bytestring(GET_BP_GROUP(gt.bgroup), s, gt.m_GT, NO_COMPRESS);
+    os << "(" << s.toHex() << ")";
+#else
+	gt_write_ostream(os, const_cast<GT&>(gt).m_GT, DEC);
+#endif
+	return os;
+}
+
+bool operator==(const GT& x,const GT& y)
+{
+    bool result;
+#if defined(BP_WITH_OPENSSL)
+    result = (GT_ELEM_cmp(x.m_GT, y.m_GT) == G_CMP_EQ);
+#else
+    result = (gt_cmp(const_cast<GT&>(x).m_GT, const_cast<GT&>(y).m_GT) == G_CMP_EQ);
+#endif
+    return result;
+}
+
+bool operator!=(const GT& x, const GT& y)
+{
+    bool result;
+#if defined(BP_WITH_OPENSSL)
+    result = (GT_ELEM_cmp(x.m_GT, y.m_GT) != G_CMP_EQ);
+#else
+    result = (gt_cmp(const_cast<GT&>(x).m_GT, const_cast<GT&>(y).m_GT) != G_CMP_EQ);
+#endif
+    return result;
+}
+
+
+void
+GT::serialize(OpenABEByteString &result) const
+{
+    OpenABEByteString tmp;
+    int compress = shouldCompress_ ? COMPRESS : NO_COMPRESS;
+
+    if(this->isInit) {
+        gt_convert_to_bytestring(GET_BP_GROUP(this->bgroup), tmp, const_cast<GT&>(*this).m_GT, compress);
+        // pack the resulting ciphertext in result
+        result.clear();
+        result.insertFirstByte(OpenABE_ELEMENT_GT);
+        result.smartPack(tmp);
+    }
+}
+
+void
+GT::deserialize(OpenABEByteString &input)
+{
+    OpenABEByteString gt_bytes;
+    size_t index = 0;
+
+    if(this->isInit && this->bgroup != nullptr) {
+        // first byte is the group type
+        uint8_t element_type = input.at(index);
+        if(element_type == OpenABE_ELEMENT_GT) {
+            index++;
+            gt_bytes = input.smartUnpack(&index);
+            if (is_elem_null(this->m_GT)) {
+                gt_init(GET_BP_GROUP(this->bgroup), &this->m_GT);
+            }
+            gt_convert_to_point(GET_BP_GROUP(this->bgroup), gt_bytes, this->m_GT);
+            return;
+        }
+    }
+    ASSERT(false, OpenABE_ERROR_ELEMENT_NOT_INITIALIZED);
+}
+
+bool
+GT::isEqual(ZObject *z) const
+{
+	GT *z1 = dynamic_cast<GT*>(z);
+	if(z1 != NULL) {
+		return *z1 == *this;
+	}
+	return false;
+}
+
+#if !defined(BP_WITH_OPENSSL)
+void fp12_write_ostream(ostream& os, fp12_t a, int radix) {
+    os << "[(";
+    fp6_write_ostream(os, a[0], radix);
+    os << "),(";
+    fp6_write_ostream(os, a[1], radix);
+    os << "]";
+}
+
+void fp6_write_ostream(ostream &os, fp6_t a, int radix) {
+    os << "{";
+    fp2_write_ostream(os, a[0], radix);
+    os << ",";
+    fp2_write_ostream(os, a[1], radix);
+    os << ",";
+    fp2_write_ostream(os, a[2], radix);
+    os << "}";
+}
+
+void fp2_write_ostream(ostream& os, fp2_t a, int radix) {
+    os << "<";
+    fp_write_ostream(os, a[0], radix);
+    os << ",";
+    fp_write_ostream(os, a[1], radix);
+    os << ">";
+}
+
+void fp_write_ostream(ostream& os, fp_t a, int radix) {
+    char strBuf[MAX_BYTES];
+    fp_write_str(strBuf, MAX_BYTES, a, radix);
+    os << strBuf;
+}
+
+void ep2_write_ostream(ostream &os, ep2_t p, int radix) {
+    os << "[";
+    fp2_write_ostream(os, p->x, radix);
+    os << ",";
+    fp2_write_ostream(os, p->y, radix);
+//    os << ",";
+//    fp2_write_ostream(os, p->z, radix);
+    os << "]";
+}
+
+void ep_write_ostream(ostream &os, ep_t p, int radix) {
+    // base field
+    os << "[";
+    fp_write_ostream(os, p->x, radix);
+    os << ",";
+    fp_write_ostream(os, p->y, radix);
+    os << "]";
+}
+#endif
+
+#endif
