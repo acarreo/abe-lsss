@@ -236,46 +236,83 @@ public:
   G2* clone() const { return new G2(*this); }
 };
 
-
-#if 0
 /// \class  GT
 /// \brief  Class for GT field elements in RELIC.
 class GT : public ZObject {
 public:
   gt_t m_GT;
   bool isInit;
-  std::shared_ptr<BPGroup> bgroup;
+  // std::shared_ptr<BPGroup> bgroup;
 
-  GT(std::shared_ptr<BPGroup> bgroup);
-  GT(const GT &w);
-  ~GT();
-  GT& operator*=(const GT &x);
-  GT& operator=(const GT &x);
+  GT() { gt_init(m_GT); gt_set_unity(m_GT); isInit = true; }
+  GT(const GT &w) { gt_init(m_GT); gt_copy(m_GT, w.m_GT); isInit = true; }
+  ~GT() { if (isInit) { gt_free(m_GT); isInit = false; } }
 
-  void enableCompression() { shouldCompress_ = true; };
-  void disableCompression() { shouldCompress_ = false; };
-  //void setRandom(OpenABERNG *rng);
-  void setIdentity();
-  bool isInfinity();
-  bool ismember(bignum_t);
-  GT exp(ZP);
 
-  friend GT operator-(const GT&);
-  friend GT operator/(const GT&,const GT&);
-  friend GT operator*(const GT&,const GT&);
-  friend std::ostream& operator<<(std::ostream& s, const GT&);
-  friend bool operator==(const GT& x, const GT& y);
-  friend bool operator!=(const GT& x, const GT& y);
+  void setIdentity() { if (isInit) gt_set_unity(m_GT); }
+  void setRandom() { if (isInit) gt_rand(m_GT); }
+  void setGenerator() { if (isInit) gt_get_gen(m_GT); }
+
+  int getSize() { return gt_size_bin(m_GT, 1); }
+
+  uint8_t* getBytes(int *bufferSize) {
+    int size = getSize();
+    uint8_t *buffer = (uint8_t *)malloc(size);
+    gt_write_bin(buffer, size, m_GT, 1);
+    *bufferSize = size;
+    return buffer;
+  }
+
+  bool isIdentity() { return isInit && gt_is_unity(m_GT); }
+  bool ismember() { return isInit && gt_is_valid(m_GT); }
+
+  GT exp(ZP k) {
+    GT tmp;
+    gt_exp(tmp.m_GT, this->m_GT, k.m_ZP);
+    return tmp;
+  }
+
+  GT inverse() {
+    GT tmp;
+    gt_inv(tmp.m_GT, m_GT);
+    return tmp;
+  }
+
+  GT operator*(const GT &x) {
+    GT tmp; // tmp = x * this->m_GT
+    gt_mul(tmp.m_GT, m_GT, x.m_GT);
+    return tmp;
+  }
+
+  GT operator/(const GT &x) {
+    GT tmp; // tmp = this->m_GT / x = this->m_GT * x^-1
+    gt_inv(tmp.m_GT, x.m_GT);
+    gt_mul(tmp.m_GT, m_GT, tmp.m_GT);
+    return tmp;
+  }
+
+  GT& operator*=(const GT &x) {
+    GT tmp(*this);
+    *this = tmp * x;
+    return *this;
+  }
+
+  GT& operator=(const GT &x) {
+    gt_copy(m_GT, x.m_GT);
+    return *this;
+  }
+
+  bool operator==(const GT& x) const {
+    return (gt_cmp(m_GT, x.m_GT) == RLC_EQ);
+  }
+
+  bool isEqual(ZObject* z) const {
+    GT *z1 = dynamic_cast<GT *>(z);
+    return (z1 != NULL) && (*z1 == *this);
+  }
 
   GT* clone() const { return new GT(*this); }
-  void serialize(OpenABEByteString &result) const;
-  void deserialize(OpenABEByteString &input);
-  bool isEqual(ZObject*) const;
-
-private:
-  bool shouldCompress_;
 };
-#endif
 
 /// \typedef    OpenABEElementList
 /// \brief      Vector or list of elements
