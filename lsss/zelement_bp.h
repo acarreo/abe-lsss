@@ -137,9 +137,14 @@ public:
     }
   }
 
-  G1& operator*=(const G1 &x) {
+  G1& operator*=(ZP k) {
     G1 tmp(*this);
-    *this = tmp * x;
+    *this = tmp * k;
+    return *this;
+  }
+  G1& operator+=(const G1 &x) {
+    G1 tmp(*this);
+    *this = tmp + x;
     return *this;
   }
 
@@ -149,24 +154,37 @@ public:
   }
 
   void setRandom() { if (isInit) g1_rand(this->m_G1); }
+  void setGenerator() { if (isInit) g1_get_gen(this->m_G1); }
+
+  int getSize() { return g1_size_bin(m_G1, 1); }
+
+  uint8_t* getBytes(int *bufferSize) {
+    int size = getSize();
+    uint8_t *buffer = (uint8_t *)malloc(size);
+    g1_write_bin(buffer, size, m_G1, 1);
+    *bufferSize = size;
+    return buffer;
+  }
+
   bool ismember() { return isInit && g1_is_valid(m_G1); }
-  G1 exp(ZP k) {
+
+  G1 operator*(ZP k) const { // scalar multiplication of G1 element
     G1 tmp;
-    g1_mul(tmp.m_G1, this->m_G1, k.m_ZP);
+    g1_mul(tmp.m_G1, m_G1, k.m_ZP);
     return tmp;
   }
-  friend G1 operator-(const G1 &x) {
+  G1 operator-(const G1 &x) const {
     G1 tmp;
     g1_neg(tmp.m_G1, x.m_G1);
     return tmp;
   }
-  friend G1 operator*(const G1 &x,const G1 &y) {
+  G1 operator+(const G1 &x) const {
     G1 tmp;
-    g1_add(tmp.m_G1, x.m_G1, y.m_G1);
+    g1_add(tmp.m_G1, m_G1, x.m_G1);
     return tmp;
   }
-  friend bool operator==(const G1 &x, const G1 &y) {
-    return (g1_cmp(x.m_G1, y.m_G1) == RLC_EQ);
+  bool operator==(const G1 &x) const {
+    return (g1_cmp(m_G1, x.m_G1) == RLC_EQ);
   }
 
   bool isEqual(ZObject *z) const {
@@ -196,9 +214,14 @@ public:
     }
   }
 
-  G2& operator*=(const G2 &x) {
+  G2& operator+=(const G2 &x) {
     G2 tmp(*this);
-    *this = tmp * x;
+    *this = tmp + x;
+    return *this;
+  }
+  G2& operator*=(ZP k) {
+    G2 tmp(*this);
+    *this = tmp * k;
     return *this;
   }
 
@@ -208,24 +231,36 @@ public:
   }
 
   void setRandom() { if (isInit) g2_rand(this->m_G2); }
+  void setGenerator() { if (isInit) g2_get_gen(this->m_G2); }
+
+  int getSize() { return g2_size_bin(m_G2, 1); }
+
+  uint8_t* getBytes(int *bufferSize) {
+    int size = getSize();
+    uint8_t *buffer = (uint8_t *)malloc(size);
+    g2_write_bin(buffer, size, m_G2, 1);
+    *bufferSize = size;
+    return buffer;
+  }
+
   bool ismember() { return isInit && g2_is_valid(m_G2); }
-  G2 exp(ZP k) {
+  G2 operator*(ZP k) const { // scalar multiplication of G2 element
     G2 tmp;
-    g2_mul(tmp.m_G2, this->m_G2, k.m_ZP);
+    g2_mul(tmp.m_G2, m_G2, k.m_ZP);
     return tmp;
   }
-  friend G2 operator-(const G2 &x) {
+  G2 operator-(const G2 &x) const {
     G2 tmp;
     g2_neg(tmp.m_G2, x.m_G2);
     return tmp;
   }
-  friend G2 operator*(const G2 &x,const G2 &y) {
+  G2 operator+(const G2 &x) const {
     G2 tmp;
-    g2_add(tmp.m_G2, x.m_G2, y.m_G2);
+    g2_add(tmp.m_G2, m_G2, x.m_G2);
     return tmp;
   }
-  friend bool operator==(const G2 &x, const G2 &y) {
-    return (g2_cmp(x.m_G2, y.m_G2) == RLC_EQ);
+  bool operator==(const G2 &x) const {
+    return (g2_cmp(m_G2, x.m_G2) == RLC_EQ);
   }
 
   bool isEqual(ZObject *z) const {
