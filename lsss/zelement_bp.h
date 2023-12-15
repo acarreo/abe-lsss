@@ -178,6 +178,65 @@ public:
 };
 
 
+/// \class  G2
+/// \brief  Class for G2 base field elements in ZML.
+class G2 : public ZObject {
+public:
+  g2_t m_G2;
+  bool isInit;
+  // std::shared_ptr<BPGroup> bgroup;
+
+  G2() { g2_init(m_G2); g2_set_infty(m_G2); isInit = true; }
+  G2(const G2 &w) { g2_init(m_G2); g2_copy(m_G2, w.m_G2); isInit = true; }
+
+  ~G2() {
+    if (isInit) {
+      g2_free(m_G2);
+      isInit = false;
+    }
+  }
+
+  G2& operator*=(const G2 &x) {
+    G2 tmp(*this);
+    *this = tmp * x;
+    return *this;
+  }
+
+  G2& operator=(const G2 &w) {
+    g2_copy(m_G2, w.m_G2);
+    return *this;
+  }
+
+  void setRandom() { if (isInit) g2_rand(this->m_G2); }
+  bool ismember() { return isInit && g2_is_valid(m_G2); }
+  G2 exp(ZP k) {
+    G2 tmp;
+    g2_mul(tmp.m_G2, this->m_G2, k.m_ZP);
+    return tmp;
+  }
+  friend G2 operator-(const G2 &x) {
+    G2 tmp;
+    g2_neg(tmp.m_G2, x.m_G2);
+    return tmp;
+  }
+  friend G2 operator*(const G2 &x,const G2 &y) {
+    G2 tmp;
+    g2_add(tmp.m_G2, x.m_G2, y.m_G2);
+    return tmp;
+  }
+  friend bool operator==(const G2 &x, const G2 &y) {
+    return (g2_cmp(x.m_G2, y.m_G2) == RLC_EQ);
+  }
+
+  bool isEqual(ZObject *z) const {
+    G2 *z1 = dynamic_cast<G2 *>(z);
+    return (z1 != NULL) && (*z1 == *this);
+  }
+
+  G2* clone() const { return new G2(*this); }
+};
+
+
 #if 0
 /// \class  GT
 /// \brief  Class for GT field elements in RELIC.
