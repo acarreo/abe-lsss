@@ -68,25 +68,7 @@ typedef enum _OpenABEElementType {
     OpenABE_ELEMENT_BYTESTRING = 0x1D,
 } OpenABEElementType;
 
-/// @typedef    OpenABECurveID
-///
-/// @brief      Enumeration all the curve identifiers supported
-
-typedef enum OpenABECurveID {
-  OpenABE_NONE_ID = 0x00,
-  OpenABE_NIST_P256_ID = 0x32,
-  OpenABE_NIST_P384_ID = 0x5A,
-  OpenABE_NIST_P521_ID = 0xB7,
-  OpenABE_BN_P158_ID = 0x61,
-  OpenABE_BN_P254_ID = 0x6F,
-  OpenABE_BN_P256_ID = 0x73,
-  OpenABE_KSS_508_ID = 0x3C,
-  OpenABE_BN_P382_ID = 0xE4,
-  OpenABE_BN_P638_ID = 0x8D
-} OpenABECurveID;
-
 // Data structures
-
 typedef enum zGroupType {
   GROUP_NONE,
   GROUP_G1,
