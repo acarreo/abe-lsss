@@ -199,7 +199,7 @@ OpenABELSSS::performCoefficientRecovery(OpenABEPolicy *policy, OpenABEAttributeL
   // computing the necessary coefficients at each stage. When we hit a leaf node,
   // the coefficient will be added to the m_ResultMap result list.
   ZP one;
-  BPGroup group(OpenABE_NONE_ID);
+  BPGroup group;
 
   bn_null(one.m_ZP); bn_new(one.m_ZP);
   bn_set_dig(one.m_ZP, 1);
@@ -225,7 +225,7 @@ OpenABELSSS::iterativeShareSecret(OpenABETreeNode *treeNode, ZP &elt)
   std::stack<ZP> eltList;
   OpenABETreeNode *visitedNode = NULL;
   ZP theSecret, coefficient;
-  BPGroup group(OpenABE_NONE_ID);
+  BPGroup group;
 
   bn_null(theSecret.m_ZP); bn_new(theSecret.m_ZP);
   bn_zero(theSecret.m_ZP);
@@ -305,7 +305,7 @@ OpenABELSSS::iterativeCoefficientRecover(OpenABETreeNode *treeNode, ZP &inCoeff)
   std::stack<ZP> coeffs;
   OpenABETreeNode *visitedNode = NULL;
   ZP tmpInCoeff, coefficient;
-  BPGroup group(OpenABE_NONE_ID);
+  BPGroup group;
 
   bn_null(tmpInCoeff.m_ZP); bn_new(tmpInCoeff.m_ZP);
   bn_zero(tmpInCoeff.m_ZP);
@@ -389,7 +389,7 @@ OpenABELSSS::iterativeCoefficientRecover(OpenABETreeNode *treeNode, ZP &inCoeff)
 ZP
 OpenABELSSS::calculateCoefficient(OpenABETreeNode *treeNode, uint32_t index, uint32_t threshold, uint32_t total)
 {
-  BPGroup group(OpenABE_NONE_ID);
+  BPGroup group;
   ZP result;
 
   bn_null(result.m_ZP); bn_new(result.m_ZP);
@@ -455,7 +455,7 @@ OpenABELSSS::evaluatePolynomial(OpenABEElementList &coefficients, uint32_t x)
   // Make sure the coefficients vector is non-trivial
   assert(coefficients.size() > 0);
 
-  BPGroup group(OpenABE_NONE_ID);
+  BPGroup group;
   ZP share, xpow;
   unsigned int i = 0;
 
