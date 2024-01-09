@@ -56,9 +56,8 @@ void ro_error(void) {
  * Implementation of the Group class
  ********************************************************************************/
 
-BPGroup::BPGroup(OpenABECurveID id) : ZGroup(id)
+BPGroup::BPGroup()
 {
-  group_param = "";
   zmbignum_init(&order);
   ep_curve_get_ord(order);
 }

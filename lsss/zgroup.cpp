@@ -30,7 +30,7 @@
 ///
 /// \author J. Ayo Akinyele
 ///
-
+#if 0
 #define __ZGROUP_CPP__
 
 #include "zgroup.h"
@@ -60,3 +60,4 @@ ZGroup::~ZGroup() {}
 OpenABECurveID ZGroup::getCurveID() { return id; }
 
 std::ostream &operator<<(std::ostream &os, const ZGroup &z) { return os; }
+#endif

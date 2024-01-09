@@ -30,7 +30,7 @@
 ///
 /// \author J. Ayo Akinyele
 ///
-
+#if 0
 #ifndef __ZGROUP_H__
 #define __ZGROUP_H__
 
@@ -57,3 +57,4 @@ protected:
 };
 
 #endif /* ifdef __ZGROUP_H__ */
+#endif

@@ -55,11 +55,11 @@ void ro_error(void);
 
 /// \class  ECGroup
 /// \brief  Wrapper for managing elliptic curve groups
-class BPGroup : public ZGroup {
+class BPGroup {
 public:
   bignum_t     order;
 
-  BPGroup(OpenABECurveID id);
+  BPGroup();
   ~BPGroup();
 
   void getGroupOrder(bignum_t o);
