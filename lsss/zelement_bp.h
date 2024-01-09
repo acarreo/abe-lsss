@@ -158,13 +158,7 @@ public:
 
   int getSize() { return g1_size_bin(m_G1, 1); }
 
-  uint8_t* getBytes(int *bufferSize) {
-    int size = getSize();
-    uint8_t *buffer = (uint8_t *)malloc(size);
-    g1_write_bin(buffer, size, m_G1, 1);
-    *bufferSize = size;
-    return buffer;
-  }
+  uint8_t* getBytes(int *bufferSize);
 
   bool ismember() { return isInit && g1_is_valid(m_G1); }
 
@@ -193,6 +187,9 @@ public:
   }
 
   G1* clone() const { return new G1(*this); }
+
+  void serialize(OpenABEByteString &result);
+  void deserialize(OpenABEByteString &input);
 };
 
 
@@ -235,13 +232,7 @@ public:
 
   int getSize() { return g2_size_bin(m_G2, 1); }
 
-  uint8_t* getBytes(int *bufferSize) {
-    int size = getSize();
-    uint8_t *buffer = (uint8_t *)malloc(size);
-    g2_write_bin(buffer, size, m_G2, 1);
-    *bufferSize = size;
-    return buffer;
-  }
+  uint8_t* getBytes(int *bufferSize);
 
   bool ismember() { return isInit && g2_is_valid(m_G2); }
   G2 operator*(ZP k) const { // scalar multiplication of G2 element
@@ -269,6 +260,9 @@ public:
   }
 
   G2* clone() const { return new G2(*this); }
+
+  void serialize(OpenABEByteString &result);
+  void deserialize(OpenABEByteString &input);
 };
 
 /// \class  GT
@@ -290,13 +284,7 @@ public:
 
   int getSize() { return gt_size_bin(m_GT, 1); }
 
-  uint8_t* getBytes(int *bufferSize) {
-    int size = getSize();
-    uint8_t *buffer = (uint8_t *)malloc(size);
-    gt_write_bin(buffer, size, m_GT, 1);
-    *bufferSize = size;
-    return buffer;
-  }
+  uint8_t* getBytes(int *bufferSize);
 
   bool isIdentity() { return isInit && gt_is_unity(m_GT); }
   bool ismember() { return isInit && gt_is_valid(m_GT); }
@@ -347,7 +335,12 @@ public:
   }
 
   GT* clone() const { return new GT(*this); }
+
+  void serialize(OpenABEByteString &result);
+  void deserialize(OpenABEByteString &input);
 };
+
+GT pairing(const G1 &x, const G2 &y);
 
 /// \typedef    OpenABEElementList
 /// \brief      Vector or list of elements
