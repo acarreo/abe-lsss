@@ -373,25 +373,108 @@ void ZP::getLengthAndByteString(OpenABEByteString &z) const
   z.appendArray(data, length);
 }
 
-GT pairing(const G1 &x, const G2 &y) {
-  GT tmp;
-  pc_map(tmp.m_GT, x.m_G1, y.m_G2);
+/********************************************************************************
+ * Implementation of the G1 class
+ ********************************************************************************/
+
+G1::G1() {
+  g1_init(this->m_G1);
+  g1_set_infty(this->m_G1);
+  isInit = true;
+}
+
+G1::G1(const G1 &w) {
+  g1_init(this->m_G1);
+  g1_copy(this->m_G1, w.m_G1);
+  isInit = true;
+}
+
+G1::~G1() {
+  if (isInit) {
+    g1_free(this->m_G1);
+    isInit = false;
+  }
+}
+
+G1& G1::operator*=(const ZP k) {
+  G1 tmp(*this);
+  *this = tmp * k;
+  return *this;
+}
+
+G1& G1::operator+=(const G1 &x) {
+  G1 tmp(*this);
+  *this = tmp + x;
+  return *this;
+}
+
+G1& G1::operator=(const G1 &w) {
+  if (this != &w) {
+    g1_copy(this->m_G1, w.m_G1);
+  }
+  return *this;
+}
+
+void G1::setRandom() {
+  if (isInit) g1_rand(this->m_G1);
+}
+
+void G1::setGenerator() {
+  if (isInit) g1_get_gen(this->m_G1);
+}
+
+int G1::getSize() const {
+  return g1_size_bin(this->m_G1, 1);
+}
+
+bool G1::ismember() const {
+  return isInit && g1_is_valid(this->m_G1);
+}
+
+G1 G1::operator*(const ZP k) const {
+  G1 tmp;
+  g1_mul(tmp.m_G1, this->m_G1, k.m_ZP);
   return tmp;
 }
 
+G1 G1::operator-(const G1 &x) const {
+  G1 tmp;
+  g1_neg(tmp.m_G1, x.m_G1);
+  return tmp;
+}
+
+G1 G1::operator+(const G1 &x) const {
+  G1 tmp;
+  g1_add(tmp.m_G1, this->m_G1, x.m_G1);
+  return tmp;
+}
+
+bool G1::operator==(const G1 &x) const {
+  return (g1_cmp(m_G1, x.m_G1) == RLC_EQ);
+}
+
+bool G1::isEqual(ZObject *z) const {
+  G1 *z1 = dynamic_cast<G1 *>(z);
+  return (z1 != NULL) && (*z1 == *this);
+}
+
+G1* G1::clone() const {
+  return new G1(*this);
+}
+
 uint8_t* G1::getBytes(int *bufferSize) {
-  int size = getSize();
+  int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  g1_write_bin(buffer, size, m_G1, 1);
+  g1_write_bin(buffer, size, this->m_G1, 1);
   *bufferSize = size;
   return buffer;
 }
 
-void G1::serialize(OpenABEByteString &result) {
+void G1::serialize(OpenABEByteString &result) const {
   OpenABEByteString tmp;
 
   if (this->isInit) {
-    size_t len = getSize();
+    size_t len = this->getSize();
     tmp.fillBuffer(0, len);
     g1_write_bin(tmp.getInternalPtr(), len, this->m_G1, 1);
   
@@ -418,19 +501,109 @@ void G1::deserialize(OpenABEByteString &input) {
   }
 }
 
+
+/********************************************************************************
+ * Implementation of the G2 class
+ ********************************************************************************/
+
+G2::G2() {
+  g2_init(this->m_G2);
+  g2_set_infty(this->m_G2);
+  isInit = true;
+}
+
+G2::G2(const G2 &w) {
+  g2_init(this->m_G2);
+  g2_copy(this->m_G2, w.m_G2);
+  isInit = true;
+}
+
+G2::~G2() {
+  if (isInit) {
+    g2_free(this->m_G2);
+    isInit = false;
+  }
+}
+
+G2& G2::operator*=(const ZP k) {
+  G2 tmp(*this);
+  *this = tmp * k;
+  return *this;
+}
+
+G2& G2::operator+=(const G2 &x) {
+  G2 tmp(*this);
+  *this = tmp + x;
+  return *this;
+}
+
+G2& G2::operator=(const G2 &w) {
+  if (this != &w) {
+    g2_copy(this->m_G2, w.m_G2);
+  }
+  return *this;
+}
+
+void G2::setRandom() {
+  if (isInit) g2_rand(this->m_G2);
+}
+
+void G2::setGenerator() {
+  if (isInit) g2_get_gen(this->m_G2);
+}
+
+int G2::getSize() const {
+  return g2_size_bin(this->m_G2, 1);
+}
+
+bool G2::ismember() const {
+  return isInit && g2_is_valid(this->m_G2);
+}
+
+G2 G2::operator*(const ZP k) const {
+  G2 tmp;
+  g2_mul(tmp.m_G2, this->m_G2, k.m_ZP);
+  return tmp;
+}
+
+G2 G2::operator-(const G2 &x) const {
+  G2 tmp;
+  g2_neg(tmp.m_G2, x.m_G2);
+  return tmp;
+}
+
+G2 G2::operator+(const G2 &x) const {
+  G2 tmp;
+  g2_add(tmp.m_G2, this->m_G2, x.m_G2);
+  return tmp;
+}
+
+bool G2::operator==(const G2 &x) const {
+  return (g2_cmp(this->m_G2, x.m_G2) == RLC_EQ);
+}
+
+bool G2::isEqual(ZObject *z) const {
+  G2 *z1 = dynamic_cast<G2 *>(z);
+  return (z1 != NULL) && (*z1 == *this);
+}
+
+G2* G2::clone() const {
+  return new G2(*this);
+}
+
 uint8_t* G2::getBytes(int *bufferSize) {
-  int size = getSize();
+  int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  g2_write_bin(buffer, size, m_G2, 1);
+  g2_write_bin(buffer, size, this->m_G2, 1);
   *bufferSize = size;
   return buffer;
 }
 
-void G2::serialize(OpenABEByteString &result) {
+void G2::serialize(OpenABEByteString &result) const {
   OpenABEByteString tmp;
 
   if (this->isInit) {
-    size_t len = getSize();
+    size_t len = this->getSize();
     tmp.fillBuffer(0, len);
     g2_write_bin(tmp.getInternalPtr(), len, this->m_G2, 1);
     result.clear();
@@ -456,24 +629,126 @@ void G2::deserialize(OpenABEByteString &input) {
   }
 }
 
+
+/********************************************************************************
+ * Implementation of the GT class
+ ********************************************************************************/
+
+GT::GT() {
+  gt_init(this->m_GT);
+  gt_set_unity(this->m_GT);
+  isInit = true;
+}
+
+GT::GT(const GT &w) {
+  gt_init(this->m_GT);
+  gt_copy(this->m_GT, w.m_GT);
+  isInit = true;
+}
+
+GT::~GT() {
+  if (isInit) {
+    gt_free(this->m_GT);
+    isInit = false;
+  }
+}
+
+void GT::setIdentity() {
+  if (isInit) gt_set_unity(this->m_GT);
+}
+
+void GT::setRandom() {
+  if (isInit) gt_rand(this->m_GT);
+}
+
+void GT::setGenerator() {
+  if (isInit) gt_get_gen(this->m_GT);
+}
+
+int GT::getSize() {
+  return gt_size_bin(this->m_GT, 1);
+}
+
+bool GT::isIdentity() const {
+  return isInit && gt_is_unity(this->m_GT);
+}
+
+bool GT::ismember() const {
+  return isInit && gt_is_valid(this->m_GT);
+}
+
+GT GT::exp(const ZP k) const {
+  GT tmp;
+  gt_exp(tmp.m_GT, this->m_GT, k.m_ZP);
+  return tmp;
+}
+
+GT GT::inverse() const {
+  GT tmp;
+  gt_inv(tmp.m_GT, this->m_GT);
+  return tmp;
+}
+
+GT GT::operator*(const GT &x) const {
+  GT tmp;
+  gt_mul(tmp.m_GT, this->m_GT, x.m_GT);
+  return tmp;
+}
+
+GT GT::operator/(const GT &x) const {
+  GT tmp;
+  gt_inv(tmp.m_GT, x.m_GT);
+  gt_mul(tmp.m_GT, this->m_GT, tmp.m_GT);
+  return tmp;
+}
+
+GT& GT::operator*=(const GT &x) {
+  GT tmp(*this);
+  *this = tmp * x;
+  return *this;
+}
+
+GT& GT::operator=(const GT &x) {
+  gt_copy(this->m_GT, x.m_GT);
+  return *this;
+}
+
+bool GT::operator==(const GT& x) const {
+  return (gt_cmp(this->m_GT, x.m_GT) == RLC_EQ);
+}
+
+bool GT::isEqual(ZObject* z) const {
+  GT *z1 = dynamic_cast<GT *>(z);
+  return (z1 != NULL) && (*z1 == *this);
+}
+
+GT* GT::clone() const {
+  return new GT(*this);
+}
+
 uint8_t* GT::getBytes(int *bufferSize) {
-  int size = getSize();
+  int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  gt_write_bin(buffer, size, m_GT, 1);
+  gt_write_bin(buffer, size, this->m_GT, 1);
   *bufferSize = size;
   return buffer;
 }
 
-void GT::serialize(OpenABEByteString &result) {
+void GT::serialize(OpenABEByteString &result) const {
   OpenABEByteString tmp;
+  gt_t gt_tmp;
 
   if(this->isInit) {
-    size_t len = getSize();
+    gt_init(gt_tmp); gt_copy(gt_tmp, this->m_GT);
+    size_t len = gt_size_bin(gt_tmp, 1);
+
     tmp.fillBuffer(0, len);
-    gt_write_bin(tmp.getInternalPtr(), len, this->m_GT, 1);
+    gt_write_bin(tmp.getInternalPtr(), len, gt_tmp, 1);
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_GT);
     result.smartPack(tmp);
+
+    gt_free(gt_tmp);
   }
 }
 
@@ -492,4 +767,11 @@ void GT::deserialize(OpenABEByteString &input) {
       gt_read_bin(this->m_GT, xstr, (int)xstr_len);
     }
   }
+}
+
+
+GT pairing(const G1 &x, const G2 &y) {
+  GT tmp;
+  pc_map(tmp.m_GT, x.m_G1, y.m_G2);
+  return tmp;
 }
