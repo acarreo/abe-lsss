@@ -35,18 +35,13 @@
 #ifndef openabe_ZObject_h
 #define openabe_ZObject_h
 
-/// \class	ZPublicParams
-/// \brief	Generic container for scheme public parameters. This class is is subclassed
-///			by variants for specific schemes.
-
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 
-//#ifndef __ZBYTESTRING_H__
-//class OpenABEByteString;
-//#endif
+class OpenABEByteString;
 
 class ZObject {
 public:
@@ -57,9 +52,9 @@ public:
   void deRef();
   uint32_t getRefCount() { return this->refCount; }
   virtual ZObject& operator=(const ZObject &rhs) { return *this; }
-  virtual ZObject* clone() const { return NULL; } // throw an exception if not implemented
-  //virtual void serialize(OpenABEByteString &result) const { throw OpenABE_ERROR_NOT_IMPLEMENTED; }
-  //virtual bool isEqual(ZObject* z) const { return false; }
+  virtual ZObject* clone() const { return nullptr; }
+  virtual void serialize(OpenABEByteString &result) const { throw std::runtime_error("Not implemented"); }
+  virtual bool isEqual(ZObject* z) const { return false; }
 
 protected:
   uint32_t refCount;
