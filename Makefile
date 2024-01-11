@@ -33,4 +33,4 @@ vars:
 	@echo "OBJ: $(OBJ)"
 
 clean:
-	rm -f *.o *~
+	rm -f *.o lsss/*.o *.a *~
