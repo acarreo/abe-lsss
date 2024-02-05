@@ -47,6 +47,9 @@ extern "C" {
 #include "zobject.h"
 
 
+#define G1_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) + 1)
+#define G2_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) * 2 + 1)
+
 class OpenABEByteString;
 
 void ro_error(void);
