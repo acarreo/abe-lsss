@@ -2,7 +2,7 @@
 #define __VECTOR_BP_H__
 
 #include <vector>
-#include <zlsss.h>
+#include "zelement_bp.h"
 
 typedef enum ElementType {
   VECTOR_G1_ELEMENT = 0xF1,
