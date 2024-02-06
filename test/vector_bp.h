@@ -9,6 +9,10 @@ typedef enum ElementType {
   VECTOR_G2_ELEMENT = 0xF2,
 } ElementType;
 
+typedef enum CompressionType {
+  BIN_UNCOMPRESSED = 0x00,
+  BIN_COMPRESSED = 0x01,
+} CompressionType;
 
 class OpenABEByteString;
 
@@ -38,7 +42,9 @@ public:
     std::vector<G1>::clear();
   }
 
-  void serialize(OpenABEByteString &result) const;
+  size_t getSizeInBytes(CompressionType compress) const;
+
+  void serialize(OpenABEByteString &result, CompressionType compress) const;
   void deserialize(OpenABEByteString &input);
 
   // define operator==

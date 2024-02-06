@@ -43,9 +43,11 @@ extern "C" {
 }
 
 #include "zbytestring.h"
-#include "zgroup.h"
 #include "zobject.h"
 
+
+#define G1_SIZE_BIN             ((RLC_PC_BYTES) * 2 + 1)
+#define G2_SIZE_BIN             ((RLC_PC_BYTES) * 4 + 1)
 
 #define G1_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) + 1)
 #define G2_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) * 2 + 1)
