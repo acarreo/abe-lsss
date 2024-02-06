@@ -58,8 +58,10 @@ public:
   void serialize(OpenABEByteString &result, CompressionType compress) const;
   void deserialize(OpenABEByteString &input);
 
-  // define operator==
   bool operator==(const G1_Vector &x) const;
+  G1_Vector& operator=(const G1_Vector &other);
+  G1_Vector  operator+(const G1_Vector &other) const;
+  G1_Vector  operator*(const ZP &k) const;
 
   // Temporary methods for testing, will be removed later
   void random(size_t dim) {

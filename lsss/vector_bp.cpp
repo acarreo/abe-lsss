@@ -104,3 +104,32 @@ bool G1_Vector::operator==(const G1_Vector &x) const {
 
   return true;
 }
+
+G1_Vector & G1_Vector::operator=(const G1_Vector &other) {
+  this->clear();
+  for (size_t i = 0; i < other.size(); i++) {
+    this->push_back(other.at(i));
+  }
+  this->setDim(other.getDim());
+  return *this;
+}
+
+G1_Vector G1_Vector::operator+(const G1_Vector &other) const {
+  if (this->getDim() != other.getDim()) {
+    throw std::runtime_error("Cannot add two vectors with different dimensions");
+  }
+
+  G1_Vector result(this->getDim());
+  for (size_t i = 0; i < this->getDim(); i++) {
+    result.insertElement(this->at(i) + other.at(i), i);
+  }
+  return result;
+}
+
+G1_Vector G1_Vector::operator*(const ZP &k) const {
+  G1_Vector result(this->getDim());
+  for (size_t i = 0; i < this->getDim(); i++) {
+    result.insertElement(this->at(i) * k, i);
+  }
+  return result;
+}
