@@ -1,5 +1,51 @@
 #include "vector_bp.h"
 
+void G1_Vector::addElement(const G1 & element) {
+  if (this->isDimSet && this->size() < this->dim) {
+    this->push_back(element);
+  }
+  else if (!this->isDimSet) {
+    this->push_back(element);
+  }
+  else {
+    throw std::runtime_error("Cannot add more elements to the vector");
+  }
+}
+
+void G1_Vector::insertElement(const G1 & element, size_t index) {
+  if (this->isDimSet && index <= this->size() && this->size() < this->dim) {
+    this->at(index) = element;
+  }
+  else if (!this->isDimSet && index < this->size()) {
+    this->at(index) = element;
+  }
+  else {
+    throw std::runtime_error("Cannot insert more elements to the vector");
+  }
+}
+
+size_t G1_Vector::getSizeInBytes(CompressionType compress) const {
+  size_t buff_size = 0, total_size = 0;
+
+  if (this->size() == 0) return 0;
+
+  // size of G1_Vector in bytes
+  buff_size = (compress == BIN_COMPRESSED ? G1_SIZE_BIN_COMPRESSED : G1_SIZE_BIN);
+  buff_size *= this->getDim();
+
+  // ADD : type of vector group, size of dim and compression type
+  total_size = 3 * sizeof(uint8_t);
+
+  // ADD : size of G1_Vector in bytes
+  total_size += sizeof(uint8_t) +
+                ((buff_size > UINT16_MAX) ? sizeof(uint32_t) :
+                ((buff_size > UINT16_MAX) ? sizeof(uint16_t) : sizeof(uint8_t)));
+
+  total_size += buff_size; // ADD : buff_size
+
+  // For some reason that I don't know, we need to add 1 to total_size
+  return total_size + 1;
+}
 
 void G1_Vector::serialize(OpenABEByteString &result, CompressionType compress) const {
   OpenABEByteString temp;

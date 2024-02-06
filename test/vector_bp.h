@@ -17,27 +17,34 @@ typedef enum CompressionType {
 class OpenABEByteString;
 
 class G1_Vector : public std::vector<G1> {
+private:
+  size_t dim;
+  bool isDimSet;
+
 public:
   G1_Vector() : std::vector<G1>() {}
-  G1_Vector(size_t dim) : std::vector<G1>(dim) {}
+  G1_Vector(size_t dim) : std::vector<G1>(dim), dim(dim), isDimSet(true) {}
   G1_Vector(std::initializer_list<G1> init_list) : std::vector<G1>(init_list) {}
 
-  void addElement(const G1 &element) {
-    this->push_back(element);
-  }
-
-  void insertElement(const G1 &element, size_t index) {
-    if (index <= this->size()) {
-      this->at(index) = element;
+  void setDim(size_t dim) {
+    if (!this->isDimSet) {
+      this->resize(dim); this->dim = dim; this->isDimSet = true;
     }
   }
 
+  size_t getDim() const {
+    return this->isDimSet ? this->dim : this->size();
+  }
+
+  void addElement(const G1 &element);
+  void insertElement(const G1 &element, size_t index);
+
+  // remove element at index and clear the vector must be revised
   void removeElement(size_t index) {
     if (index < this->size()) {
       this->erase(this->begin() + index);
     }
   }
-
   void clear() {
     std::vector<G1>::clear();
   }
@@ -58,6 +65,7 @@ public:
       g1.setRandom();
       this->push_back(g1);
     }
+    this->setDim(dim);
   }
 
 };
