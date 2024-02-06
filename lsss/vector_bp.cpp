@@ -13,10 +13,10 @@ void G1_Vector::addElement(const G1 & element) {
 }
 
 void G1_Vector::insertElement(const G1 & element, size_t index) {
-  if (this->isDimSet && index <= this->size() && this->size() < this->dim) {
+  if (this->isDimSet && index < this->dim) {
     this->at(index) = element;
   }
-  else if (!this->isDimSet && index < this->size()) {
+  else if (index < this->size()) {
     this->at(index) = element;
   }
   else {

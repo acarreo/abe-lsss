@@ -36,6 +36,10 @@ public:
     return this->isDimSet ? this->dim : this->size();
   }
 
+  bool isFixedSize() const {
+    return this->isDimSet;
+  }
+
   void addElement(const G1 &element);
   void insertElement(const G1 &element, size_t index);
 
