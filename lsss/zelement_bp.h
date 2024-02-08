@@ -39,7 +39,6 @@
 
 extern "C" {
   #include "zelement.h"
-  #include <relic.h>
 }
 
 #include "zbytestring.h"
