@@ -41,7 +41,6 @@
 #include <memory>
 
 #include "zbytestring.h"
-#include "zgroup.h"
 #include "zobject.h"
 #include "zelement_bp.h"
 
@@ -389,6 +388,12 @@ G1::G1(const G1 &w) {
   isInit = true;
 }
 
+G1::G1(const g1_t &w) {
+  g1_init(this->m_G1);
+  g1_copy(this->m_G1, w);
+  isInit = true;
+}
+
 G1::~G1() {
   if (isInit) {
     g1_free(this->m_G1);
@@ -515,6 +520,12 @@ G2::G2() {
 G2::G2(const G2 &w) {
   g2_init(this->m_G2);
   g2_copy(this->m_G2, w.m_G2);
+  isInit = true;
+}
+
+G2::G2(const g2_t &w) {
+  g2_init(this->m_G2);
+  g2_copy(this->m_G2, w);
   isInit = true;
 }
 

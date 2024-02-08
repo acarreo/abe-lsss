@@ -39,13 +39,17 @@
 
 extern "C" {
   #include "zelement.h"
-  #include <relic.h>
 }
 
 #include "zbytestring.h"
-#include "zgroup.h"
 #include "zobject.h"
 
+
+#define G1_SIZE_BIN             ((RLC_PC_BYTES) * 2 + 1)
+#define G2_SIZE_BIN             ((RLC_PC_BYTES) * 4 + 1)
+
+#define G1_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) + 1)
+#define G2_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) * 2 + 1)
 
 class OpenABEByteString;
 
@@ -129,6 +133,7 @@ public:
 
   G1();
   G1(const G1 &w);
+  G1(const g1_t &w);
 
   ~G1();
 
@@ -164,6 +169,7 @@ public:
 
   G2();
   G2(const G2 &w);
+  G2(const g2_t &w);
 
   ~G2();
 

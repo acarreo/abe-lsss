@@ -60,7 +60,7 @@ typedef enum PACK_TYPE {
   PACK_64   = 0xD4
 } PackType;
 
-class OpenABEByteString : public ZObject, public std::vector<uint8_t> {
+class OpenABEByteString : public std::vector<uint8_t> {
 
 public:
   OpenABEByteString& operator+=(const OpenABEByteString &concat) {
@@ -115,8 +115,7 @@ public:
   void zeroize() {
     size_t b_len = this->size();
     if (b_len > 0) {
-      void *b = &((*this)[0]);
-      OpenABEZeroize(b, b_len);
+      std::fill(this->begin(), this->end(), 0);
     }
     this->clear();
   }
@@ -257,10 +256,10 @@ public:
     }
   }
 
-  bool isEqual(ZObject* z) const {
-    OpenABEByteString *z1 = dynamic_cast<OpenABEByteString*>(z);
-    return (z1 != NULL) && (*z1 == *this);
-  }
+  // bool isEqual(ZObject* z) const {
+  //   OpenABEByteString *z1 = dynamic_cast<OpenABEByteString*>(z);
+  //   return (z1 != NULL) && (*z1 == *this);
+  // }
 
   void pack8bits(uint8_t byte) {
     this->push_back(byte);
