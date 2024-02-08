@@ -5,11 +5,15 @@
 /*                                G1_Vector                                 */
 /****************************************************************************/
 
-void G1_Vector::addElement(const G1 & element) {
-  if (this->isDimSet && this->size() < this->dim) {
-    this->push_back(element);
+G1_Vector::G1_Vector(const g1_vector_ptr & g1_vector) {
+  for (size_t i = 0; i < g1_vector->dim; i++) {
+    this->push_back(G1(g1_vector->elements[i]));
   }
-  else if (!this->isDimSet) {
+  this->setDim(g1_vector->dim);
+}
+
+void G1_Vector::addElement(const G1 & element) {
+  if (!this->isDimSet) {
     this->push_back(element);
   }
   else {
@@ -18,10 +22,7 @@ void G1_Vector::addElement(const G1 & element) {
 }
 
 void G1_Vector::insertElement(const G1 & element, size_t index) {
-  if (this->isDimSet && index < this->dim) {
-    this->at(index) = element;
-  }
-  else if (index < this->size()) {
+  if (index < this->size()) {
     this->at(index) = element;
   }
   else {
@@ -50,6 +51,21 @@ size_t G1_Vector::getSizeInBytes(CompressionType compress) const {
 
   // For some reason that I don't know, we need to add 1 to total_size
   return total_size + 1;
+}
+
+g1_vector_ptr G1_Vector::getG1Vector() const {
+  size_t dim = this->getDim();
+  g1_vector_ptr g1_vector = nullptr;
+  if (dim > 0) {
+    g1_vector = (g1_vector_ptr)malloc(sizeof(g1_vector_t));
+    g1_vector->elements = (g1_t *)malloc(sizeof(g1_t) * dim);
+    g1_vector->dim = dim;
+
+    for (size_t i = 0; i < dim; i++) {
+      g1_copy(g1_vector->elements[i], this->at(i).m_G1);
+    }
+  }
+  return g1_vector;
 }
 
 void G1_Vector::serialize(OpenABEByteString &result, CompressionType compress) const {
@@ -111,11 +127,11 @@ bool G1_Vector::operator==(const G1_Vector &x) const {
 }
 
 G1_Vector & G1_Vector::operator=(const G1_Vector &other) {
-  this->clear();
-  for (size_t i = 0; i < other.size(); i++) {
-    this->push_back(other.at(i));
+  if (this != &other) {
+    static_cast<std::vector<G1>&>(*this) = static_cast<const std::vector<G1>&>(other);
+    isDimSet = other.isDimSet;
+    dim = other.dim;
   }
-  this->setDim(other.getDim());
   return *this;
 }
 
@@ -143,6 +159,13 @@ G1_Vector G1_Vector::operator*(const ZP &k) const {
 /****************************************************************************/
 /*                                G2_Vector                                 */
 /****************************************************************************/
+
+G2_Vector::G2_Vector(const g2_vector_ptr & g2_vector) {
+  for (size_t i = 0; i < g2_vector->dim; i++) {
+    this->push_back(G2(g2_vector->elements[i]));
+  }
+  this->setDim(g2_vector->dim);
+}
 
 void G2_Vector::addElement(const G2 & element) {
   if (this->isDimSet && this->size() < this->dim) {
@@ -189,6 +212,21 @@ size_t G2_Vector::getSizeInBytes(CompressionType compress) const {
 
   // For some reason that I don't know, we need to add 1 to total_size
   return total_size + 1;
+}
+
+g2_vector_ptr G2_Vector::getG2Vector() const {
+  size_t dim = this->getDim();
+  g2_vector_ptr g2_vector = nullptr;
+  if (dim > 0) {
+    g2_vector = (g2_vector_ptr)malloc(sizeof(g2_vector_t));
+    g2_vector->elements = (g2_t *)malloc(sizeof(g2_t) * dim);
+    g2_vector->dim = dim;
+
+    for (size_t i = 0; i < dim; i++) {
+      g2_copy(g2_vector->elements[i], this->at(i).m_G2);
+    }
+  }
+  return g2_vector;
 }
 
 void G2_Vector::serialize(OpenABEByteString &result, CompressionType compress) const {
@@ -250,11 +288,11 @@ bool G2_Vector::operator==(const G2_Vector &x) const {
 }
 
 G2_Vector & G2_Vector::operator=(const G2_Vector &other) {
-  this->clear();
-  for (size_t i = 0; i < other.size(); i++) {
-    this->push_back(other.at(i));
+  if (this != &other) {
+    static_cast<std::vector<G2>&>(*this) = static_cast<const std::vector<G2>&>(other);
+    isDimSet = other.isDimSet;
+    dim = other.dim;
   }
-  this->setDim(other.getDim());
   return *this;
 }
 
@@ -276,4 +314,47 @@ G2_Vector G2_Vector::operator*(const ZP &k) const {
     result.insertElement(this->at(i) * k, i);
   }
   return result;
+}
+
+
+GT innerProduct(const G1_Vector &x, const G2_Vector &y) {
+  if (x.getDim() != y.getDim()) {
+    throw std::runtime_error("Cannot compute inner product of two vectors with different dimensions");
+  }
+
+  GT result;
+
+  g1_vector_ptr vx = x.getG1Vector();
+  g2_vector_ptr vy = y.getG2Vector();
+
+  if (vx != nullptr && vy != nullptr) {
+    pp_map_sim_k12(result.m_GT, vx->elements, vy->elements, vx->dim);
+  }
+
+  clear_g1_vector(vx);
+  clear_g2_vector(vy);
+
+  return result;
+}
+
+void clear_g1_vector(g1_vector_ptr &g1_vector) {
+  if (g1_vector != nullptr) {
+    for (size_t i = 0; i < g1_vector->dim; i++) {
+      g1_free(g1_vector->elements[i]);
+    }
+    free(g1_vector->elements);
+    free(g1_vector);
+    g1_vector = nullptr;
+  }
+}
+
+void clear_g2_vector(g2_vector_ptr &g2_vector) {
+  if (g2_vector != nullptr) {
+    for (size_t i = 0; i < g2_vector->dim; i++) {
+      g2_free(g2_vector->elements[i]);
+    }
+    free(g2_vector->elements);
+    free(g2_vector);
+    g2_vector = nullptr;
+  }
 }
