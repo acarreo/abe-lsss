@@ -7,12 +7,12 @@ LIB_LSSS = liblsss.a
 SRC = $(wildcard lsss/*.cpp)
 OBJ = $(SRC:.cpp=.o)
 INSTALL_DIR = /usr/local
-RELIC_INCLUDE = /usr/local/include/relic
+# RELIC_INCLUDE = /usr/local/include/relic
 
 all: $(LIB_LSSS)
 
 %.o: %.cpp
-	$(CXX) -o $@ -c $< $(CXXFLAGS) -I$(RELIC_INCLUDE)
+	$(CXX) -o $@ -c $< $(CXXFLAGS)
 
 zparser.tab.o: lsss/zparser.tab.cc
 	$(CC) -o $@ -c $< $(CXXFLAGS)
