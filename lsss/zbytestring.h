@@ -375,25 +375,25 @@ public:
     return buf;
   }
 
-  uint16_t unpack16bits(size_t *index) {
+  uint16_t unpack16bits(OpenABEByteString &input, size_t *index) {
     uint16_t result = 0;
     size_t index2 = *index;
 
-    result |= this->at(index2+1);
-    result |= (this->at(index2) << 8);
+    result |= input.at(index2+1);
+    result |= (input.at(index2) << 8);
     *index += 2;
 
     return result;
   }
 
-  uint32_t unpack32bits(size_t *index) {
+  uint32_t unpack32bits(OpenABEByteString &input, size_t *index) {
     uint32_t result = 0;
     size_t index2 = *index;
 
-    result |= (this->at(index2) << 24);
-    result |= (this->at(index2+1) << 16);
-    result |= (this->at(index2+2) << 8);
-    result |= this->at(index2+3);
+    result |= (input.at(index2) << 24);
+    result |= (input.at(index2+1) << 16);
+    result |= (input.at(index2+2) << 8);
+    result |= input.at(index2+3);
 
     *index += 4;
 
