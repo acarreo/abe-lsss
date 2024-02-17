@@ -116,6 +116,8 @@ public:
   void setThresholdValue(uint32_t k) { if (this->m_Subnodes.size() > 0) { this->m_thresholdValue = k; } }
   uint32_t getThresholdValue();
   std::string toString();
+
+  std::string getPolicyWithHashedAttributes();
 };
 
 ///

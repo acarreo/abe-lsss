@@ -45,6 +45,8 @@
 
 using namespace std;
 
+std::string hashAttribute(const std::string& attribute);
+
 /********************************************************************************
  * Implementation of the OpenABEPolicy class
  ********************************************************************************/
@@ -331,6 +333,65 @@ OpenABETreeNode::toString() {
     tree += "(";
     for (uint32_t i = 0; i < this->m_Subnodes.size(); i++) {
       tree += this->m_Subnodes[i]->toString() + ", ";
+    }
+    tree.erase(tree.size()-2, tree.size());
+    tree += ")";
+  }
+
+  return tree;
+}
+
+string
+OpenABETreeNode::getPolicyWithHashedAttributes() {
+  string op = "";
+  string tree = "";
+  stringstream tmp;
+  int threshold = 0;
+  bool recurse = false;
+  if(this->m_nodeType == GATE_TYPE_LEAF) {
+    if(this->m_Prefix != "") {
+      const string thePrefix = this->m_Prefix + COLON;
+      return thePrefix + hashAttribute(this->m_Label);
+    }
+    return hashAttribute(this->m_Label);
+  }
+
+  switch(this->m_nodeType) {
+    case GATE_TYPE_AND:
+      op = " and ";
+      threshold = this->m_Subnodes.size();
+      recurse = true;
+      break;
+    case GATE_TYPE_OR:
+      op = " or ";
+      threshold = 1;
+      recurse = true;
+      break;
+    case GATE_TYPE_THRESHOLD:
+      tmp << this->m_thresholdValue << " of ";
+      op = tmp.str();
+      break;
+    default:
+      break;
+  }
+
+  if(this->m_Subnodes.size() == 2) {
+    tree += "(";
+    if(recurse) {
+      tree += this->m_Subnodes[0]->getPolicyWithHashedAttributes() + op +
+              this->m_Subnodes[1]->getPolicyWithHashedAttributes();
+    }
+    tree += ")";
+  }
+  else {
+    cout << "m_Subnodes.size() = " << this->m_Subnodes.size() << endl;
+    if(this->m_nodeType == GATE_TYPE_AND || this->m_nodeType == GATE_TYPE_OR) {
+      tmp << threshold << " of ";
+      tree = tmp.str();
+    }
+    tree += "(";
+    for (uint32_t i = 0; i < this->m_Subnodes.size(); i++) {
+      tree += this->m_Subnodes[i]->getPolicyWithHashedAttributes() + ", ";
     }
     tree.erase(tree.size()-2, tree.size());
     tree += ")";
