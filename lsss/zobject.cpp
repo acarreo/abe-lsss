@@ -182,7 +182,7 @@ string Base64Decode(string const& encoded_string) {
   if (in_ < encoded_string.size()) {
     // Look for terminating '='s, maximum 2
     if (encoded_string.size() - in_ > 2) {
-      return NULL;
+      return std::string();
       //throw //OpenABE_ERROR_INVALID_INPUT;
     }
 
@@ -193,7 +193,7 @@ string Base64Decode(string const& encoded_string) {
         }
     }
     if (tmp != encoded_string.size()) {
-      return NULL;
+      return std::string();
       //throw //OpenABE_ERROR_INVALID_INPUT;
     }
   }
