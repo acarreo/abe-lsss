@@ -116,8 +116,6 @@ public:
   void setThresholdValue(uint32_t k) { if (this->m_Subnodes.size() > 0) { this->m_thresholdValue = k; } }
   uint32_t getThresholdValue();
   std::string toString();
-
-  std::string getPolicyWithHashedAttributes();
 };
 
 ///
@@ -191,5 +189,15 @@ bool resetFlags(OpenABETreeNode *root);
 std::unique_ptr<OpenABEPolicy> addToRootOfInput(
             zGateType type,
             const std::string attribute, OpenABEPolicy* policy);
+
+
+#ifndef NO_HASH_ATTRIBUTE_AND_POLICY
+#ifndef SIZEOF_ATTRIBUTE
+#define SIZEOF_ATTRIBUTE 9
+#endif
+  std::string hashAttribute(const std::string& attribute);
+  std::string hashPolicy(const std::string policy);
+  std::string hashattributesList(const std::string& attributes);
+#endif // NO_HASH_ATTRIBUTE_AND_POLICY
 
 #endif /* ifdef  __ZPOLICY_H__ */
