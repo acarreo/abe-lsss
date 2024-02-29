@@ -14,5 +14,6 @@ RUN mkdir -p /relic/build-${CURVE}
 WORKDIR /relic/build-${CURVE}
 RUN ../preset/x64-pbc-${CURVE}.sh ..
 RUN make -j && make install
+RUN cp /relic/src/md/blake2.h /usr/local/include/
 
 WORKDIR /root
