@@ -656,3 +656,35 @@ pair<bool, int> checkIfSatisfied(OpenABEPolicy *policy, OpenABEAttributeList *at
   // return result of check
   return make_pair(isSatisfied, numNodesSatisfied);
 }
+
+
+#ifndef OpenABE_NO_TEST_ROUTINES
+
+//
+// Used for testing only
+//
+
+ZP
+OpenABELSSS::LSSStestSecretRecovery(const OpenABELSSSRowMap& coefficients, const OpenABELSSSRowMap& shares) {
+  // Set 'result' to zero
+  ZP result = ZP((uint32_t)0);
+
+  // For each share, find the matching coefficient
+  for(OpenABELSSSRowMap::const_iterator shareIt = shares.begin(); shareIt != shares.end(); ++shareIt) {
+    // First identify the coefficient that matches this share
+    OpenABELSSSRowMap::const_iterator coeffIt = coefficients.find(shareIt->first);
+    if (coeffIt == coefficients.end()) {
+      // OpenABE_LOG_AND_THROW("Could not find a matching coefficient in the list", OpenABE_ERROR_SECRET_SHARING_FAILED);
+      // Note: this condition occurs in one of two situations:
+      // 1) there is legitimately a missing coefficient in the list (due to recoveryCoefficient error)
+      // 2) we are dealing with an OR policy, in which case only 1 of the coefficients is necessary to recover secret
+      continue;
+    }
+
+    // Now compute result += (share * coeff)
+    result += (coeffIt->second.element() * shareIt->second.element());
+  }
+
+  return result;
+}
+#endif
