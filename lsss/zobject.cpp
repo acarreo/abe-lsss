@@ -102,12 +102,12 @@ OpenABEZeroize(void *b, size_t b_len) {
 static const string base64_chars =
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
+             "0123456789-_";
 
 /* Note that the following was borrowed from Copyright (C) 2004-2008 Ren� Nyffenegger (*/
 
 bool is_base64(unsigned char c) {
-  return (isalnum(c) || (c == '+') || (c == '/'));
+  return (isalnum(c) || (c == '-') || (c == '_'));
 }
 
 string Base64Encode(unsigned char const* bytes_to_encode, unsigned int in_len) {
@@ -182,7 +182,7 @@ string Base64Decode(string const& encoded_string) {
   if (in_ < encoded_string.size()) {
     // Look for terminating '='s, maximum 2
     if (encoded_string.size() - in_ > 2) {
-      return NULL;
+      return std::string();
       //throw //OpenABE_ERROR_INVALID_INPUT;
     }
 
@@ -193,7 +193,7 @@ string Base64Decode(string const& encoded_string) {
         }
     }
     if (tmp != encoded_string.size()) {
-      return NULL;
+      return std::string();
       //throw //OpenABE_ERROR_INVALID_INPUT;
     }
   }

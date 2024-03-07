@@ -119,6 +119,12 @@ public:
   // Methods for obtaining the rows
   OpenABELSSSRowMap& getRows() { return m_ResultMap; }
 
+#ifndef OpenABE_NO_TEST_ROUTINES
+	//
+	// Test routine we use to make sure secret sharing is working
+	//
+	ZP LSSStestSecretRecovery(const OpenABELSSSRowMap& coefficients, const OpenABELSSSRowMap& shares);
+#endif // OpenABE_NO_TEST_ROUTINES
 };
 
 bool iterativeScanTree(OpenABETreeNode *treeNode, OpenABEAttributeList *attributeList);
