@@ -24,6 +24,10 @@ install-lsss: $(LIB_LSSS)
 	sudo mkdir -p $(INSTALL_DIR)/include/lsss
 	sudo cp lsss/*.h lsss/zparser.yy lsss/zparser.tab.hh lsss/zscanner.ll $(INSTALL_DIR)/include/lsss/
 	sudo mv $(LIB_LSSS) $(INSTALL_DIR)/lib
+install-lsss: $(LIB_LSSS)
+	sudo mkdir -p $(INSTALL_DIR)/include/lsss
+	sudo cp lsss/*.h lsss/zparser.yy lsss/zparser.tab.hh lsss/zscanner.ll $(INSTALL_DIR)/include/lsss/
+	sudo mv $(LIB_LSSS) $(INSTALL_DIR)/lib
 
 install-relic:
 	./compile/install-relic.sh
