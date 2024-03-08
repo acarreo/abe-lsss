@@ -43,6 +43,7 @@
 #include "zelement_bp.h"
 #include "zpolicy.h"
 #include "zattributelist.h"
+#include "hashattributes.h"
 
 
 /// \class  ZLSSSElement

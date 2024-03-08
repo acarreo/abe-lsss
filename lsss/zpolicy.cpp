@@ -39,7 +39,6 @@
 #include <fstream>
 #include <string>
 #include <stack>
-#include <blake2.h>
 
 #include "zpolicy.h"
 #include "zdriver.h"
@@ -430,80 +429,3 @@ std::vector<std::string> split(const std::string &s, char delim) {
   return elems;
 }
 
-
-
-#if 0
-#ifndef NO_HASH_ATTRIBUTE_AND_POLICY
-
-std::vector<std::string> splitByWord (const std::string& stringToSplit, const std::string& delim) {
-  std::vector<std::string> result;
-  std::string str = stringToSplit;
-  size_t del_len = delim.length();
-  size_t pos = 0;
-
-  while(pos < str.length()){
-    pos = str.find(delim);
-    result.push_back(str.substr(0, pos));
-    str.erase(0, pos + del_len);
-  }
-
-  return result;
-}
-
-std::string hashAttribute(const std::string &attribute) {
-  if (attribute.find("Date") != std::string::npos ||
-      attribute.find("Floor") != std::string::npos)
-    return attribute;
-
-  uint8_t digest[SIZEOF_ATTRIBUTE];
-  blake2s(digest, SIZEOF_ATTRIBUTE, (uint8_t *)attribute.c_str(), attribute.size(), NULL, 0);
-
-  return "A:" + Base64Encode(digest, SIZEOF_ATTRIBUTE);
-}
-
-std::string hashPolicy(const std::string policy) {
-  std::string final_policy = "";
-
-  std::vector<std::string> vect_split_or = splitByWord(policy, " or ");
-  for (std::string elm: vect_split_or) {
-
-    std::vector<std::string> vect_split_and = splitByWord(elm, " and ");
-    for (string y: vect_split_and) {
-
-      size_t pos = y.rfind('('); // reverse find '('
-      if (pos != std::string::npos) {
-        final_policy += y.substr(0, pos + 1) + hashAttribute(y.substr(pos + 1, y.length() - pos));
-        final_policy += " and ";
-      }
-
-      pos = y.find(')');         // find ')'
-      if (pos != std::string::npos) {
-        final_policy += hashAttribute(y.substr(0, pos)) + y.substr(pos, y.length());
-        final_policy += " and ";
-      }
-    }
-    // remove last " and "
-    final_policy = final_policy.substr(0, final_policy.length() - 5);
-    final_policy += " or ";
-  }
-  // remove last " or "
-  final_policy = final_policy.substr(0, final_policy.length() - 4);
-
-  return final_policy;
-}
-
-std::string hashattributesList(const std::string &attributes) {
-  std::vector<std::string> attr_list = split(attributes, '|');
-  std::string hashed_attr = "";
-
-  for (const auto& att : attr_list) {
-    hashed_attr += hashAttribute(att) + "|";
-  }
-  // remove last "|"
-  hashed_attr = hashed_attr.substr(0, hashed_attr.length() - 1);
-
-  return hashed_attr;
-}
-
-#endif // NO_HASH_ATTRIBUTE_AND_POLICY
-#endif
