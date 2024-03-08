@@ -432,6 +432,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 
 
 
+#if 0
 #ifndef NO_HASH_ATTRIBUTE_AND_POLICY
 
 std::vector<std::string> splitByWord (const std::string& stringToSplit, const std::string& delim) {
@@ -505,3 +506,4 @@ std::string hashattributesList(const std::string &attributes) {
 }
 
 #endif // NO_HASH_ATTRIBUTE_AND_POLICY
+#endif
