@@ -4,6 +4,13 @@
  */
 
 #include "hashattributes.h"
+#include "zpolicy.h"
+#include "zattributelist.h"
+
+#include <set>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
 
 
 // std::vector<std::string> splitByWord(const std::string& stringToSplit, const std::string& delim);
@@ -128,6 +135,7 @@ std::string Base64Decode(std::string const& encoded_string) {
 }
 
 
+#if 0
 /**
  * @brief Splits a string by a delimiter and returns a vector of substrings.
  *
@@ -151,16 +159,84 @@ std::vector<std::string> splitByWord(const std::string& stringToSplit, const std
 }
 
 /**
+ * Replaces all instances of a specified word within a string, provided they 
+ * constitute whole words. The function respects specific delimiters such as 
+ * parentheses and spaces, as well as the beginning or end of the string. 
+ * This ensures that substrings forming part of a larger word are not replaced.
+ *
+ * @param str The string in which to replace the word.
+ * @param oldWord The word to be replaced.
+ * @param newWord The new word to replace the old word.
+ */
+void replaceWholeWord(std::string& str, const std::string& oldWord, const std::string& newWord) {
+  size_t pos = 0;
+  while ((pos = str.find(oldWord, pos)) != std::string::npos) {
+    if ((pos == 0 || str[pos - 1] == '(' || str[pos - 1] == ' ') &&
+        (pos + oldWord.length() == str.length()
+        || str[pos + oldWord.length()] == ')'
+        || str[pos + oldWord.length()] == ' '
+        || str[pos + oldWord.length()] == '\0'))
+    {
+      str.replace(pos, oldWord.length(), newWord);
+      pos += newWord.length();
+    } else {
+      pos++;
+    }
+  }
+}
+
+/**
+ * @brief Extracts words from a string. This function is used to extract
+ * set of unique attributes from a policy string. Don't use this function
+ * complex policies.
+ *
+ * @param str The string from which to extract words.
+ * @return std::set<std::string> The set of extracted unqique words.
+ */
+std::set<std::string> extractWords(const std::string& str) {
+  std::set<std::string> words;
+  std::istringstream iss(str);
+  std::string word;
+
+  while (iss >> word) {
+    if (word != "or" && word != "and") {
+      while (!word.empty() && (word.front() == '(' || word.front() == ')')) {
+        word.erase(0, 1);
+      }
+      while (!word.empty() && (word.back() == '(' || word.back() == ')')) {
+        word.pop_back();
+      }
+
+      words.insert(word);
+    }
+  }
+  
+  return words;
+}
+#endif
+
+/**
+ * Replaces all instances of a specified word within a string with a new word.
+ *
+ * @param str The string in which to replace the word.
+ * @param oldWord The word to be replaced.
+ * @param newWord The new word to replace the old word.
+ */
+void replaceAll(std::string& str, const std::string& oldWord, const std::string& newWord) {
+  size_t pos = 0;
+  while ((pos = str.find(oldWord, pos)) != std::string::npos) {
+    str.replace(pos, oldWord.length(), newWord);
+    pos += newWord.length();
+  }
+}
+
+/**
  * @brief Hashes an attribute using the Blake2s algorithm.
  *
  * @param attribute The attribute to be hashed.
  * @return std::string The hashed attribute.
  */
 std::string hashAttribute(const std::string& attribute) {
-  if (attribute.find("Date") != std::string::npos ||
-      attribute.find("Floor") != std::string::npos)
-    return attribute;
-
   uint8_t digest[SIZEOF_ATTRIBUTE];
   blake2s(digest, SIZEOF_ATTRIBUTE, (uint8_t*)attribute.c_str(), attribute.size(), NULL, 0);
 
@@ -174,32 +250,13 @@ std::string hashAttribute(const std::string& attribute) {
  * @return std::string The hashed policy.
  */
 std::string hashPolicy(const std::string policy) {
-  std::string final_policy = "";
+  std::string final_policy = policy;
 
-  std::vector<std::string> vect_split_or = splitByWord(policy, " or ");
-  for (std::string elm : vect_split_or) {
+  auto attributes = createPolicyTree(policy)->getAttrCompleteSet();
 
-    std::vector<std::string> vect_split_and = splitByWord(elm, " and ");
-    for (std::string y : vect_split_and) {
-
-      size_t pos = y.rfind('('); // reverse find '('
-      if (pos != std::string::npos) {
-        final_policy += y.substr(0, pos + 1) + hashAttribute(y.substr(pos + 1, y.length() - pos));
-        final_policy += " and ";
-      }
-
-      pos = y.find(')'); // find ')'
-      if (pos != std::string::npos) {
-        final_policy += hashAttribute(y.substr(0, pos)) + y.substr(pos, y.length());
-        final_policy += " and ";
-      }
-    }
-    // remove last " and "
-    final_policy = final_policy.substr(0, final_policy.length() - 5);
-    final_policy += " or ";
+  for (const auto& attr : attributes) {
+    replaceAll(final_policy, attr, hashAttribute(attr));
   }
-  // remove last " or "
-  final_policy = final_policy.substr(0, final_policy.length() - 4);
 
   return final_policy;
 }
@@ -211,14 +268,14 @@ std::string hashPolicy(const std::string policy) {
  * @return std::string The hashed attributes separated by '|'.
  */
 std::string hashattributesList(const std::string& attributes) {
-  std::vector<std::string> attr_list = split(attributes, '|');
-  std::string hashed_attr = "";
+  std::string hashed_attr = attributes;
 
-  for (const auto& att : attr_list) {
-    hashed_attr += hashAttribute(att) + "|";
+  auto attrList = createAttributeList(attributes);
+  auto attrSet = attrList->getAttributeList();
+
+  for (const auto& att : *attrSet) {
+    replaceAll(hashed_attr, att, hashAttribute(att));
   }
-  // remove last "|"
-  hashed_attr = hashed_attr.substr(0, hashed_attr.length() - 1);
 
   return hashed_attr;
 }
