@@ -14,6 +14,6 @@ std::string Base64Decode(std::string const& encoded_string);
 
 std::string hashAttribute(const std::string& attribute);
 std::string hashPolicy(const std::string policy);
-std::string hashattributesList(const std::string& attributes);
+std::string hashAttributesList(const std::string& attributes);
 
 #endif // __HASHATTRIBUTES_H__

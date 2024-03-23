@@ -28,7 +28,7 @@ int main(int argc, char const *argv[])
   string attributes = "Bob|Eve|uid:56ab7c|Date=May 2, 2022";
 
   string policy_hashed = hashPolicy(policy);
-  string attributes_hashed = hashattributesList(attributes);
+  string attributes_hashed = hashAttributesList(attributes);
 
   cout << "Policy hashed: " << policy_hashed << endl;
   cout << "Attributes hashed: " << attributes_hashed << endl;

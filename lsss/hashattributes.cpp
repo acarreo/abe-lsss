@@ -267,7 +267,7 @@ std::string hashPolicy(const std::string policy) {
  * @param attributes The list of attributes to be hashed.
  * @return std::string The hashed attributes separated by '|'.
  */
-std::string hashattributesList(const std::string& attributes) {
+std::string hashAttributesList(const std::string& attributes) {
   std::string hashed_attr = attributes;
 
   auto attrList = createAttributeList(attributes);
