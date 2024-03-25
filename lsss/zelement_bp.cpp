@@ -315,6 +315,14 @@ void ZP::serialize(OpenABEByteString &result) const
   this->getLengthAndByteString(result);
 }
 
+void ZP::serialize(vector<uint8_t>& result) const
+{
+  OpenABEByteString temp;
+  this->serialize(temp);
+  result.resize(temp.size());
+  std::copy(temp.data(), temp.data() + temp.size(), result.begin());
+}
+
 void ZP::deserialize(OpenABEByteString &input)
 {
   size_t inputSize = input.size(), hdrLen = 3;
@@ -332,6 +340,14 @@ void ZP::deserialize(OpenABEByteString &input)
     if (isOrderSet && zmbignum_cmp(this->m_ZP, this->order) == BN_CMP_GT)
       zmbignum_mod(this->m_ZP, this->order);
   }
+}
+
+void ZP::deserialize(vector<uint8_t>& input)
+{
+  OpenABEByteString temp;
+  temp.fillBuffer(0, input.size());
+  std::copy(input.begin(), input.end(), temp.data());
+  this->deserialize(temp);
 }
 
 bool ZP::isEqual(ZObject *z) const

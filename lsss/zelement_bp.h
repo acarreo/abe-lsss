@@ -121,6 +121,8 @@ public:
   ZP*    clone() const { return new ZP(*this); }
   void serialize(OpenABEByteString &result) const;
   void deserialize(OpenABEByteString &input);
+  void serialize(std::vector<uint8_t> &result) const;
+  void deserialize(std::vector<uint8_t> &input);
   bool isEqual(ZObject*) const;
 };
 

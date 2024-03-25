@@ -51,5 +51,6 @@ int main(int argc, char const *argv[])
   }
   cout << "Policy with hash ---> satisfied" << endl;
 
+  core_clean();
   return 0;
 }
