@@ -44,6 +44,9 @@ extern "C" {
 #include "zbytestring.h"
 #include "zobject.h"
 
+#ifndef _COMPRESSION_
+#define _COMPRESSION_    1
+#endif
 
 #define G1_SIZE_BIN             ((RLC_PC_BYTES) * 2 + 1)
 #define G2_SIZE_BIN             ((RLC_PC_BYTES) * 4 + 1)
@@ -121,8 +124,6 @@ public:
   ZP*    clone() const { return new ZP(*this); }
   void serialize(OpenABEByteString &result) const;
   void deserialize(OpenABEByteString &input);
-  void serialize(std::vector<uint8_t> &result) const;
-  void deserialize(std::vector<uint8_t> &input);
   bool isEqual(ZObject*) const;
 };
 
@@ -146,6 +147,8 @@ public:
   void setRandom();
   void setGenerator();
   uint8_t* getBytes(int *bufferSize);
+
+  uint8_t* hashToBytes(size_t *size) const;
 
   G1 operator*(const ZP k) const;
   G1 operator-(const G1 &x) const;
@@ -181,6 +184,7 @@ public:
 
   void setRandom();
   void setGenerator();
+  uint8_t* hashToBytes(size_t *size) const;
 
   uint8_t* getBytes(int *bufferSize);
 
@@ -213,6 +217,7 @@ public:
   void setIdentity();
   void setRandom();
   void setGenerator();
+  uint8_t* hashToBytes(size_t *size) const;
 
   uint8_t* getBytes(int *bufferSize);
 
@@ -226,7 +231,7 @@ public:
   GT operator/(const GT &x) const;
   bool operator==(const GT& x) const;
 
-  int getSize();
+  int getSize() const;
   bool isIdentity() const;
   bool ismember() const;
   bool isEqual(ZObject* z) const;

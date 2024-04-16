@@ -315,13 +315,6 @@ void ZP::serialize(OpenABEByteString &result) const
   this->getLengthAndByteString(result);
 }
 
-void ZP::serialize(vector<uint8_t>& result) const
-{
-  OpenABEByteString temp;
-  this->serialize(temp);
-  result.resize(temp.size());
-  std::copy(temp.data(), temp.data() + temp.size(), result.begin());
-}
 
 void ZP::deserialize(OpenABEByteString &input)
 {
@@ -342,13 +335,6 @@ void ZP::deserialize(OpenABEByteString &input)
   }
 }
 
-void ZP::deserialize(vector<uint8_t>& input)
-{
-  OpenABEByteString temp;
-  temp.fillBuffer(0, input.size());
-  std::copy(input.begin(), input.end(), temp.data());
-  this->deserialize(temp);
-}
 
 bool ZP::isEqual(ZObject *z) const
 {
@@ -445,11 +431,26 @@ void G1::setGenerator() {
 }
 
 int G1::getSize() const {
-  return g1_size_bin(this->m_G1, 1);
+  return g1_size_bin(this->m_G1, _COMPRESSION_);
 }
 
 bool G1::ismember() const {
   return isInit && g1_is_valid(this->m_G1);
+}
+
+uint8_t* G1::hashToBytes(size_t *size) const {
+  uint8_t* hash = (uint8_t *)malloc(RLC_MD_LEN * sizeof(uint8_t));
+  if (hash == NULL) {
+    cout << "Failed to allocate memory for hash" << endl;
+    return NULL;
+  }
+
+  int l = this->getSize();
+  uint8_t buffer[l];
+  g1_write_bin(buffer, l, this->m_G1, _COMPRESSION_);
+  md_map(hash, buffer, l);
+  *size = RLC_MD_LEN;
+  return hash;
 }
 
 G1 G1::operator*(const ZP k) const {
@@ -497,7 +498,7 @@ void G1::serialize(OpenABEByteString &result) const {
   if (this->isInit) {
     size_t len = this->getSize();
     tmp.fillBuffer(0, len);
-    g1_write_bin(tmp.getInternalPtr(), len, this->m_G1, 1);
+    g1_write_bin(tmp.getInternalPtr(), len, this->m_G1, _COMPRESSION_);
   
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_G1);
@@ -579,8 +580,24 @@ void G2::setGenerator() {
   if (isInit) g2_get_gen(this->m_G2);
 }
 
+uint8_t* G2::hashToBytes(size_t *size) const {
+  uint8_t* hash = (uint8_t *)malloc(RLC_MD_LEN * sizeof(uint8_t));
+  if (hash == NULL) {
+    cout << "Failed to allocate memory for hash" << endl;
+    return NULL;
+  }
+
+  int l = this->getSize();
+  uint8_t buffer[l];
+  g2_write_bin(buffer, l, this->m_G2, _COMPRESSION_);
+  md_map(hash, buffer, l);
+  *size = RLC_MD_LEN;
+
+  return hash;
+}
+
 int G2::getSize() const {
-  return g2_size_bin(this->m_G2, 1);
+  return g2_size_bin(this->m_G2, _COMPRESSION_);
 }
 
 bool G2::ismember() const {
@@ -632,7 +649,7 @@ void G2::serialize(OpenABEByteString &result) const {
   if (this->isInit) {
     size_t len = this->getSize();
     tmp.fillBuffer(0, len);
-    g2_write_bin(tmp.getInternalPtr(), len, this->m_G2, 1);
+    g2_write_bin(tmp.getInternalPtr(), len, this->m_G2, _COMPRESSION_);
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_G2);
     result.smartPack(tmp);
@@ -692,8 +709,26 @@ void GT::setGenerator() {
   if (isInit) gt_get_gen(this->m_GT);
 }
 
-int GT::getSize() {
-  return gt_size_bin(this->m_GT, 1);
+uint8_t* GT::hashToBytes(size_t *size) const {
+  uint8_t* hash = (uint8_t *)malloc(RLC_MD_LEN * sizeof(uint8_t));
+  if (hash == NULL) {
+    cout << "Failed to allocate memory for hash" << endl;
+    return NULL;
+  }
+
+  int l = this->getSize();
+  uint8_t buffer[l];
+  gt_write_bin(buffer, l, this->m_GT, _COMPRESSION_);
+  md_map(hash, buffer, l);
+  *size = RLC_MD_LEN;
+
+  return hash;
+}
+
+int GT::getSize() const {
+  gt_t tmp; gt_init(tmp);
+  gt_copy(tmp, this->m_GT);
+  return gt_size_bin(tmp, _COMPRESSION_);
 }
 
 bool GT::isIdentity() const {
