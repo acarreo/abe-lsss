@@ -444,6 +444,11 @@ int G1::getSize() const {
   return g1_size_bin(this->m_G1, _COMPRESSION_);
 }
 
+size_t G1::getSizeInBytes() const {
+  //Add 3 bytes : 1 byte for the group type and 2 bytes for the length
+  return this->getSize() + sizeof(uint8_t) + sizeof(uint16_t);
+}
+
 bool G1::ismember() const {
   return isInit && g1_is_valid(this->m_G1);
 }
@@ -613,6 +618,11 @@ int G2::getSize() const {
   return g2_size_bin(this->m_G2, _COMPRESSION_);
 }
 
+size_t G2::getSizeInBytes() const {
+  //Add 3 bytes : 1 byte for the group type and 2 bytes for the length
+  return this->getSize() + sizeof(uint8_t) + sizeof(uint16_t);
+}
+
 bool G2::ismember() const {
   return isInit && g2_is_valid(this->m_G2);
 }
@@ -736,6 +746,11 @@ uint8_t* GT::hashToBytes(size_t *size) const {
 
 int GT::getSize() const {
   return gt_size_bin((static_cast<GT>(*this)).m_GT, _COMPRESSION_);
+}
+
+size_t GT::getSizeInBytes() const {
+  //Add 3 bytes : 1 byte for the group type and 2 bytes for the length
+  return this->getSize() + sizeof(uint8_t) + sizeof(uint16_t);
 }
 
 bool GT::isIdentity() const {

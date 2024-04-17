@@ -54,6 +54,9 @@ extern "C" {
 #define G1_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) + 1)
 #define G2_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) * 2 + 1)
 
+#define G1_SIZE    (_COMPRESSION_ ? G1_SIZE_BIN_COMPRESSED : G1_SIZE_BIN)
+#define G2_SIZE    (_COMPRESSION_ ? G2_SIZE_BIN_COMPRESSED : G2_SIZE_BIN)
+
 class OpenABEByteString;
 
 void ro_error(void);
@@ -156,6 +159,7 @@ public:
   bool operator==(const G1 &x) const;
 
   int getSize() const;
+  size_t getSizeInBytes() const;
   bool ismember() const;
   bool isEqual(ZObject *z) const;
   G1* clone() const;
@@ -194,6 +198,7 @@ public:
   bool operator==(const G2 &x) const;
 
   int getSize() const;
+  size_t getSizeInBytes() const;
   bool ismember() const;
   bool isEqual(ZObject *z) const;
   G2* clone() const;
@@ -231,6 +236,7 @@ public:
   bool operator==(const GT& x) const;
 
   int getSize() const;
+  size_t getSizeInBytes() const;
   bool isIdentity() const;
   bool ismember() const;
   bool isEqual(ZObject* z) const;
