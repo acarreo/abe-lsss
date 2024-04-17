@@ -439,18 +439,15 @@ bool G1::ismember() const {
 }
 
 uint8_t* G1::hashToBytes(size_t *size) const {
-  uint8_t* hash = (uint8_t *)malloc(RLC_MD_LEN * sizeof(uint8_t));
-  if (hash == NULL) {
-    cout << "Failed to allocate memory for hash" << endl;
-    return NULL;
-  }
+  int len = this->getSize();
+  uint8_t buffer[len];
+  g1_write_bin(buffer, len, this->m_G1, _COMPRESSION_);
 
-  int l = this->getSize();
-  uint8_t buffer[l];
-  g1_write_bin(buffer, l, this->m_G1, _COMPRESSION_);
-  md_map(hash, buffer, l);
+  std::unique_ptr<uint8_t[]> hash(new uint8_t[RLC_MD_LEN]);
+  md_map(hash.get(), buffer, len);
   *size = RLC_MD_LEN;
-  return hash;
+
+  return hash.release();
 }
 
 G1 G1::operator*(const ZP k) const {
@@ -484,7 +481,7 @@ G1* G1::clone() const {
   return new G1(*this);
 }
 
-uint8_t* G1::getBytes(int *bufferSize) {
+uint8_t* G1::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
   g1_write_bin(buffer, size, this->m_G1, 1);
@@ -581,19 +578,15 @@ void G2::setGenerator() {
 }
 
 uint8_t* G2::hashToBytes(size_t *size) const {
-  uint8_t* hash = (uint8_t *)malloc(RLC_MD_LEN * sizeof(uint8_t));
-  if (hash == NULL) {
-    cout << "Failed to allocate memory for hash" << endl;
-    return NULL;
-  }
+  int len = this->getSize();
+  uint8_t buffer[len];
+  g2_write_bin(buffer, len, this->m_G2, _COMPRESSION_);
 
-  int l = this->getSize();
-  uint8_t buffer[l];
-  g2_write_bin(buffer, l, this->m_G2, _COMPRESSION_);
-  md_map(hash, buffer, l);
+  std::unique_ptr<uint8_t[]> hash(new uint8_t[RLC_MD_LEN]);
+  md_map(hash.get(), buffer, len);
   *size = RLC_MD_LEN;
 
-  return hash;
+  return hash.release();
 }
 
 int G2::getSize() const {
@@ -635,7 +628,7 @@ G2* G2::clone() const {
   return new G2(*this);
 }
 
-uint8_t* G2::getBytes(int *bufferSize) {
+uint8_t* G2::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
   g2_write_bin(buffer, size, this->m_G2, 1);
@@ -710,25 +703,19 @@ void GT::setGenerator() {
 }
 
 uint8_t* GT::hashToBytes(size_t *size) const {
-  uint8_t* hash = (uint8_t *)malloc(RLC_MD_LEN * sizeof(uint8_t));
-  if (hash == NULL) {
-    cout << "Failed to allocate memory for hash" << endl;
-    return NULL;
-  }
+  int len = this->getSize();
+  uint8_t buffer[len];
+  gt_write_bin(buffer, len, this->m_GT, _COMPRESSION_);
 
-  int l = this->getSize();
-  uint8_t buffer[l];
-  gt_write_bin(buffer, l, this->m_GT, _COMPRESSION_);
-  md_map(hash, buffer, l);
+  std::unique_ptr<uint8_t[]> hash(new uint8_t[RLC_MD_LEN]);
+  md_map(hash.get(), buffer, len);
   *size = RLC_MD_LEN;
 
-  return hash;
+  return hash.release();
 }
 
 int GT::getSize() const {
-  gt_t tmp; gt_init(tmp);
-  gt_copy(tmp, this->m_GT);
-  return gt_size_bin(tmp, _COMPRESSION_);
+  return gt_size_bin((static_cast<GT>(*this)).m_GT, _COMPRESSION_);
 }
 
 bool GT::isIdentity() const {
@@ -788,7 +775,7 @@ GT* GT::clone() const {
   return new GT(*this);
 }
 
-uint8_t* GT::getBytes(int *bufferSize) {
+uint8_t* GT::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
   gt_write_bin(buffer, size, this->m_GT, 1);
@@ -798,19 +785,15 @@ uint8_t* GT::getBytes(int *bufferSize) {
 
 void GT::serialize(OpenABEByteString &result) const {
   OpenABEByteString tmp;
-  gt_t gt_tmp;
 
   if(this->isInit) {
-    gt_init(gt_tmp); gt_copy(gt_tmp, this->m_GT);
-    size_t len = gt_size_bin(gt_tmp, 1);
+    size_t len = this->getSize();
 
     tmp.fillBuffer(0, len);
-    gt_write_bin(tmp.getInternalPtr(), len, gt_tmp, 1);
+    gt_write_bin(tmp.getInternalPtr(), len, static_cast<GT>(*this).m_GT, _COMPRESSION_);
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_GT);
     result.smartPack(tmp);
-
-    gt_free(gt_tmp);
   }
 }
 

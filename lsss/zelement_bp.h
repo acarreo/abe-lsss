@@ -146,8 +146,7 @@ public:
 
   void setRandom();
   void setGenerator();
-  uint8_t* getBytes(int *bufferSize);
-
+  uint8_t* getBytes(int *bufferSize) const;
   uint8_t* hashToBytes(size_t *size) const;
 
   G1 operator*(const ZP k) const;
@@ -185,8 +184,7 @@ public:
   void setRandom();
   void setGenerator();
   uint8_t* hashToBytes(size_t *size) const;
-
-  uint8_t* getBytes(int *bufferSize);
+  uint8_t* getBytes(int *bufferSize) const;
 
   G2 operator*(const ZP k) const;
   G2 operator-(const G2 &x) const;
@@ -218,8 +216,7 @@ public:
   void setRandom();
   void setGenerator();
   uint8_t* hashToBytes(size_t *size) const;
-
-  uint8_t* getBytes(int *bufferSize);
+  uint8_t* getBytes(int *bufferSize) const;
 
   GT exp(const ZP k) const;
   GT inverse() const;
