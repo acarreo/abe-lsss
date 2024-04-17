@@ -137,6 +137,7 @@ public:
   G1();
   G1(const G1 &w);
   G1(const g1_t &w);
+  G1(uint8_t *buffer, int bufferSize);
 
   ~G1();
 
@@ -174,6 +175,7 @@ public:
   G2();
   G2(const G2 &w);
   G2(const g2_t &w);
+  G2(uint8_t *buffer, int bufferSize);
 
   ~G2();
 

@@ -396,6 +396,16 @@ G1::G1(const g1_t &w) {
   isInit = true;
 }
 
+G1::G1(uint8_t *buffer, int bufferSize) {
+  if (bufferSize != G1_SIZE) {
+    cerr << "Error : Invalid buffer size for G1 element." << endl;
+    exit(-1);
+  }
+  g1_init(this->m_G1);
+  g1_read_bin(this->m_G1, buffer, bufferSize);
+  isInit = true;
+}
+
 G1::~G1() {
   if (isInit) {
     g1_free(this->m_G1);
@@ -540,6 +550,16 @@ G2::G2(const G2 &w) {
 G2::G2(const g2_t &w) {
   g2_init(this->m_G2);
   g2_copy(this->m_G2, w);
+  isInit = true;
+}
+
+G2::G2(uint8_t *buffer, int bufferSize) {
+  if (bufferSize != G2_SIZE) {
+    cerr << "Error : Invalid buffer size for G2 element." << endl;
+    exit(-1);
+  }
+  g2_init(this->m_G2);
+  g2_read_bin(this->m_G2, buffer, bufferSize);
   isInit = true;
 }
 
