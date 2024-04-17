@@ -499,19 +499,19 @@ G1* G1::clone() const {
 uint8_t* G1::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  g1_write_bin(buffer, size, this->m_G1, 1);
+  g1_write_bin(buffer, size, this->m_G1, _COMPRESSION_);
   *bufferSize = size;
   return buffer;
 }
 
 void G1::serialize(OpenABEByteString &result) const {
   OpenABEByteString tmp;
+  int len = 0;
 
   if (this->isInit) {
-    size_t len = this->getSize();
-    tmp.fillBuffer(0, len);
-    g1_write_bin(tmp.getInternalPtr(), len, this->m_G1, _COMPRESSION_);
-  
+    uint8_t *bytes = this->getBytes(&len);
+    tmp.appendArray(bytes, len);
+
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_G1);
     result.smartPack(tmp);
@@ -522,16 +522,10 @@ void G1::deserialize(OpenABEByteString &input) {
   OpenABEByteString g1_bytes;
   size_t index = 0;
 
-  if (this->isInit) {
-    // first byte is the group type
-    uint8_t element_type = input.at(index);
-    if (element_type == OpenABE_ELEMENT_G1) {
-      index++;
-      g1_bytes = input.smartUnpack(&index);
-      uint8_t *xstr = g1_bytes.getInternalPtr();
-      size_t xstr_len = g1_bytes.size();
-      g1_read_bin(this->m_G1, xstr, (int)xstr_len);
-    }
+  if (this->isInit && (input.at(index++) == OpenABE_ELEMENT_G1)) {
+    g1_bytes = input.smartUnpack(&index);
+    G1 tmp(g1_bytes.data(), g1_bytes.size());
+    *this = tmp;
   }
 }
 
@@ -668,11 +662,12 @@ uint8_t* G2::getBytes(int *bufferSize) const {
 
 void G2::serialize(OpenABEByteString &result) const {
   OpenABEByteString tmp;
+  int len = 0;
 
   if (this->isInit) {
-    size_t len = this->getSize();
-    tmp.fillBuffer(0, len);
-    g2_write_bin(tmp.getInternalPtr(), len, this->m_G2, _COMPRESSION_);
+    uint8_t *bytes = this->getBytes(&len);
+    tmp.appendArray(bytes, len);
+
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_G2);
     result.smartPack(tmp);
@@ -683,16 +678,10 @@ void G2::deserialize(OpenABEByteString &input) {
   OpenABEByteString g2_bytes;
   size_t index = 0;
 
-  if (this->isInit) {
-    // first byte is the group type
-    uint8_t element_type = input.at(index);
-    if (element_type == OpenABE_ELEMENT_G2) {
-      index++;
-      g2_bytes = input.smartUnpack(&index);
-      uint8_t *xstr = g2_bytes.getInternalPtr();
-      size_t xstr_len = g2_bytes.size();
-      g2_read_bin(this->m_G2, xstr, (int)xstr_len);
-    }
+  if (this->isInit && (input.at(index++) == OpenABE_ELEMENT_G2)) {
+    g2_bytes = input.smartUnpack(&index);
+    G2 tmp(g2_bytes.data(), g2_bytes.size());
+    *this = tmp;
   }
 }
 
@@ -733,12 +722,10 @@ void GT::setGenerator() {
 }
 
 uint8_t* GT::hashToBytes(size_t *size) const {
-  int len = this->getSize();
-  uint8_t buffer[len];
-  gt_write_bin(buffer, len, this->m_GT, _COMPRESSION_);
-
+  OpenABEByteString buffer;
+  this->serialize(buffer);
   std::unique_ptr<uint8_t[]> hash(new uint8_t[RLC_MD_LEN]);
-  md_map(hash.get(), buffer, len);
+  md_map(hash.get(), buffer.data(), buffer.size());
   *size = RLC_MD_LEN;
 
   return hash.release();
@@ -820,12 +807,12 @@ uint8_t* GT::getBytes(int *bufferSize) const {
 
 void GT::serialize(OpenABEByteString &result) const {
   OpenABEByteString tmp;
+  int len = 0;
 
   if(this->isInit) {
-    size_t len = this->getSize();
+    uint8_t *bytes = this->getBytes(&len);
+    tmp.appendArray(bytes, len);
 
-    tmp.fillBuffer(0, len);
-    gt_write_bin(tmp.getInternalPtr(), len, static_cast<GT>(*this).m_GT, _COMPRESSION_);
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_GT);
     result.smartPack(tmp);
@@ -836,16 +823,10 @@ void GT::deserialize(OpenABEByteString &input) {
   OpenABEByteString gt_bytes;
   size_t index = 0;
 
-  if(this->isInit) {
-    // first byte is the group type
-    uint8_t element_type = input.at(index);
-    if(element_type == OpenABE_ELEMENT_GT) {
-      index++;
-      gt_bytes = input.smartUnpack(&index);
-      uint8_t *xstr = gt_bytes.getInternalPtr();
-      size_t xstr_len = gt_bytes.size();
-      gt_read_bin(this->m_GT, xstr, (int)xstr_len);
-    }
+  if(this->isInit && (input.at(index++) == OpenABE_ELEMENT_GT)) {
+    gt_bytes = input.smartUnpack(&index);
+    int xstr_len = gt_bytes.size();
+    gt_read_bin(this->m_GT, gt_bytes.data(), xstr_len);
   }
 }
 
