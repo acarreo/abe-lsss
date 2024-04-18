@@ -655,7 +655,7 @@ G2* G2::clone() const {
 uint8_t* G2::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  g2_write_bin(buffer, size, this->m_G2, 1);
+  g2_write_bin(buffer, size, this->m_G2, _COMPRESSION_);
   *bufferSize = size;
   return buffer;
 }
@@ -800,7 +800,7 @@ GT* GT::clone() const {
 uint8_t* GT::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  gt_write_bin(buffer, size, this->m_GT, 1);
+  gt_write_bin(buffer, size, this->m_GT, _COMPRESSION_);
   *bufferSize = size;
   return buffer;
 }
@@ -825,8 +825,7 @@ void GT::deserialize(OpenABEByteString &input) {
 
   if(this->isInit && (input.at(index++) == OpenABE_ELEMENT_GT)) {
     gt_bytes = input.smartUnpack(&index);
-    int xstr_len = gt_bytes.size();
-    gt_read_bin(this->m_GT, gt_bytes.data(), xstr_len);
+    gt_read_bin(this->m_GT, gt_bytes.data(), gt_bytes.size());
   }
 }
 
