@@ -7,9 +7,16 @@ LIB_LSSS = liblsss.a
 SRC = $(wildcard lsss/*.cpp)
 OBJ = $(SRC:.cpp=.o)
 INSTALL_DIR = /usr/local
-# RELIC_INCLUDE = /usr/local/include/relic
 
-all: install-relic install-lsss
+COMPRESSION ?= false
+
+ifeq ($(COMPRESSION), true)
+    CXXFLAGS += -D_COMPRESSION_=true
+else
+    CXXFLAGS += -D_COMPRESSION_=false
+endif
+
+all: install-relic install-lsss clean
 
 %.o: %.cpp
 	$(CXX) -o $@ -c $< $(CXXFLAGS)
