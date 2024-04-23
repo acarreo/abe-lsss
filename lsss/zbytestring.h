@@ -60,7 +60,7 @@ typedef enum PACK_TYPE {
   PACK_64   = 0xD4
 } PackType;
 
-class OpenABEByteString : public std::vector<uint8_t> {
+class OpenABEByteString : public ZObject, public std::vector<uint8_t> {
 
 public:
   OpenABEByteString& operator+=(const OpenABEByteString &concat) {

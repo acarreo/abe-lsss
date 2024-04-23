@@ -51,6 +51,7 @@ public:
   void addRef();
   void deRef();
   uint32_t getRefCount() { return this->refCount; }
+
   virtual ZObject& operator=(const ZObject &rhs) { return *this; }
   virtual ZObject* clone() const { return nullptr; }
   virtual void serialize(OpenABEByteString &result) const { throw std::runtime_error("Not implemented"); }
