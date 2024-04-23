@@ -90,4 +90,20 @@ typedef enum zGroupType {
 #define HASH_FUNCTION_Zr_TO_G1_ROM      "2"
 #define HASH_FUNCTION_Zr_TO_G2_ROM      "3"
 
+
+#define ASSERT_GROUP(G, A, B)   if ( (A) != (G) ||  (B) != (G) ) throw OpenABE_ERROR_WRONG_GROUP;
+#define ASSERT_RNG(R)			if ( (R) < 1 ) throw OpenABE_ERROR_RAND_INSUFFICIENT;
+#define ASSERT_PAIRING(P)       if ( (P) == NULL ) throw OpenABE_ERROR_WRONG_GROUP;
+#define ASSERT_NOTNULL(A)		if ( (A) == NULL ) throw OpenABE_ERROR_INVALID_INPUT;
+#define ASSERT_MESSAGE(A, B, C)  if ( (A) == false ) { string tmp_s = B; fprintf(stderr, "%s:%s:%d: %s - '%s'\n", __FILE__, __FUNCTION__, __LINE__, tmp_s.c_str(), OpenABE_errorToString(C)); throw C; }
+#define ASSERT(A, B)			if ( (A) == false ) { fprintf(stderr, "%s:%s:%d: '%s'\n", __FILE__, __FUNCTION__, __LINE__, OpenABE_errorToString(B)); throw B; }
+#define THROW_ERROR(B)          fprintf(stderr, "%s:%s:%d: '%s'\n", __FILE__, __FUNCTION__, __LINE__, OpenABE_errorToString(B)); throw B;
+
+#define MALLOC_CHECK_OUT_OF_MEMORY(ptr) \
+	if(!ptr) { \
+		fprintf(stderr, __FILE__ ": Out of Memory, Line %d\n", __LINE__); \
+		exit(1); \
+	}
+
+
 #endif /* ifdef __ZCONSTANTS_H__ */
