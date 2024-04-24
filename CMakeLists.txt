@@ -25,9 +25,11 @@ file(GLOB LSSS_SOURCES src/lsss/*.cpp)
 set(SOURCE_FILES
     ${ABE_SOURCES}
     ${LSSS_SOURCES}
+    src/lsss/zparser.tab.cc
 )
 
 find_package(OpenSSL REQUIRED)
+find_package(relic REQUIRED)
 
 add_library(lsss_abe SHARED ${SOURCE_FILES})
 target_link_libraries(lsss_abe OpenSSL::SSL relic gmp)
