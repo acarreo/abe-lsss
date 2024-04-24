@@ -38,7 +38,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "zfunctioninput.h"
+#include "lsss/zfunctioninput.h"
 
 using namespace std;
 

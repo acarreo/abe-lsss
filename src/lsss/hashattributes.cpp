@@ -3,9 +3,9 @@
  * @brief This file contains functions for hashing attributes and policies.
  */
 
-#include "hashattributes.h"
-#include "zpolicy.h"
-#include "zattributelist.h"
+#include "lsss/hashattributes.h"
+#include "lsss/zpolicy.h"
+#include "lsss/zattributelist.h"
 
 #include <set>
 #include <iostream>

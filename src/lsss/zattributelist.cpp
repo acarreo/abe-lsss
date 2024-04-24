@@ -41,9 +41,9 @@
 #include <string>
 #include <regex>
 
-#include "zattributelist.h"
-#include "zdriver.h"
-#include "zpolicy.h"
+#include "lsss/zattributelist.h"
+#include "lsss/zdriver.h"
+#include "lsss/zpolicy.h"
 
 using namespace std;
 

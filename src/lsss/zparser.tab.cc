@@ -38,33 +38,33 @@
 #define yylex   testlex
 
 // First part of user prologue.
-#line 3 "zparser.yy"
+#line 3 "lsss/zparser.yy"
  /*** C/C++ Declarations ***/
 
 #include <stdio.h>
 #include <string>
 #include <vector>
 
-#include "zobject.h"
-#include "zconstants.h"
-#include "zbytestring.h"
-#include "zfunctioninput.h"
-#include "zinteger.h"
-#include "zattributelist.h"
-#include "zpolicy.h"
+#include "lsss/zobject.h"
+#include "lsss/zconstants.h"
+#include "lsss/zbytestring.h"
+#include "lsss/zfunctioninput.h"
+#include "lsss/zinteger.h"
+#include "lsss/zattributelist.h"
+#include "lsss/zpolicy.h"
 
 
 #line 59 "zparser.tab.cc"
 
 
-#include "zparser.tab.hh"
+#include "lsss/zparser.tab.hh"
 
 // Second part of user prologue.
 #line 96 "zparser.yy"
 
 
-#include "zdriver.h"
-#include "zscanner.h"
+#include "lsss/zdriver.h"
+#include "lsss/zscanner.h"
 
 /* this "connects" the bison parser in the driver to the flex scanner class
  * object. it defines the yylex() function call to pull the next token from the

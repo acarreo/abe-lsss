@@ -40,9 +40,9 @@
 #include <list>
 #include <memory>
 
-#include "zbytestring.h"
-#include "zobject.h"
-#include "zelement_bp.h"
+#include "lsss/zbytestring.h"
+#include "lsss/zobject.h"
+#include "lsss/zelement_bp.h"
 
 using namespace std;
 

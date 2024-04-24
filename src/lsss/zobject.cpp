@@ -36,7 +36,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "zobject.h"
+#include "lsss/zobject.h"
 
 using namespace std;
 

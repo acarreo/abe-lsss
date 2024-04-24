@@ -39,8 +39,8 @@
 #include <math.h>
 #include <time.h>
 
-#include "zdriver.h"
-#include "zscanner.h"
+#include "lsss/zdriver.h"
+#include "lsss/zscanner.h"
 
 const size_t DAY_IN_SECS = 60*60*24;
 

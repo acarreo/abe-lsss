@@ -40,8 +40,8 @@
 #include <string>
 #include <stack>
 
-#include "zpolicy.h"
-#include "zdriver.h"
+#include "lsss/zpolicy.h"
+#include "lsss/zdriver.h"
 
 using namespace std;
 
