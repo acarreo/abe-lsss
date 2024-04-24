@@ -6,4 +6,4 @@ local:
 	./install-relic.sh
 
 docker:
-	docker build -t lsss-abe:0.1.0 .
+	docker build -t relic-toolkit:0.6.0 .
