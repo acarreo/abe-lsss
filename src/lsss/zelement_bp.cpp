@@ -251,6 +251,22 @@ void ZP::setRandom(bignum_t o) {
   zmbignum_rand(this->m_ZP, this->order);
 }
 
+void ZP::setRandom(ZP &order) {
+  if (!order.isOrderSet) {
+    if (!this->isOrderSet) {
+      this->isOrderSet = true;
+      zmbignum_copy(this->order, order.m_ZP);
+    }
+    zmbignum_rand(this->m_ZP, order.m_ZP);
+  }
+}
+
+void ZP::setPrime(uint16_t n_bits) {
+  if (this->isInit && !this->isOrderSet) {
+    bn_gen_prime_basic(this->m_ZP, n_bits);
+  }
+}
+
 void ZP::setFrom(ZP &z, uint32_t index) {
   zmbignum_copy(this->m_ZP, z.m_ZP);
   *this = *this + index;

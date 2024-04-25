@@ -101,6 +101,8 @@ public:
   void getLengthAndByteString(OpenABEByteString &z) const;
   void setOrder(const bignum_t o);
   void setRandom(bignum_t o);
+  void setRandom(ZP &order);
+  void setPrime(uint16_t bits);
 
   void setFrom(ZP&, uint32_t);
   bool ismember();
