@@ -96,8 +96,8 @@ OpenABEByteString OpenABEKDF::DeriveKey(OpenABEByteString &Z, uint32_t keyBitLen
   // buffer = counter || hashPrefix || Z || Metadata
   buffer.setFirstBytes(count);
   buffer.push_back(this->hashPrefix);
-  buffer.appendArray(Z.getInternalPtr(), Z.size());
-  buffer.appendArray(metadata.getInternalPtr(), metadata.size());
+  buffer.appendArray(Z.data(), Z.size());
+  buffer.appendArray(metadata.data(), metadata.size());
 
   if (buffer.size() > this->maxInputLen) {
     throw OpenABE_ERROR_INVALID_LENGTH;
@@ -111,7 +111,7 @@ OpenABEByteString OpenABEKDF::DeriveKey(OpenABEByteString &Z, uint32_t keyBitLen
   uint8_t *hash_ptr = hash;
   for (size_t i = 0; i < reps_len; i++) {
     // H(count++ || prefix || Z || Metadata)
-    _hash_to_bytes_(hash_ptr, buffer.getInternalPtr(), buffer.size());
+    _hash_to_bytes_(hash_ptr, buffer.data(), buffer.size());
     count++;
     buffer.setFirstBytes(count);
     hash_ptr += this->hashLen; // move ptr by hashLen bytes
@@ -125,26 +125,56 @@ OpenABEByteString OpenABEKDF::DeriveKey(OpenABEByteString &Z, uint32_t keyBitLen
 
 
 /********************************************************************************
- * Implementation of the OpenABEPBKDF wrapper
+ * Implementation of the ComputeKDF2 wrapper
  ********************************************************************************/
 
 /*!
  *
- * @param[in]   a password.
+ * @param[in]   a key.
  * @param[in]   the number of bytes for the returned key.
  * @return      A OpenABEByteString object that contains the derived key.
  */
-
-OpenABEByteString OpenABEPBKDF(OpenABEByteString &password, uint32_t keydataLenBytes)
+OpenABEByteString OpenABEKDF::ComputeKDF2(OpenABEByteString &key, uint32_t keydataLenBytes)
 {
-  ASSERT(password.size() > 0, OpenABE_ERROR_INVALID_INPUT);
+  ASSERT(key.size() > 0, OpenABE_ERROR_INVALID_INPUT);
   ASSERT(keydataLenBytes > 0, OpenABE_ERROR_INVALID_INPUT);
 
   /* cheap allocation for keydataLenBytes */
-  OpenABEByteString outputHash;
-  outputHash.fillBuffer(0, keydataLenBytes);
+  OpenABEByteString output_key;
+  output_key.fillBuffer(0, keydataLenBytes);
 
-  md_kdf(outputHash.getInternalPtr(), keydataLenBytes, password.data(), password.size());
+  md_kdf(output_key.getInternalPtr(), keydataLenBytes, key.data(), key.size());
 
-  return outputHash;
+  return output_key;
+}
+
+OpenABEByteString OpenABEKDF::ComputeHKDF(OpenABEByteString& key,
+                  OpenABEByteString& salt, OpenABEByteString& info, size_t key_len)
+{
+  uint8_t prk[RLC_MD_LEN];
+  uint8_t h_salt[RLC_MD_LEN];
+  uint8_t tmp_okm[RLC_MD_LEN];
+
+  if (salt.size() == 0) {
+    salt.fillBuffer(0, RLC_MD_LEN);
+  }
+
+  // extract
+  md_map(h_salt, salt.data(), salt.size());
+  md_hmac(prk, h_salt, RLC_MD_LEN, key.data(), key.size());
+
+  // expand
+  int i = 0;
+  OpenABEByteString tmp, tmp_ii;
+  OpenABEByteString output_key;
+  while (output_key.size() < key_len) {
+    tmp_ii = tmp + info;
+    tmp_ii.pack8bits((uint8_t)++i);
+    md_hmac(tmp_okm, tmp_ii.data(), tmp_ii.size(), prk, RLC_MD_LEN);
+    tmp.appendArray(tmp_okm, RLC_MD_LEN);
+    output_key += tmp;
+  }
+  output_key.resize(key_len);
+
+  return output_key;
 }

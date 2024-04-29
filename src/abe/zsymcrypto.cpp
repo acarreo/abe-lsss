@@ -36,6 +36,7 @@
 #include <cassert>
 
 #include "abe/zsymcrypto.h"
+#include "abe/zkdf.h"
 
 using namespace std;
 
@@ -45,48 +46,6 @@ namespace crypto {
 /********************************************************************************
  * Implementation of the OpenABESymKeyAuthEnc class
  ********************************************************************************/
-
-void OpenABEComputeHKDF(OpenABEByteString& key, OpenABEByteString& salt,
-                        OpenABEByteString& info, size_t key_len, OpenABEByteString& output_key) {
-  uint8_t prk[RLC_MD_LEN];
-  uint8_t h_salt[RLC_MD_LEN];
-  uint8_t tmp_okm[RLC_MD_LEN];
-
-  if (salt.size() == 0) {
-    salt.fillBuffer(0, RLC_MD_LEN);
-  }
-
-  // extract
-  md_map(h_salt, salt.data(), salt.size());
-  md_hmac(prk, h_salt, RLC_MD_LEN, key.data(), key.size());
-
-  // expand
-  int i = 0;
-  OpenABEByteString tmp, tmp_ii;
-  while (output_key.size() < key_len) {
-    tmp_ii = tmp + info;
-    tmp_ii.pack8bits((uint8_t)++i);
-    md_hmac(tmp_okm, tmp_ii.data(), tmp_ii.size(), prk, RLC_MD_LEN);
-    tmp.appendArray(tmp_okm, RLC_MD_LEN);
-    output_key += tmp;
-  }
-  output_key.resize(key_len);
-}
-
-void generateSymmetricKey(std::string& key, uint32_t keyLen)
-{
-    OpenABEByteString key_buf;
-    getRandomBytes(key_buf, (int) keyLen);
-    key = key_buf.toString();
-}
-
-// For debug purposes only!!
-const string printAsHex(const string& bin_buf)
-{
-    OpenABEByteString buf;
-    buf += bin_buf;
-    return buf.toLowerHex();
-}
 
 OpenABESymKeyAuthEnc::OpenABESymKeyAuthEnc(int securitylevel, const string& zkey): ZObject()
 {
@@ -111,22 +70,19 @@ OpenABESymKeyAuthEnc::OpenABESymKeyAuthEnc(int securitylevel, OpenABEByteString&
 }
 
 
-OpenABESymKeyAuthEnc::~OpenABESymKeyAuthEnc()
-{
+OpenABESymKeyAuthEnc::~OpenABESymKeyAuthEnc() {
     if (this->aad_set) {
         this->aad.zeroize();
     }
 }
 
 void
-OpenABESymKeyAuthEnc::chooseRandomIV()
-{
+OpenABESymKeyAuthEnc::chooseRandomIV() {
     getRandomBytes(this->iv, AES_BLOCK_SIZE);
 }
 
 void
-OpenABESymKeyAuthEnc::setAddAuthData(OpenABEByteString &aad)
-{
+OpenABESymKeyAuthEnc::setAddAuthData(OpenABEByteString &aad) {
     if(aad.size() == 0) {
         // fill AAD buffer with 0's
         this->aad.fillBuffer(0, AES_BLOCK_SIZE);
@@ -139,8 +95,7 @@ OpenABESymKeyAuthEnc::setAddAuthData(OpenABEByteString &aad)
 }
 
 void
-OpenABESymKeyAuthEnc::setAddAuthData(uint8_t *aad, uint32_t aad_len)
-{
+OpenABESymKeyAuthEnc::setAddAuthData(uint8_t *aad, uint32_t aad_len) {
     this->aad.clear();
     if(aad) {
         this->aad.appendArray(aad, aad_len);
@@ -153,7 +108,8 @@ OpenABESymKeyAuthEnc::setAddAuthData(uint8_t *aad, uint32_t aad_len)
 
 
 OpenABE_ERROR
-OpenABESymKeyAuthEnc::encrypt(const string& plaintext, OpenABEByteString *iv, OpenABEByteString *ciphertext, OpenABEByteString *tag)
+OpenABESymKeyAuthEnc::encrypt(const string& plaintext, OpenABEByteString *iv,
+                              OpenABEByteString *ciphertext, OpenABEByteString *tag)
 {
     OpenABE_ERROR result = OpenABE_NOERROR;
     uint8_t *ct = nullptr;
@@ -234,7 +190,8 @@ OpenABESymKeyAuthEnc::encrypt(const string& plaintext, OpenABEByteString *iv, Op
 }
 
 bool
-OpenABESymKeyAuthEnc::decrypt(string& plaintext, OpenABEByteString* iv, OpenABEByteString* ciphertext, OpenABEByteString* tag)
+OpenABESymKeyAuthEnc::decrypt(string& plaintext, OpenABEByteString* iv,
+                              OpenABEByteString* ciphertext, OpenABEByteString* tag)
 {
     ASSERT_NOTNULL(iv);
     ASSERT_NOTNULL(ciphertext);
@@ -441,7 +398,9 @@ OpenABESymKeyHandleImpl::exportKey(string& key) {
 	secret_key += this->key_;
 	// info: export key is the label
 	info += "export key";
-	OpenABEComputeHKDF(secret_key, salt, info, key_len, output_key);
+
+    OpenABEKDF kdf;
+    output_key = kdf.ComputeHKDF(secret_key, salt, info, key_len);
 	key = output_key.toString();
 }
 

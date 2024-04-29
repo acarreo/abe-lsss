@@ -61,11 +61,12 @@ public:
   ~OpenABEKDF();
 
   OpenABEByteString DeriveKey(OpenABEByteString &Z, uint32_t keyBitLen, OpenABEByteString &metadata);
-};
 
-///
-/// @brief  OpenABEPBKDF wrapper for Password-based Key Derivation Function
-///         (As described in RFC 2898)
-OpenABEByteString OpenABEPBKDF(OpenABEByteString &password, uint32_t keydataLenBytes);
+  /// @brief Key Derivation Function 2
+  OpenABEByteString ComputeKDF2(OpenABEByteString &key, uint32_t keydataLenBytes);
+
+  /// @brief HMAC-based Key Derivation Function
+  OpenABEByteString ComputeHKDF(OpenABEByteString& key, OpenABEByteString& salt, OpenABEByteString& info, size_t key_len);
+};
 
 #endif // __ZKDF_H__
