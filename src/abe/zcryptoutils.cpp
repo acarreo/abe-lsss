@@ -41,6 +41,7 @@
 #include <memory>
 
 #include "abe/zcryptoutils.h"
+#include "abe/zkdf.h"
 
 using namespace std;
 
@@ -84,24 +85,4 @@ string OpenABEHashKey(const string attr_key) {
     return hex_digest.toLowerHex();
   }
   return attr_key;
-}
-
-/*!
- * Generate a salted hash from a given password
- *
- * @param[out] hash      - empty string variable to store the computed hash.
- * @param[in]  password  - a password or passphrase to generate a hash against.
- * @return
- */
-void generateHash(std::string &hash, const std::string &password) {
-  OpenABEByteString pword, genHash;
-  ASSERT(password.size() > 0, OpenABE_ERROR_INVALID_INPUT);
-
-  pword = password;
-  genHash = OpenABEPBKDF(pword, HASH_LEN);
-  hash = genHash.toLowerHex();
-
-  /* clear buffers */
-  pword.clear();
-  genHash.clear();
 }
