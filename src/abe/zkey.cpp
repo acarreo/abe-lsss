@@ -172,3 +172,9 @@ void getRandomBytes(OpenABEByteString &buf, size_t buf_len) {
   buf.fillBuffer(0, buf_len);
   rand_bytes(buf.getInternalPtr(), buf_len);
 }
+
+void generateSymmetricKey(std::string& key, uint32_t keyLen) {
+  OpenABEByteString key_buf;
+  getRandomBytes(key_buf, (int) keyLen);
+  key = key_buf.toString();
+}

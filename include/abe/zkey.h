@@ -92,7 +92,7 @@ public:
 
 OpenABEKeyType OpenABE_KeyTypeFromAlgorithmID(uint8_t algorithmID);
 const std::string OpenABE_KeyTypeToString(OpenABEKeyType key_type);
-
+void generateSymmetricKey(std::string& key, uint32_t keyLen);
 
 /*****************************************************************************/
 // void getRandomBytes(uint8_t *buf, size_t buf_len);
