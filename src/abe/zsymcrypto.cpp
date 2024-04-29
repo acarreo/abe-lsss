@@ -48,58 +48,29 @@ namespace crypto {
 
 void OpenABEComputeHKDF(OpenABEByteString& key, OpenABEByteString& salt,
                         OpenABEByteString& info, size_t key_len, OpenABEByteString& output_key) {
-  EVP_PKEY_CTX *kctx = NULL;
-  string error_msg = "";
-  // check if key is at least a certain size > 0, < 1024
-  size_t out_len = key_len;
-  uint8_t out_key[out_len+1];
-  const EVP_MD *md = EVP_sha256();
+  uint8_t prk[RLC_MD_LEN];
+  uint8_t h_salt[RLC_MD_LEN];
+  uint8_t tmp_okm[RLC_MD_LEN];
 
-  // allocates public key algorithm context using alg specified by id
-  kctx = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, NULL);
-
-  if (EVP_PKEY_derive_init(kctx) <= 0) {
-	error_msg = "EVP_PKEY_derive_init";
-	goto out;
+  if (salt.size() == 0) {
+    salt.fillBuffer(0, RLC_MD_LEN);
   }
 
-  if (EVP_PKEY_CTX_set_hkdf_md(kctx, md) <= 0) {
-    error_msg = "EVP_PKEY_CTX_set_hkdf_md";
-    goto out;
-  }
+  // extract
+  md_map(h_salt, salt.data(), salt.size());
+  md_hmac(prk, h_salt, RLC_MD_LEN, key.data(), key.size());
 
-  if (salt.size() > 0) {
-	  if (EVP_PKEY_CTX_set1_hkdf_salt(kctx, salt.getInternalPtr(), salt.size()) <= 0) {
-		error_msg = "EVP_PKEY_CTX_set1_salt";
-		goto out;
-	  }
+  // expand
+  int i = 0;
+  OpenABEByteString tmp, tmp_ii;
+  while (output_key.size() < key_len) {
+    tmp_ii = tmp + info;
+    tmp_ii.pack8bits((uint8_t)++i);
+    md_hmac(tmp_okm, tmp_ii.data(), tmp_ii.size(), prk, RLC_MD_LEN);
+    tmp.appendArray(tmp_okm, RLC_MD_LEN);
+    output_key += tmp;
   }
-
-  if (EVP_PKEY_CTX_set1_hkdf_key(kctx, key.getInternalPtr(), key.size()) <= 0) {
-	error_msg = "EVP_PKEY_CTX_set1_key";
-	goto out;
-  }
-
-  if (info.size() > 0) {
-	  if (EVP_PKEY_CTX_add1_hkdf_info(kctx, info.getInternalPtr(), info.size()) <= 0) {
-		error_msg = "EVP_PKEY_CTX_add1_hkdf_info";
-		goto out;
-	  }
-  }
-
-  if (EVP_PKEY_derive(kctx, out_key, &out_len) <= 0) {
-	error_msg = "EVP_PKEY_derive";
-	goto out;
-  }
-
-  output_key.clear();
-  output_key.appendArray(out_key, out_len);
-out:
-  // if kctx is NULL, nothing is done.
-  EVP_PKEY_CTX_free(kctx);
-  if (error_msg != "") {
-    throw CryptoException(error_msg);
-  }
+  output_key.resize(key_len);
 }
 
 void generateSymmetricKey(std::string& key, uint32_t keyLen)

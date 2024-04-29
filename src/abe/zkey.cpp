@@ -110,7 +110,7 @@ OpenABE_ERROR
 OpenABEKey::exportKeyToBytes(OpenABEByteString &output) {
   output.clear();
   OpenABEByteString keyHeader, keyBytes;
-  // libVersion || curveID || AlgID || uid || id
+  // libVersion || AlgID || uid || id
   this->getHeader(keyHeader);
   // serialize the key structure
   this->serialize(keyBytes);
