@@ -40,7 +40,6 @@
 #include <string>
 
 #include "abe/zkdf.h"
-#include "abe/zcryptoutils.h"
 
 using namespace std;
 
@@ -177,4 +176,17 @@ OpenABEByteString OpenABEKDF::ComputeHKDF(OpenABEByteString& key,
   output_key.resize(key_len);
 
   return output_key;
+}
+
+string OpenABEHashKey(const string attr_key) {
+  OpenABEByteString hex_digest;
+  string hash;
+  if (attr_key.size() > 16) {
+    uint8_t digest[RLC_MD_LEN];
+    _hash_to_bytes_(digest, (uint8_t *)(attr_key.c_str()), attr_key.size());
+    hash = string((char *)digest, RLC_MD_LEN);
+    hex_digest += hash.substr(0,8);
+    return hex_digest.toLowerHex();
+  }
+  return attr_key;
 }
