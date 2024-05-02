@@ -62,7 +62,11 @@ protected:
     
 public:
   // Constructors/destructors
-  OpenABESymKey();
+  OpenABESymKey() : OpenABEKey() {};
+  OpenABESymKey(const std::string ID, OpenABEByteString *uid = nullptr,
+                uint8_t algorithmID = OpenABE_SCHEME_AES_GCM) :
+                OpenABEKey(algorithmID, ID, uid) {};
+
   ~OpenABESymKey();
 
   // Methods

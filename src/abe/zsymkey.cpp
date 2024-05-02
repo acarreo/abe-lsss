@@ -50,11 +50,6 @@ using namespace std;
 /********************************************************************************
  * Implementation of the OpenABESymKey class
  ********************************************************************************/
-/*!
- * Constructor for the OpenABESymKey class.
- *
- */
-OpenABESymKey::OpenABESymKey() : OpenABEKey() {}
 
 /*!
  * Destructor for the STKSymKey class.
@@ -69,12 +64,39 @@ OpenABE_ERROR OpenABESymKey::loadKeyFromBytes(OpenABEByteString &input) {
   if (input.size() == 0) {
     return OpenABE_ERROR_INVALID_LENGTH;
   }
-  this->m_keyData = input;
+
+  OpenABEByteString header, idBytes, uid, keyBytes;
+
+  size_t index = 0, h_index = 0;
+  size_t id_len = 0;
+  uint8_t algoID, libVersion;
+
+  header = input.smartUnpack(&index);
+  id_len = header.size() - UID_LEN - sizeof(algoID) - sizeof(libVersion);
+
+  libVersion = header.at(h_index++);
+  algoID = header.at(h_index++);
+  uid = header.getSubset(h_index, UID_LEN); h_index += UID_LEN;
+  idBytes = header.getSubset(h_index, id_len);
+
+  OpenABESymKey key(idBytes.toString(), &uid, algoID);
+
+  // Set the key data
+  keyBytes = input.smartUnpack(&index);
+  key.setSymmetricKey(keyBytes);
+
+  *this = key;
+
   return OpenABE_NOERROR;
 }
 
 OpenABE_ERROR OpenABESymKey::exportKeyToBytes(OpenABEByteString &output) {
-  output = this->m_keyData;
+  OpenABEByteString header;
+  this->getHeader(header);
+
+  output.clear();
+  output.smartPack(header);
+  output.smartPack(this->m_keyData);
   return OpenABE_NOERROR;
 }
 
@@ -99,26 +121,33 @@ bool OpenABESymKey::hashToSymmetricKey(GT &input, uint32_t keyLen) {
   uint8_t* h_in = input.hashToBytes(&h_len);
   h_input.appendArray(h_in, h_len);
 
-  this->m_keyData.clear();
-  this->m_keyData = OpenABEKDF().ComputeKDF2(h_input, keyLen);
+  OpenABEByteString key = OpenABEKDF().ComputeKDF2(h_input, keyLen);
+  this->setSymmetricKey(key);
 
   return true;
 }
 
 bool OpenABESymKey::generateSymmetricKey(uint32_t keyLen) {
-  // Clear the original key
-  getRandomBytes(this->m_keyData, (int)keyLen);
+  OpenABEByteString key;
+  getRandomBytes(key, (int)keyLen);
+
+  this->setSymmetricKey(key);
   return true;
 }
 
 void OpenABESymKey::setSymmetricKey(OpenABEByteString &key) {
+  if (key.size() != SYM_KEY_BYTES && key.size() != DEFAULT_SYM_KEY_BYTES) {
+    throw OpenABE_ERROR_INVALID_LENGTH;
+  }
+
   this->m_keyData.clear();
   this->m_keyData = key;
 }
 
 bool operator==(const OpenABESymKey &lhs, const OpenABESymKey &rhs) {
-  return (lhs.m_keyData.size() == rhs.m_keyData.size() &&
-          lhs.m_keyData == lhs.m_keyData);
+  OpenABEByteString lhs_header, rhs_header;
+  lhs.getHeader(lhs_header); rhs.getHeader(rhs_header);
+  return (lhs_header == rhs_header && lhs.m_keyData == lhs.m_keyData);
 }
 
 /********************************************************************************
