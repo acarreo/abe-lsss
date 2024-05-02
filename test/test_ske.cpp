@@ -154,6 +154,29 @@ TEST(hashToSymmetricKey, TestKDF2) {
     ASSERT_TRUE(DK == DK0);
 }
 
+TEST(SymKey, SKGeneration) {
+    TEST_DESCRIPTION("Testing Symmetric Key Generation");
+    OpenABESymKey symkey;
+
+    ASSERT_TRUE(symkey.generateSymmetricKey(DEFAULT_SYM_KEY_BYTES));
+    ASSERT_TRUE(symkey.generateSymmetricKey(SYM_KEY_BYTES));
+    ASSERT_THROW(symkey.generateSymmetricKey(17), OpenABE_ERROR);
+
+    OpenABESymKey symkey1("toto_key");
+    OpenABESymKey symkey2;
+    OpenABEByteString exportedKey;
+
+    ASSERT_TRUE(symkey1.generateSymmetricKey(DEFAULT_SYM_KEY_BYTES));
+    ASSERT_TRUE(symkey1.exportKeyToBytes(exportedKey) == OpenABE_NOERROR);
+    ASSERT_TRUE(symkey2.loadKeyFromBytes(exportedKey) == OpenABE_NOERROR);
+
+    ASSERT_TRUE(symkey1 == symkey2);
+
+    // cout << "Exported Key:" << endl << exportedKey.toHex() << endl;
+    // cout << "Key bytes without header:" << endl << symkey1.getKeyBytes().toHex() << endl;
+}
+
+
 int main(int argc, char **argv) {
   int rc;
 
