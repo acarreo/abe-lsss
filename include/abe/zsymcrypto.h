@@ -80,7 +80,38 @@ void OpenABEComputeHKDF(OpenABEByteString& key, OpenABEByteString& salt,
 void generateSymmetricKey(std::string& key, uint32_t keyLen);
 const std::string printAsHex(const std::string& bin_buf);
 
+// Enum for encryption modes
+enum class EncryptionMode {
+  CBC,
+  GCM,
+  STREAM_GCM
+};
+
+class SymKeyEncHandler : ZObject {
+public:
+  SymKeyEncHandler();
+  SymKeyEncHandler(const std::string& key, EncryptionMode mode = EncryptionMode::GCM, bool apply_b64_encode = false);
+  SymKeyEncHandler(const std::shared_ptr<OpenABESymKey>& key, EncryptionMode mode = EncryptionMode::GCM, bool apply_b64_encode = false);
+
+  ~SymKeyEncHandler();
 }
 
+  void setAuthData(const OpenABEByteString& authData);
+  void setSKEHandler(const std::shared_ptr<OpenABESymKey>& key);
+  void setSKEHandler(const std::string& key);
+
+  std::string encrypt(const std::string& plaintext);
+  std::string decrypt(const std::string& ciphertext);
+
+private:
+  bool b64_encode_;
+  OpenABEByteString authData_;
+  EncryptionMode encryption_mode_;
+  std::shared_ptr<OpenABESymKey> key_;
+
+  // Pointers to different encryption handlers
+  std::unique_ptr<OpenABESymKeyEnc> cbc_handler_;
+  std::unique_ptr<OpenABESymKeyAuthEnc> gcm_handler_;
+};
 
 #endif // __ZSYMCRYPTO__
