@@ -103,7 +103,6 @@ void OpenABEKey::getHeader(OpenABEByteString &header) {
   header.push_back(this->algorithmID);
   header += this->uid;
   header += this->ID;
-  return;
 }
 
 OpenABE_ERROR
@@ -132,7 +131,11 @@ OpenABEKey::loadKeyFromBytes(OpenABEByteString &input) {
 }
 
 OpenABEKeyType OpenABE_KeyTypeFromAlgorithmID(uint8_t algorithmID) {
-  if (algorithmID == OpenABE_SCHEME_PK_OPDH)
+  if (algorithmID == OpenABE_SCHEME_AES_CBC ||
+      algorithmID == OpenABE_SCHEME_AES_GCM ||
+      algorithmID == OpneABE_SCHEME_AES_GCM_STREAM)
+    return OpenABEKEY_SK_ENC;
+  else if (algorithmID == OpenABE_SCHEME_PK_OPDH)
     return OpenABEKEY_PK_ENC;
   else if (algorithmID == OpenABE_SCHEME_CP_WATERS ||
            algorithmID == OpenABE_SCHEME_CP_WATERS_CCA)
