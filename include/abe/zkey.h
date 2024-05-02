@@ -78,14 +78,14 @@ public:
   ~OpenABEKey();
 
   void    setAsPrivate() { isPrivate = true; }
-  void    getHeader(OpenABEByteString &header);
+  void    getHeader(OpenABEByteString &header) const;
   uint8_t getAlgorithmID() { return this->algorithmID; }
   uint8_t getLibID() { return this->libraryVersion; }
   OpenABEByteString& getUID() { return this->uid; }
   std::string getID() { return this->ID; }
   OpenABEKeyType getKeyType() { return this->key_type; }
 
-  virtual OpenABE_ERROR exportKeyToBytes(OpenABEByteString &output);
+  virtual OpenABE_ERROR exportKeyToBytes(OpenABEByteString &output) const;
   virtual OpenABE_ERROR loadKeyFromBytes(OpenABEByteString &input);
 
 };

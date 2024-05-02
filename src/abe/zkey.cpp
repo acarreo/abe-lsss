@@ -97,7 +97,7 @@ OpenABEKey::~OpenABEKey() {}
  *
  */
 
-void OpenABEKey::getHeader(OpenABEByteString &header) {
+void OpenABEKey::getHeader(OpenABEByteString &header) const {
   header.clear();
   header.push_back(this->libraryVersion);
   header.push_back(this->algorithmID);
@@ -106,7 +106,7 @@ void OpenABEKey::getHeader(OpenABEByteString &header) {
 }
 
 OpenABE_ERROR
-OpenABEKey::exportKeyToBytes(OpenABEByteString &output) {
+OpenABEKey::exportKeyToBytes(OpenABEByteString &output) const {
   output.clear();
   OpenABEByteString keyHeader, keyBytes;
   // libVersion || AlgID || uid || id

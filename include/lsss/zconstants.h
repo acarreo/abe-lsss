@@ -46,6 +46,7 @@
 #define HASH_LEN                      MIN_BYTE_LEN // 256-bits
 #define SEED_LEN                      MIN_BYTE_LEN
 #define UID_LEN                       16 // 128-bit UID length
+#define SYM_KEY_BYTES                 16 // 128-bit keys
 #define DEFAULT_SYM_KEY_BYTES         MIN_BYTE_LEN  // 256-bit keys
 #define DEFAULT_SYM_KEY_BITS          DEFAULT_SYM_KEY_BYTES*8
 #define SHA256_LEN                    32 // SHA-256
