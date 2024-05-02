@@ -11,4 +11,11 @@
 #include "abe/zsymcrypto.h"
 #include "abe/zsymkey.h"
 
+// Define shorter aliases for some classes for easier usage in code
+using ByteString = OpenABEByteString;      // Alias for OpenABEByteString class
+using CryptoKDF = OpenABEKDF;              // Alias for OpenABEKDF class
+using CryptoSymKey = OpenABESymKey;        // Alias for OpenABESymKey class
+using CryptoKeyStore = OpenABEKeystore;    // Alias for OpenABEKeystore class
+using CryptoContainer = OpenABEContainer;  // Alias for OpenABEContainer class
+
 #endif // __LSSS_ABE_H__
