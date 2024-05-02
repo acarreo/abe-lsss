@@ -47,44 +47,6 @@
 
 namespace crypto {
 
-///
-/// @class  OpenABESymKeyAuthEnc
-///
-/// @brief  Class for performing authenticated symmetric encryption using AES in GCM mode
-///
-
-class OpenABESymKeyAuthEnc : ZObject {
-private:
-  EVP_CIPHER *cipher;
-  uint8_t iv[AES_BLOCK_SIZE+1];
-  OpenABEByteString aad;
-  OpenABEByteString key;
-  bool aad_set;
-  uint32_t iv_len;
-
-public:
-  OpenABESymKeyAuthEnc(int securitylevel, const std::string& zkey);
-  OpenABESymKeyAuthEnc(int securitylevel, OpenABEByteString& zkey);
-  ~OpenABESymKeyAuthEnc();
-
-  void chooseRandomIV();
-  void setAddAuthData(OpenABEByteString &aad);
-  void setAddAuthData(uint8_t* aad, uint32_t aad_len);
-  OpenABE_ERROR encrypt(const std::string& plaintext, OpenABEByteString* iv,
-                    OpenABEByteString* ciphertext, OpenABEByteString* tag);
-  bool decrypt(std::string& plaintext, OpenABEByteString* iv,
-               OpenABEByteString* ciphertext, OpenABEByteString* tag);
-};
-
-class OpenABESymKeyHandle {
-public:
-  virtual void encrypt(std::string& ciphertext,
-                       const std::string& plaintext) = 0;
-  virtual void decrypt(std::string& plaintext,
-                       const std::string& ciphertext) = 0;
-  virtual void exportRawKey(std::string& key) = 0;
-  virtual void exportKey(std::string& key) = 0;
-};
 
 // Implementation of SymmetricKeyHandle
 class OpenABESymKeyHandleImpl : public OpenABESymKeyHandle {
