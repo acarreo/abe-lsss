@@ -69,6 +69,9 @@ public:
   OpenABEByteString ComputeHKDF(OpenABEByteString& key, OpenABEByteString& salt, OpenABEByteString& info, size_t key_len);
 };
 
+
+OpenABEByteString ComputeHMAC(OpenABEByteString &key, OpenABEByteString &data);
+
 std::string OpenABEHashKey(const std::string attr_key);
 
 #endif // __ZKDF_H__

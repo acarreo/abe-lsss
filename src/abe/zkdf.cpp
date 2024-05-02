@@ -150,17 +150,15 @@ OpenABEByteString OpenABEKDF::ComputeKDF2(OpenABEByteString &key, uint32_t keyda
 OpenABEByteString OpenABEKDF::ComputeHKDF(OpenABEByteString& key,
                   OpenABEByteString& salt, OpenABEByteString& info, size_t key_len)
 {
-  uint8_t prk[RLC_MD_LEN];
-  uint8_t h_salt[RLC_MD_LEN];
-  uint8_t tmp_okm[RLC_MD_LEN];
-
   if (salt.size() == 0) {
     salt.fillBuffer(0, RLC_MD_LEN);
   }
 
   // extract
-  md_map(h_salt, salt.data(), salt.size());
-  md_hmac(prk, h_salt, RLC_MD_LEN, key.data(), key.size());
+  OpenABEByteString h_salt, prk;
+  h_salt.fillBuffer(0, RLC_MD_LEN);
+  _hash_to_bytes_(h_salt.getInternalPtr(), salt.data(), salt.size());
+  prk = ComputeHMAC(key, h_salt);
 
   // expand
   int i = 0;
@@ -169,8 +167,7 @@ OpenABEByteString OpenABEKDF::ComputeHKDF(OpenABEByteString& key,
   while (output_key.size() < key_len) {
     tmp_ii = tmp + info;
     tmp_ii.pack8bits((uint8_t)++i);
-    md_hmac(tmp_okm, tmp_ii.data(), tmp_ii.size(), prk, RLC_MD_LEN);
-    tmp.appendArray(tmp_okm, RLC_MD_LEN);
+    tmp = ComputeHMAC(prk, tmp_ii);
     output_key += tmp;
   }
   output_key.resize(key_len);
@@ -189,4 +186,11 @@ string OpenABEHashKey(const string attr_key) {
     return hex_digest.toLowerHex();
   }
   return attr_key;
+}
+
+OpenABEByteString ComputeHMAC(OpenABEByteString &key, OpenABEByteString &data) {
+  OpenABEByteString hmac;
+  hmac.fillBuffer(0, RLC_MD_LEN);
+  md_hmac(hmac.getInternalPtr(), data.data(), data.size(), key.data(), key.size());
+  return hmac;
 }
