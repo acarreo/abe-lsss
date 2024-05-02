@@ -89,22 +89,23 @@ public:
 
 class OpenABESymKeyEnc : ZObject {
 private:
-	int seclevel;
-	std::string guid, keyStr;
-	uint8_t iv[AES_BLOCK_SIZE+1];
-	AES_KEY *key;
-	bool status, iv_set;
+  int seclevel;
+  std::string guid, keyStr;
+  uint8_t iv[AES_BLOCK_SIZE+1];
+  AES_KEY *key;
+  bool status, iv_set;
 
 public:
-	OpenABESymKeyEnc(std::string key);
-	OpenABESymKeyEnc(int securitylevel, std::string key);
-	OpenABESymKeyEnc(int securitylevel, uint8_t *iv, std::string key);
-	~OpenABESymKeyEnc();
+  OpenABESymKeyEnc(std::string key);
+  OpenABESymKeyEnc(int securitylevel, std::string key);
+  OpenABESymKeyEnc(int securitylevel, uint8_t *iv, std::string key);
+  ~OpenABESymKeyEnc();
 
-	void chooseRandomIV();
-	std::string encrypt(uint8_t *plaintext, uint32_t plaintext_len);
-	std::string decrypt(std::string ciphertext);
-	bool getDecryptionStatus() { return status; }
+  OpenABE_ERROR encrypt(const std::string& plaintext, OpenABEByteString& iv,
+                        OpenABEByteString& ciphertext);
+  bool decrypt(std::string& plaintext, OpenABEByteString& iv,
+                                     OpenABEByteString& ciphertext);
+  bool getDecryptionStatus() { return status; }
 };
 
 
@@ -145,28 +146,28 @@ public:
 
 class OpenABESymKeyAuthEncStream : ZObject {
 private:
-	EVP_CIPHER *cipher;
-	EVP_CIPHER_CTX *ctx;
-	OpenABEByteString the_iv, aad;
+  EVP_CIPHER *cipher;
+  EVP_CIPHER_CTX *ctx;
+  OpenABEByteString the_iv, aad;
 
-	std::shared_ptr<OpenABESymKey> key;
-	bool aad_set, init_enc_set, init_dec_set;
-	size_t total_ct_len, updateEncCount, updateDecCount;
+  std::shared_ptr<OpenABESymKey> key;
+  bool aad_set, init_enc_set, init_dec_set;
+  size_t total_ct_len, updateEncCount, updateDecCount;
 
 public:
-	OpenABESymKeyAuthEncStream(int securitylevel, const std::shared_ptr<OpenABESymKey>& key);
-	~OpenABESymKeyAuthEncStream();
+  OpenABESymKeyAuthEncStream(int securitylevel, const std::shared_ptr<OpenABESymKey>& key);
+  ~OpenABESymKeyAuthEncStream();
 
-	void initAddAuthData(uint8_t *aad, uint32_t aad_len);
-	OpenABE_ERROR setAddAuthData(void);
+  void initAddAuthData(uint8_t *aad, uint32_t aad_len);
+  OpenABE_ERROR setAddAuthData(void);
 
-	OpenABE_ERROR	 encryptInit(OpenABEByteString *iv);
-	OpenABE_ERROR 	 encryptUpdate(OpenABEByteString *plaintextBlock, OpenABEByteString *ciphertext);
-	OpenABE_ERROR 	 encryptFinalize(OpenABEByteString* ciphertext, OpenABEByteString *tag);
+  OpenABE_ERROR   encryptInit(OpenABEByteString& iv);
+  OpenABE_ERROR   encryptUpdate(OpenABEByteString& plaintextBlock, OpenABEByteString& ciphertext);
+  OpenABE_ERROR   encryptFinalize(OpenABEByteString& ciphertext, OpenABEByteString& tag);
 
-	OpenABE_ERROR	 decryptInit(OpenABEByteString *iv, OpenABEByteString *tag);
-	OpenABE_ERROR	 decryptUpdate(OpenABEByteString *ciphertextBlock, OpenABEByteString *plaintext);
-	OpenABE_ERROR	 decryptFinalize(OpenABEByteString *plaintext);
+  OpenABE_ERROR   decryptInit(OpenABEByteString& iv, OpenABEByteString& tag);
+  OpenABE_ERROR   decryptUpdate(OpenABEByteString& ciphertextBlock, OpenABEByteString& plaintext);
+  OpenABE_ERROR   decryptFinalize(OpenABEByteString& plaintext);
 };
 
 

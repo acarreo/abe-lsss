@@ -43,27 +43,30 @@
 #include <openssl/kdf.h>
 
 #include "zabe.h"
+#include "zsymkey.h"
 
-
-namespace crypto {
-
+// class OpenABESymKeyHandle {
+// public:
+//   virtual void encrypt(std::string& ciphertext,
+//                        const std::string& plaintext) = 0;
+//   virtual void decrypt(std::string& plaintext,
+//                        const std::string& ciphertext) = 0;
+//   virtual void exportRawKey(std::string& key) = 0;
+//   virtual void exportKey(std::string& key) = 0;
+// };
 
 // Implementation of SymmetricKeyHandle
-class OpenABESymKeyHandleImpl : public OpenABESymKeyHandle {
+class OpenABESymKeyHandle { // : public OpenABESymKeyHandle {
 public:
-  void encrypt(std::string& ciphertext,
-               const std::string& plaintext);
-  void decrypt(std::string& plaintext,
-               const std::string& ciphertext);
+  void encrypt(std::string& ciphertext, const std::string& plaintext);
+  void decrypt(std::string& plaintext, const std::string& ciphertext);
   void exportRawKey(std::string& key);
   void exportKey(std::string& key);
 
-  OpenABESymKeyHandleImpl(const std::string& keyBytes,
+  OpenABESymKeyHandle(const std::string& keyBytes, bool apply_b64_encode = false);
+  OpenABESymKeyHandle(OpenABEByteString& keyBytes, OpenABEByteString& authData,
                       bool apply_b64_encode = false);
-  OpenABESymKeyHandleImpl(OpenABEByteString& keyBytes,
-                      OpenABEByteString& authData,
-                      bool apply_b64_encode = false);
-  virtual ~OpenABESymKeyHandleImpl();
+  virtual ~OpenABESymKeyHandle();
 
 protected:
   int security_level_;
@@ -72,13 +75,6 @@ protected:
   OpenABEByteString authData_;
 };
 
-// Hash-based key derivation function
-void OpenABEComputeHKDF(OpenABEByteString& key, OpenABEByteString& salt,
-    		            OpenABEByteString& info, size_t key_len,
-    		            OpenABEByteString& output_key);
-// generate a random symmetric key
-void generateSymmetricKey(std::string& key, uint32_t keyLen);
-const std::string printAsHex(const std::string& bin_buf);
 
 // Enum for encryption modes
 enum class EncryptionMode {
@@ -94,7 +90,6 @@ public:
   SymKeyEncHandler(const std::shared_ptr<OpenABESymKey>& key, EncryptionMode mode = EncryptionMode::GCM, bool apply_b64_encode = false);
 
   ~SymKeyEncHandler();
-}
 
   void setAuthData(const OpenABEByteString& authData);
   void setSKEHandler(const std::shared_ptr<OpenABESymKey>& key);
