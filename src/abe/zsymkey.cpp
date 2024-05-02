@@ -43,7 +43,7 @@
 #include <cmath>
 
 #include "abe/zsymkey.h"
-#include "abe/zcryptoutils.h"
+#include "abe/zkdf.h"
 
 using namespace std;
 
@@ -93,9 +93,16 @@ string OpenABESymKey::toString() { return this->m_keyData.toHex(); }
  */
 
 bool OpenABESymKey::hashToSymmetricKey(GT &input, uint32_t keyLen) {
+  size_t h_len = 0;
+  OpenABEByteString h_input;
+
+  uint8_t* h_in = input.hashToBytes(&h_len);
+  h_input.appendArray(h_in, h_len);
+
   this->m_keyData.clear();
-  // Hash the element into the key
-  return OpenABEUtilsHashToString(input, keyLen, this->m_keyData);
+  this->m_keyData = OpenABEKDF().ComputeKDF2(h_input, keyLen);
+
+  return true;
 }
 
 bool OpenABESymKey::generateSymmetricKey(uint32_t keyLen) {
@@ -153,98 +160,71 @@ OpenABESymKeyEnc::OpenABESymKeyEnc(int securitylevel, uint8_t *iv, string key)
 
 OpenABESymKeyEnc::~OpenABESymKeyEnc() { SAFE_FREE(this->key); }
 
-void OpenABESymKeyEnc::chooseRandomIV() {
-  if (!this->iv_set) {
-    rand_bytes(this->iv, AES_BLOCK_SIZE);
-  }
-}
-
-// an 32-bit length field means we can encrypt 4GB files
-string OpenABESymKeyEnc::encrypt(uint8_t *plaintext, uint32_t plaintext_len) {
+OpenABE_ERROR
+OpenABESymKeyEnc::encrypt(const string& plaintext, OpenABEByteString& iv,
+                          OpenABEByteString& ciphertext)
+{
   // select a new IV
-  this->chooseRandomIV();
-  // base-64 encode and serialize IV
-  string iv_encoded = Base64Encode(this->iv, AES_BLOCK_SIZE);
+  if (!this->iv_set) {
+    getRandomBytes(this->iv, AES_BLOCK_SIZE);
+  }
 
   // instantiate AES_KEY
   AES_set_encrypt_key((uint8_t *)this->keyStr.c_str(), this->seclevel,
                       this->key);
 
   // compute ciphertext size and round to nearest block
-  int ct_len =
-      (int)ceil((plaintext_len + sizeof(uint32_t)) / (double)(AES_BLOCK_SIZE)) *
-      AES_BLOCK_SIZE;
-  uint8_t plaintext2[ct_len + 1];
-  memset(plaintext2, 0, ct_len + 1);
+  uint32_t plaintext_len = plaintext.size();
+  int ct_len = (int)ceil((plaintext_len) / (double)(AES_BLOCK_SIZE)) * AES_BLOCK_SIZE;
 
-  // big-endian
-  plaintext2[3] = (plaintext_len & 0x000000FF);
-  plaintext2[2] = (plaintext_len & 0x0000FF00) >> 8;
-  plaintext2[1] = (plaintext_len & 0x00FF0000) >> 16;
-  plaintext2[0] = (plaintext_len & 0xFF000000) >> 24;
-  memcpy((uint8_t *)(plaintext2 + sizeof(uint32_t)), plaintext, plaintext_len);
-  //	cout << "PT=> " << debug_print_as_hex(plaintext2, ct_len) << endl;
+  // Je ne sais pas pourquoi le premier bloc du déchiffré est différent de celui
+  // du clair de départ. J'ai donc ajouté un bloc de AES_BLOCK_SIZE 0 au début du clair
+  // pour que le premier bloc du déchiffré soit le même que celui du clair de départ.
+  // J'ignore ce premier bloc lors du déchiffrement.
+  uint8_t modified_plaintext[plaintext_len + AES_BLOCK_SIZE];
+  memset(modified_plaintext, 0, plaintext_len + AES_BLOCK_SIZE);
+  memcpy(modified_plaintext + AES_BLOCK_SIZE, plaintext.c_str(), plaintext_len);
 
-  // encrypt ciphertext using AES_CBC_128 (for now)
-  uint8_t ct[ct_len + 1];
-  memset(ct, 0, ct_len + 1);
-  AES_cbc_encrypt(plaintext2, ct, ct_len, this->key, this->iv, AES_ENCRYPT);
-  string ct_encoded = Base64Encode(ct, ct_len);
+  iv.clear();
+  iv.appendArray(this->iv, AES_BLOCK_SIZE);
 
-  // cout << "...AES Encrypt...\n";
-  // cout << "IV=> " << iv_encoded << endl;
-  // cout << "CT=> " << debug_print_as_hex(ct, ct_len) << endl;
-  // cout << "...AES Encrypt...\n";
+  ciphertext.clear();
+  ciphertext.fillBuffer(0, ct_len + AES_BLOCK_SIZE);
+  AES_cbc_encrypt(modified_plaintext, ciphertext.getInternalPtr(), ct_len + AES_BLOCK_SIZE,
+                  this->key, this->iv, AES_ENCRYPT);
 
-  return iv_encoded + ":" + ct_encoded;
+  return OpenABE_NOERROR;
 }
 
-string OpenABESymKeyEnc::decrypt(string ciphertext) {
-  // deserialize ciphertext blob (split on ':')
-  vector<string> list = split(ciphertext, ':');
-  if (list.size() != 2) {
-    status = false;
-    return "";
+bool
+OpenABESymKeyEnc::decrypt(string& plaintext, OpenABEByteString& iv,
+                              OpenABEByteString& ciphertext) {
+
+  if (iv.size() != AES_BLOCK_SIZE) {
+    return false;
   }
-  string IV = Base64Decode(list[0]);
-  if (IV.size() != AES_BLOCK_SIZE) {
-    status = false;
-    return "";
-  }
-  string ct = Base64Decode(list[1]);
-  size_t ct_len = ct.size();
 
   if (!this->iv_set) {
-    // if IV was not set in the constructor, use IV in ciphertext
     memset(this->iv, 0, AES_BLOCK_SIZE);
-    memcpy(this->iv, IV.c_str(), AES_BLOCK_SIZE);
+    memcpy(this->iv, iv.data(), AES_BLOCK_SIZE);
   }
 
-  // cout << "...AES Decrypt...\n";
-  // cout << "IV=> " << debug_print_as_hex(this->iv, AES_BLOCK_SIZE) << endl;
-  // cout << "CT=> " << debug_print_as_hex((uint8_t*) ct.c_str(), ct_len) <<
-  // endl;
-
   // instantiate AES_KEY
-  AES_set_decrypt_key((uint8_t *)this->keyStr.c_str(), this->seclevel,
-                      this->key);
+  AES_set_decrypt_key((uint8_t *)this->keyStr.c_str(), this->seclevel, this->key);
 
-  uint8_t plaintext[ct_len + 1];
-  memset(plaintext, 0, ct_len + 1);
-  AES_cbc_encrypt((uint8_t *)ct.c_str(), plaintext, ct_len, this->key, this->iv,
+  uint32_t ct_len = ciphertext.size();
+  uint32_t pt_len = ct_len; // - AES_BLOCK_SIZE;
+  OpenABEByteString plain;
+  plain.fillBuffer(0, pt_len);
+
+  AES_cbc_encrypt(ciphertext.data(), plain.getInternalPtr(), ct_len, this->key, this->iv,
                   AES_DECRYPT);
 
-  // cout << "PT=> " << debug_print_as_hex(plaintext, ct_len) << endl;
-  // cout << "...AES Decrypt...\n";
-  uint32_t len = 0;
-  len |= (plaintext[0] << 24);
-  len |= (plaintext[1] << 16);
-  len |= (plaintext[2] << 8);
-  len |= plaintext[3];
+  plaintext = string((char *)plain.getInternalPtr() + AES_BLOCK_SIZE, pt_len - AES_BLOCK_SIZE);
 
-  if (len > ct_len) {
-    status = false;
-    return "ACCESS DENIED\n";
+  return true;
+}
+
 
 /********************************************************************************
  * Implementation of the OpenABESymKeyAuthEnc class
@@ -270,8 +250,6 @@ OpenABESymKeyAuthEnc::OpenABESymKeyAuthEnc(int securitylevel, OpenABEByteString&
   this->iv_len = AES_BLOCK_SIZE;
   this->aad_set = false;
   this->key = zkey;
-  status = true;
-  return plaintext2;
 }
 
 OpenABESymKeyAuthEnc::~OpenABESymKeyAuthEnc() {
@@ -519,7 +497,7 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::setAddAuthData() {
   return OpenABE_NOERROR;
 }
 
-OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptInit(OpenABEByteString *iv) {
+OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptInit(OpenABEByteString& iv) {
   OpenABE_ERROR result = OpenABE_NOERROR;
   try {
     if (!this->init_enc_set) {
@@ -537,8 +515,8 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptInit(OpenABEByteString *iv) {
       EVP_EncryptInit_ex(this->ctx, NULL, NULL, this->key->getInternalPtr(),
                          this->the_iv.getInternalPtr());
       /* save the generated IV */
-      iv->clear();
-      *iv += this->the_iv;
+      iv.clear();
+      iv = this->the_iv;
       /* initialize internal counters and state */
       this->total_ct_len = 0;
       this->updateEncCount = 0;
@@ -553,13 +531,13 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptInit(OpenABEByteString *iv) {
   return result;
 }
 
-OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptUpdate(OpenABEByteString *plaintextBlock,
-                                                OpenABEByteString *ciphertext) {
+OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptUpdate(OpenABEByteString& plaintextBlock,
+                                                OpenABEByteString& ciphertext) {
   OpenABE_ERROR result = OpenABE_NOERROR;
   if (this->init_enc_set) {
     /* encrypt plaintext */
-    uint8_t *pt_ptr = plaintextBlock->getInternalPtr();
-    int pt_len = plaintextBlock->size();
+    uint8_t *pt_ptr = plaintextBlock.getInternalPtr();
+    int pt_len = plaintextBlock.size();
     int ct_len = 0;
     /* make sure that the plaintext is at least 1 byte (since AES-GCM works on
      * non-aligned block sizes) */
@@ -574,7 +552,7 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptUpdate(OpenABEByteString *plain
     /* keep track of the total ciphertext length so far*/
     this->total_ct_len += ct_len;
     /* return back to user */
-    ciphertext->appendArray(ct, ct_len);
+    ciphertext.appendArray(ct, ct_len);
     /* increment number of encrypt updates the user has performed */
     this->updateEncCount++;
   }
@@ -582,15 +560,15 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptUpdate(OpenABEByteString *plain
   return result;
 }
 
-OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptFinalize(OpenABEByteString *ciphertext,
-                                                  OpenABEByteString *tag) {
+OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptFinalize(OpenABEByteString& ciphertext,
+                                                  OpenABEByteString& tag) {
   OpenABE_ERROR result = OpenABE_NOERROR;
 
   if (this->init_enc_set && this->updateEncCount > 0) {
     /* finalize: computes authentication tag*/
-    uint8_t *ct_ptr = ciphertext->getInternalPtr();
+    uint8_t *ct_ptr = ciphertext.getInternalPtr();
     /* make sure 'ct' size is the same as our internal size counter */
-    ASSERT(ciphertext->size() == this->total_ct_len, OpenABE_ERROR_INVALID_INPUT);
+    ASSERT(ciphertext.size() == this->total_ct_len, OpenABE_ERROR_INVALID_INPUT);
     /* now we can finalize encryption */
     EVP_EncryptFinal_ex(this->ctx, ct_ptr, (int *)&this->total_ct_len);
     // For AES-GCM, the 'len' should be '0' because there is no extra bytes used
@@ -604,7 +582,7 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptFinalize(OpenABEByteString *cip
     EVP_CIPHER_CTX_ctrl(this->ctx, EVP_CTRL_GCM_GET_TAG, tag_len, tag_ptr);
     //    cout << "Tag:\n";
     //    BIO_dump_fp(stdout, (const char *) tag, tag_len);
-    tag->appendArray(tag_ptr, tag_len);
+    tag.appendArray(tag_ptr, tag_len);
 
     // house keeping
     this->updateEncCount = 0;
@@ -621,16 +599,13 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptFinalize(OpenABEByteString *cip
   return result;
 }
 
-OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptInit(OpenABEByteString *iv,
-                                              OpenABEByteString *tag) {
+OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptInit(OpenABEByteString& iv,
+                                              OpenABEByteString& tag) {
   OpenABE_ERROR result = OpenABE_NOERROR;
   try {
     if (!this->init_dec_set) {
       /* can't mix encryptInit AND decryptInit at the same time */
       ASSERT(!this->init_enc_set, OpenABE_ERROR_INVALID_INPUT);
-
-      ASSERT_NOTNULL(iv);
-      ASSERT_NOTNULL(tag);
 
       /* allocate cipher context */
       this->ctx = EVP_CIPHER_CTX_new();
@@ -638,19 +613,19 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptInit(OpenABEByteString *iv,
       /* set cipher type and mode */
       EVP_DecryptInit_ex(this->ctx, this->cipher, NULL, NULL, NULL);
       /* set the IV length as 128-bits (or 16 bytes) */
-      EVP_CIPHER_CTX_ctrl(this->ctx, EVP_CTRL_GCM_SET_IVLEN, iv->size(), NULL);
+      EVP_CIPHER_CTX_ctrl(this->ctx, EVP_CTRL_GCM_SET_IVLEN, iv.size(), NULL);
       /* specify key and iv */
       //	cout << "Deckey:\n";
       //	BIO_dump_fp(stdout, (const char *) this->key->getInternalPtr(),
       // this->key->getLength());
       EVP_DecryptInit_ex(this->ctx, NULL, NULL, this->key->getInternalPtr(),
-                         iv->getInternalPtr());
+                         iv.getInternalPtr());
 
       /* set the tag BEFORE any calls to decrypt update
       NOTE: the tag isn't checked until decrypt finalize (i.e., once we've
       obtained all the blocks) */
-      EVP_CIPHER_CTX_ctrl(this->ctx, EVP_CTRL_GCM_SET_TAG, tag->size(),
-                          tag->getInternalPtr());
+      EVP_CIPHER_CTX_ctrl(this->ctx, EVP_CTRL_GCM_SET_TAG, tag.size(),
+                          tag.getInternalPtr());
       this->init_dec_set = true;
       this->updateDecCount = 0;
     }
@@ -661,17 +636,16 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptInit(OpenABEByteString *iv,
   return result;
 }
 
-OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptUpdate(OpenABEByteString *ciphertextBlock,
-                                                OpenABEByteString *plaintext) {
+OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptUpdate(OpenABEByteString& ciphertextBlock,
+                                                OpenABEByteString& plaintext) {
   OpenABE_ERROR result = OpenABE_NOERROR;
 
   try {
     if (this->init_dec_set) {
-      ASSERT_NOTNULL(ciphertextBlock);
-      ASSERT(ciphertextBlock->size() > 0, OpenABE_ERROR_INVALID_INPUT);
+      ASSERT(ciphertextBlock.size() > 0, OpenABE_ERROR_INVALID_INPUT);
       /* perform decrypt update */
-      int ct_len = ciphertextBlock->size();
-      uint8_t *ct_ptr = ciphertextBlock->getInternalPtr();
+      int ct_len = ciphertextBlock.size();
+      uint8_t *ct_ptr = ciphertextBlock.getInternalPtr();
       int pt_len = 0;
 
       uint8_t pt[ct_len + 1];
@@ -680,7 +654,7 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptUpdate(OpenABEByteString *ciphe
       EVP_DecryptUpdate(this->ctx, pt, &pt_len, ct_ptr, ct_len);
       ASSERT(pt_len == ct_len, OpenABE_ERROR_BUFFER_TOO_SMALL);
       /* add pt block to the given plaintext buffer */
-      plaintext->appendArray(pt, (uint32_t)pt_len);
+      plaintext.appendArray(pt, (uint32_t)pt_len);
       this->updateDecCount++;
     }
   } catch (OpenABE_ERROR &error) {
@@ -690,15 +664,15 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptUpdate(OpenABEByteString *ciphe
   return result;
 }
 
-OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptFinalize(OpenABEByteString *plaintext) {
+OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptFinalize(OpenABEByteString& plaintext) {
   OpenABE_ERROR result = OpenABE_NOERROR;
 
   try {
     if (this->init_dec_set && this->updateDecCount > 0) {
       /* finalize decryption */
-      int pt_len = plaintext->size();
+      int pt_len = plaintext.size();
       int retValue =
-          EVP_DecryptFinal_ex(this->ctx, plaintext->getInternalPtr(), &pt_len);
+          EVP_DecryptFinal_ex(this->ctx, plaintext.getInternalPtr(), &pt_len);
       /* clear memory before the check */
       EVP_CIPHER_CTX_free(this->ctx);
       this->ctx = NULL;
