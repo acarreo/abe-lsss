@@ -45,6 +45,7 @@
 #define SALT_LEN                      MIN_BYTE_LEN // 256-bits (minimum is 64-bits)
 #define HASH_LEN                      MIN_BYTE_LEN // 256-bits
 #define SEED_LEN                      MIN_BYTE_LEN
+#define OpenABE_NONCELEN              16
 #define UID_LEN                       16 // 128-bit UID length
 #define SYM_KEY_BYTES                 16 // 128-bit keys
 #define DEFAULT_SYM_KEY_BYTES         MIN_BYTE_LEN  // 256-bit keys

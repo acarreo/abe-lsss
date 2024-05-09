@@ -41,6 +41,7 @@
 #include <string>
 
 #include "abe/zpairing.h"
+#include <lsss_abe.h>
 
 using namespace std;
 
@@ -73,18 +74,6 @@ zMathShutdownLibrary()
 {
   core_clean();
   return OpenABE_NOERROR;
-}
-
-/*!
- * Factory for creating new OpenABEPairing objects
- *
- * @return The pairing object or NULL
- */
-
-OpenABEPairing*
-OpenABE_createNewPairing(const string &pairingParams)
-{
-  return new OpenABEPairing();
 }
 
 
@@ -207,7 +196,24 @@ OpenABEPairing::pairing(const G1& g1, const G2& g2)
 
 void
 OpenABEPairing::multi_pairing(GT& gt, std::vector<G1>& g1, std::vector<G2>& g2) {
-  std::cout << "multi_pairing not implemented" << std::endl;
+  if (g1.size() != g2.size() || g1.size() == 0) {
+    throw OpenABE_ERROR_INVALID_LENGTH;
+  }
+
+  const size_t n = g1.size();
+  g1_t g_1[n];
+  g2_t g_2[n];
+  for (size_t i = 0; i < n; i++) {
+    g1_init(g_1[i]);
+    g1_copy(g_1[i], g1.at(i).m_G1);
+    g2_init(g_2[i]);
+    g2_copy(g_2[i], g2.at(i).m_G2);
+  }
+  pp_map_sim_oatep_k12(gt.m_GT, g_1, g_2, n);
+  for (size_t i = 0; i < n; i++) {
+    g1_free(g_1[i]);
+    g2_free(g_2[i]);
+  }
 }
 
 

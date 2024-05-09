@@ -63,7 +63,13 @@ BPGroup::BPGroup()
 
 BPGroup::~BPGroup() { zmbignum_free(order); }
 
-void BPGroup::getGroupOrder(bignum_t o) { zmbignum_copy(o, order); }
+void BPGroup::getGroupOrder(bignum_t o) const { zmbignum_copy(o, order); }
+
+ZP BPGroup::getGroupOrder() const {
+  ZP z;
+  this->getGroupOrder(z.m_ZP);
+  return z;
+}
 
 /********************************************************************************
  * Implementation of the ZP class

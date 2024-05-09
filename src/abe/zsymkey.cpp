@@ -44,6 +44,7 @@
 
 #include "abe/zsymkey.h"
 #include "abe/zkdf.h"
+#include <lsss_abe.h>
 
 using namespace std;
 

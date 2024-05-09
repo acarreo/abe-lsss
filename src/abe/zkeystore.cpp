@@ -41,7 +41,7 @@
 #include <assert.h>
 
 #include "abe/zkeystore.h"
-
+#include <lsss_abe.h>
 
 using namespace std;
 

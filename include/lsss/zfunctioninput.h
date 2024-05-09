@@ -48,6 +48,8 @@
 /// @brief   Enumerates constant values corresponding to given function
 ///          input types, e.g., policies, attribute lists.
 
+class OpenABECiphertext;
+
 typedef enum _OpenABEFunctionInputType {
   FUNC_INVALID_INPUT = 0,
   FUNC_POLICY_INPUT = 1,
@@ -84,5 +86,8 @@ public:
   virtual std::string toString() const = 0;
   virtual std::string toCompactString() const = 0;
 };
+
+// perform deep copy of a function input
+std::unique_ptr<OpenABEFunctionInput> copyFunctionInput(const OpenABEFunctionInput& input);
 
 #endif /* ifdef  __ZFUNCTIONINPUT_H__ */

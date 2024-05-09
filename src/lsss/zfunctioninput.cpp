@@ -38,14 +38,14 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "lsss/zfunctioninput.h"
+
+#include <lsss_abe.h>
 
 using namespace std;
 
 /********************************************************************************
  * Implementation of the OpenABEFunctionInput class
  ********************************************************************************/
-//namespace oabe {
 
 /*!
  * Constructor for the OpenABEFunctionInput class.
@@ -61,4 +61,19 @@ OpenABEFunctionInput::OpenABEFunctionInput() : ZObject(), m_Type(FUNC_INVALID_IN
 
 OpenABEFunctionInput::~OpenABEFunctionInput() {}
 
-// }
+
+unique_ptr<OpenABEFunctionInput> copyFunctionInput(const OpenABEFunctionInput &input) {
+  unique_ptr<OpenABEFunctionInput> funcInput = nullptr;
+  if (input.getFunctionType() == FUNC_POLICY_INPUT) {
+    OpenABEPolicy *policy = (OpenABEPolicy *)&input;
+    // funcInput.reset(policy->clone());
+    funcInput.reset(static_cast<OpenABEFunctionInput*>(policy->clone()));
+  } else if (input.getFunctionType() == FUNC_ATTRLIST_INPUT) {
+    OpenABEAttributeList *attrs = (OpenABEAttributeList *)&input;
+    funcInput.reset(attrs->clone());
+  } else {
+    return nullptr;
+  }
+
+  return funcInput;
+}

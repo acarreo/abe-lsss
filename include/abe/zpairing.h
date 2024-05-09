@@ -62,6 +62,7 @@ public:
   G1       hashToG1(OpenABEByteString&, std::string);
   GT       pairing(const G1& g1, const G2& g2);
   void     multi_pairing(GT& gt, std::vector<G1>& g1, std::vector<G2>& g2);
+  std::shared_ptr<BPGroup> getGroup() { return this->bpgroup; }
 
   bignum_t     order;
 
@@ -74,8 +75,5 @@ protected:
 // Global library initialization and shutdown functions
 OpenABE_ERROR zMathInitLibrary();
 OpenABE_ERROR zMathShutdownLibrary();
-
-// Pairing creation functions
-OpenABEPairing* OpenABE_createNewPairing(const std::string &pairingParams);
 
 #endif	// __ZPAIRING_H__

@@ -64,6 +64,8 @@ void ro_error(void);
 // retrieve the group field of the BPGroup class
 #define GET_BP_GROUP(g)    g->group
 
+class ZP;
+
 /// \class  ECGroup
 /// \brief  Wrapper for managing elliptic curve groups
 class BPGroup {
@@ -73,7 +75,8 @@ public:
   BPGroup();
   ~BPGroup();
 
-  void getGroupOrder(bignum_t o);
+  void getGroupOrder(bignum_t o) const;
+  ZP getGroupOrder() const;
 };
 
 
