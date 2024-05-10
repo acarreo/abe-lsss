@@ -39,23 +39,19 @@ OpenABE_SCHEME OpenABE_convertStringToSchemeID(const std::string id);
 OpenABEContextPKE *OpenABE_createContextPKE(OpenABE_SCHEME scheme_type);
 OpenABEContextABE *OpenABE_createContextABE(OpenABE_SCHEME scheme_type);
 
-// PKE scheme context API
-std::unique_ptr<OpenABEContextSchemePKE>
-OpenABE_createContextPKESchemeCCA(OpenABE_SCHEME scheme_type);
-std::unique_ptr<OpenABEContextCCA>
-OpenABE_createABEContextForKEM(OpenABE_SCHEME scheme_type);
+// // PKE scheme context API
+// std::unique_ptr<OpenABEContextSchemePKE>
+// OpenABE_createContextPKESchemeCCA(OpenABE_SCHEME scheme_type);
+// std::unique_ptr<OpenABEContextCCA>
+// OpenABE_createABEContextForKEM(OpenABE_SCHEME scheme_type);
 
-// CPA scheme context API
-std::unique_ptr<OpenABEContextSchemeCPA>
-OpenABE_createContextABESchemeCPA(OpenABE_SCHEME scheme_type);
+// // CCA scheme context API
+// std::unique_ptr<OpenABEContextSchemeCCA>
+// OpenABE_createContextABESchemeCCA(OpenABE_SCHEME scheme_type);
 
-// CCA scheme context API
-std::unique_ptr<OpenABEContextSchemeCCA>
-OpenABE_createContextABESchemeCCA(OpenABE_SCHEME scheme_type);
-
-// CCA scheme context API with amortization support
-std::unique_ptr<OpenABEContextSchemeCCAWithATZN>
-OpenABE_createContextABESchemeCCAWithATZN(OpenABE_SCHEME scheme_type);
+// // CCA scheme context API with amortization support
+// std::unique_ptr<OpenABEContextSchemeCCAWithATZN>
+// OpenABE_createContextABESchemeCCAWithATZN(OpenABE_SCHEME scheme_type);
 
 // PKSIG scheme context API
 // std::unique_ptr<OpenABEContextSchemePKSIG> OpenABE_createContextPKSIGScheme();

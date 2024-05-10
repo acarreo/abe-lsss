@@ -12,18 +12,18 @@ using namespace std;
 OpenABE_SCHEME OpenABE_getSchemeID(uint8_t id) {
   OpenABE_SCHEME schemeID;
   switch (id) {
-  case OpenABE_SCHEME_NONE:
-  case OpenABE_SCHEME_PKSIG_ECDSA:
-  case OpenABE_SCHEME_AES_GCM:
-  case OpenABE_SCHEME_PK_OPDH:
-  case OpenABE_SCHEME_CP_WATERS:
-  case OpenABE_SCHEME_KP_GPSW:
-  case OpenABE_SCHEME_CP_WATERS_CCA:
-  case OpenABE_SCHEME_KP_GPSW_CCA:
-    schemeID = (OpenABE_SCHEME)id;
-    break;
-  default:
-    throw OpenABE_ERROR_INVALID_SCHEME_ID;
+    case OpenABE_SCHEME_NONE:
+    case OpenABE_SCHEME_PKSIG_ECDSA:
+    case OpenABE_SCHEME_AES_GCM:
+    case OpenABE_SCHEME_PK_OPDH:
+    case OpenABE_SCHEME_CP_WATERS:
+    case OpenABE_SCHEME_KP_GPSW:
+    case OpenABE_SCHEME_CP_WATERS_CCA:
+    case OpenABE_SCHEME_KP_GPSW_CCA:
+      schemeID = (OpenABE_SCHEME)id;
+      break;
+    default:
+      throw OpenABE_ERROR_INVALID_SCHEME_ID;
   }
   return schemeID;
 }
@@ -31,41 +31,36 @@ OpenABE_SCHEME OpenABE_getSchemeID(uint8_t id) {
 const string OpenABE_convertSchemeIDToString(OpenABE_SCHEME id) {
   string scheme = "";
   switch (id) {
-  case OpenABE_SCHEME_NONE:
-    scheme = "No Scheme";
-    break;
-  case OpenABE_SCHEME_PKSIG_ECDSA:
-    scheme = OpenABE_EC_DSA;
-    break;
-  case OpenABE_SCHEME_PK_OPDH:
-    scheme = OpenABE_PK_ENC;
-    break;
-  case OpenABE_SCHEME_CP_WATERS_CCA:
-  case OpenABE_SCHEME_CP_WATERS:
-    scheme = OpenABE_CP_ABE;
-    break;
-  case OpenABE_SCHEME_KP_GPSW_CCA:
-  case OpenABE_SCHEME_KP_GPSW:
-    scheme = OpenABE_KP_ABE;
-    break;
-  default:
-    throw OpenABE_ERROR_INVALID_SCHEME_ID;
+    case OpenABE_SCHEME_NONE:
+      scheme = "No Scheme";
+      break;
+    case OpenABE_SCHEME_PKSIG_ECDSA:
+      scheme = OpenABE_EC_DSA;
+      break;
+    case OpenABE_SCHEME_PK_OPDH:
+      scheme = OpenABE_PK_ENC;
+      break;
+    case OpenABE_SCHEME_CP_WATERS_CCA:
+    case OpenABE_SCHEME_CP_WATERS:
+      scheme = OpenABE_CP_ABE;
+      break;
+    case OpenABE_SCHEME_KP_GPSW_CCA:
+    case OpenABE_SCHEME_KP_GPSW:
+      scheme = OpenABE_KP_ABE;
+      break;
+    default:
+      throw OpenABE_ERROR_INVALID_SCHEME_ID;
   }
   return scheme;
 }
 
 OpenABE_SCHEME OpenABE_convertStringToSchemeID(const string id) {
-  if (id == OpenABE_EC_DSA) {
-    return OpenABE_SCHEME_PKSIG_ECDSA;
-  } else if (id == OpenABE_PK_ENC) {
-    return OpenABE_SCHEME_PK_OPDH;
-  } else if (id == OpenABE_CP_ABE) {
-    return OpenABE_SCHEME_CP_WATERS;
-  } else if (id == OpenABE_KP_ABE) {
-    return OpenABE_SCHEME_KP_GPSW;
-  } else {
-    return OpenABE_SCHEME_NONE;
-  }
+  if (id == OpenABE_EC_DSA) return OpenABE_SCHEME_PKSIG_ECDSA;
+  if (id == OpenABE_PK_ENC) return OpenABE_SCHEME_PK_OPDH;
+  if (id == OpenABE_CP_ABE) return OpenABE_SCHEME_CP_WATERS;
+  if (id == OpenABE_KP_ABE) return OpenABE_SCHEME_KP_GPSW;
+
+  return OpenABE_SCHEME_NONE;
 }
 
 
@@ -80,20 +75,20 @@ unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABECiphertext &ciphertext)
 
   // check the scheme type
   switch (scheme_type) {
-  case OpenABE_SCHEME_CP_WATERS:
-  case OpenABE_SCHEME_CP_WATERS_CCA:
-    policy_str = ciphertext.getByteString("policy");
-    ASSERT_NOTNULL(policy_str);
-    return unique_ptr<OpenABEFunctionInput>(createPolicyTree(policy_str->toString()));
-    break;
-  case OpenABE_SCHEME_KP_GPSW:
-  case OpenABE_SCHEME_KP_GPSW_CCA:
-    attrList = (OpenABEAttributeList *)ciphertext.getComponent("attributes");
-    ASSERT_NOTNULL(attrList);
-    return unique_ptr<OpenABEFunctionInput>(createAttributeList(attrList->toCompactString()));
-    break;
-  default:
-    break;
+    case OpenABE_SCHEME_CP_WATERS:
+    case OpenABE_SCHEME_CP_WATERS_CCA:
+      policy_str = ciphertext.getByteString("policy");
+      ASSERT_NOTNULL(policy_str);
+      return unique_ptr<OpenABEFunctionInput>(createPolicyTree(policy_str->toString()));
+
+    case OpenABE_SCHEME_KP_GPSW:
+    case OpenABE_SCHEME_KP_GPSW_CCA:
+      attrList = (OpenABEAttributeList *)ciphertext.getComponent("attributes");
+      ASSERT_NOTNULL(attrList);
+      return unique_ptr<OpenABEFunctionInput>(createAttributeList(attrList->toCompactString()));
+
+    default:
+      break;
   }
   return nullptr;
 }
@@ -105,11 +100,11 @@ OpenABEFunctionInputType getFunctionInputType(OpenABEKey *key) {
     case OpenABE_SCHEME_CP_WATERS:
     case OpenABE_SCHEME_CP_WATERS_CCA:
       return FUNC_ATTRLIST_INPUT;
-      break;
+
     case OpenABE_SCHEME_KP_GPSW:
     case OpenABE_SCHEME_KP_GPSW_CCA:
       return FUNC_POLICY_INPUT;
-      break;
+
     default:
       break;
   }
@@ -133,17 +128,98 @@ unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABEKey *key) {
       attrList = (OpenABEAttributeList*)key->getComponent("input");
       ASSERT_NOTNULL(attrList);
       return createAttributeList(attrList->toCompactString());
-      break;
+
     case OpenABE_SCHEME_KP_GPSW:
     case OpenABE_SCHEME_KP_GPSW_CCA:
       // policy on the key for KP-ABE
       policy_str = key->getByteString("input");
       ASSERT_NOTNULL(policy_str);
       return createPolicyTree(policy_str->toString());
-      break;
+
     default:
       break;
   }
 
   return nullptr;
+}
+
+OpenABEKeyType OpenABE_KeyTypeFromAlgorithmID(uint8_t algorithmID) {
+  switch (algorithmID) {
+    case OpenABE_SCHEME_AES_CBC:
+    case OpenABE_SCHEME_AES_GCM:
+    case OpneABE_SCHEME_AES_GCM_STREAM:
+      return OpenABEKEY_SK_ENC;
+
+    case OpenABE_SCHEME_PK_OPDH:
+      return OpenABEKEY_PK_ENC;
+
+    case OpenABE_SCHEME_CP_WATERS:
+    case OpenABE_SCHEME_CP_WATERS_CCA:
+      return OpenABEKEY_CP_ENC;
+
+    case OpenABE_SCHEME_KP_GPSW:
+    case OpenABE_SCHEME_KP_GPSW_CCA:
+      return OpenABEKEY_KP_ENC;
+
+    case OpenABE_SCHEME_PKSIG_ECDSA:
+      return OpenABEKEY_PK_SIG;
+
+    default:
+      return OpenABEKEY_NONE;
+  }
+}
+
+const std::string OpenABE_KeyTypeToString(OpenABEKeyType key_type) {
+  if (key_type == OpenABEKEY_SK_ENC) return "SymKey";
+  if (key_type == OpenABEKEY_PK_ENC) return "PubKey";
+  if (key_type == OpenABEKEY_CP_ENC) return "CP-ABEKey";
+  if (key_type == OpenABEKEY_KP_ENC) return "KP-ABEKey";
+  if (key_type == OpenABEKEY_PK_SIG) return "PKSigKey";
+
+  return "Invalid KeyType";
+}
+
+
+/*!
+ * Create a new OpenABEContextABE for a specific scheme type.
+ *
+ * @param[in]   a RNG object
+ * @param[in]   the scheme type
+ * @return      A pointer to the OpenABE context structure
+ */
+
+OpenABEContextABE *OpenABE_createContextABE(OpenABE_SCHEME scheme_type) {
+  OpenABEContextABE *newContext = NULL;
+
+  /* Depending on the scheme, set up the context using the appropriate
+   * constructor.
+   * This will set appropriate function pointers within the context so the other
+   * calls won't require a switch statement. */
+  switch (scheme_type) {
+  case OpenABE_SCHEME_CP_WATERS:
+    newContext = (OpenABEContextABE *)new OpenABEContextCPWaters();
+    break;
+  case OpenABE_SCHEME_KP_GPSW:
+    // newContext = (OpenABEContextABE *)new OpenABEContextKPGPSW();
+    std::cout << "------------------<<<< Not implemented yet >>>>------------------" << std::endl;
+    newContext =  NULL;
+    break;
+  default:
+    newContext = NULL;
+  }
+
+  return newContext;
+}
+
+/*!
+ * Create a new OpenABEContextScheme for a specific scheme type (for CPA security).
+ *
+ * @param[in]   the scheme type
+ * @return      A pointer to the OpenABE context structure
+ */
+
+unique_ptr<OpenABEContextSchemeCPA>
+OpenABE_createContextABESchemeCPA(OpenABE_SCHEME scheme_type) {
+  unique_ptr<OpenABEContextABE> kemContext(OpenABE_createContextABE(scheme_type));
+  return unique_ptr<OpenABEContextSchemeCPA>(new OpenABEContextSchemeCPA(move(kemContext)));
 }

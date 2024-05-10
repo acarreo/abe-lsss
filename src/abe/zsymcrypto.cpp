@@ -224,18 +224,9 @@ void SymKeyEncHandler::setSKEHandler(const std::shared_ptr<OpenABESymKey>& key) 
 void SymKeyEncHandler::setSKEHandler(const std::string& key) {
   OpenABEByteString keyBytes;
   keyBytes = key;
-  switch (this->encryption_mode_) {
-    case EncryptionMode::CBC:
-      this->cbc_handler_ = std::make_unique<OpenABESymKeyEnc>(key);
-      break;
-    case EncryptionMode::GCM:
-      this->gcm_handler_ = std::make_unique<OpenABESymKeyAuthEnc>(DEFAULT_AES_SEC_LEVEL, keyBytes);
-      break;
-    default:
-      throw OpenABE_ERROR_UNKNOWN_SCHEME;
-  }
-  this->key_ = make_shared<OpenABESymKey>();
-  this->key_->setSymmetricKey(keyBytes);
+  auto keyPtr = make_shared<OpenABESymKey>();
+  keyPtr->setSymmetricKey(keyBytes);
+  this->setSKEHandler(keyPtr);
 }
 
 void SymKeyEncHandler::setAuthData(const OpenABEByteString& authData) {

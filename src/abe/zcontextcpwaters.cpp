@@ -319,8 +319,7 @@ OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
     shared_ptr<OpenABEKey> decKey = this->getKeystore()->getSecretKey(keyID);
     ASSERT_NOTNULL(decKey);
     // Obtain the attribute list from the decryption key
-    OpenABEAttributeList *attrList =
-        (OpenABEAttributeList *)decKey->getComponent("input");
+    OpenABEAttributeList *attrList = (OpenABEAttributeList *)decKey->getComponent("input");
 
     // Initialize an LSSS structure. Given an attribute list and policy
     // it will identify the necessary solution and return the appropriate
@@ -370,6 +369,7 @@ OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
     // Compute key = hash_to_bitstring( prodT );
     key->hashToSymmetricKey(final, keyByteLen);
   } catch (OpenABE_ERROR &err) {
+    cerr << "----------->> Error: " << OpenABE_errorToString(err) << endl;
     result = err;
   }
 

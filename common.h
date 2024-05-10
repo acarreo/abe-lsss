@@ -20,6 +20,17 @@ typedef enum _OpenABE_SCHEME {
 } OpenABE_SCHEME;
 
 
+typedef enum OpenABEKeyType_ {
+  OpenABEKEY_NONE,
+  OpenABEKEY_SK_ENC,
+  OpenABEKEY_PK_ENC,
+  OpenABEKEY_CP_ENC,
+  OpenABEKEY_KP_ENC,
+  OpenABEKEY_MA_ENC,
+  OpenABEKEY_PK_SIG,
+} OpenABEKeyType;
+
+
 ///
 /// scheme identifiers
 ///

@@ -127,46 +127,11 @@ OpenABEKey::exportKeyToBytes(OpenABEByteString &output) const {
 
 OpenABE_ERROR
 OpenABEKey::loadKeyFromBytes(OpenABEByteString &input) {
+  cout << "*******************************************************************" << endl;
   this->deserialize(input);
   return OpenABE_NOERROR;
 }
 
-OpenABEKeyType OpenABE_KeyTypeFromAlgorithmID(uint8_t algorithmID) {
-  if (algorithmID == OpenABE_SCHEME_AES_CBC ||
-      algorithmID == OpenABE_SCHEME_AES_GCM ||
-      algorithmID == OpneABE_SCHEME_AES_GCM_STREAM)
-    return OpenABEKEY_SK_ENC;
-  else if (algorithmID == OpenABE_SCHEME_PK_OPDH)
-    return OpenABEKEY_PK_ENC;
-  else if (algorithmID == OpenABE_SCHEME_CP_WATERS ||
-           algorithmID == OpenABE_SCHEME_CP_WATERS_CCA)
-    return OpenABEKEY_CP_ENC;
-  else if (algorithmID == OpenABE_SCHEME_KP_GPSW ||
-           algorithmID == OpenABE_SCHEME_KP_GPSW_CCA)
-    return OpenABEKEY_KP_ENC;
-  else if (algorithmID == OpenABE_SCHEME_PKSIG_ECDSA)
-    return OpenABEKEY_PK_SIG;
-  else
-    return OpenABEKEY_NONE;
-}
-
-const std::string OpenABE_KeyTypeToString(OpenABEKeyType key_type) {
-  if (key_type == OpenABEKEY_SK_ENC)
-    return "SymKey";
-  else if (key_type == OpenABEKEY_PK_ENC)
-    return "PubKey";
-  else if (key_type == OpenABEKEY_CP_ENC)
-    return "CP-ABEKey";
-  else if (key_type == OpenABEKEY_KP_ENC)
-    return "KP-ABEKey";
-  else if (key_type == OpenABEKEY_PK_SIG)
-    return "PKSigKey";
-
-  return "Invalid KeyType";
-}
-
-
-/*****************************************************************************/
 void getRandomBytes(uint8_t *buf, size_t buf_len) {
   rand_bytes(buf, buf_len);
 }

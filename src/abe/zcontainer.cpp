@@ -54,7 +54,7 @@ using namespace std;
  */
 
 OpenABEContainer::OpenABEContainer() : ZObject() { 
-  this->group = nullptr; 
+  this->group = make_shared<BPGroup>();
 }
 
 OpenABEContainer::OpenABEContainer(std::shared_ptr<BPGroup> group) : ZObject() {

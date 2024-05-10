@@ -45,7 +45,7 @@
 
 class OpenABECiphertext : public OpenABEContainer {
 protected:
-  // 32-bytes for representing OpenABECiphertext Header information as follows:
+  // 16-bytes for representing OpenABECiphertext Header information as follows:
   // 1 bytes for the library version
   uint8_t libraryVersion;
   // 1 byte for algorithm/scheme ID

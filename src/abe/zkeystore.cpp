@@ -269,8 +269,7 @@ OpenABEKeystore::exportKeyToBytes(const string keyID, OpenABEByteString &exporte
     }
 
     exportedKey.clear();
-    key->exportKeyToBytes(exportedKey);
-    return OpenABE_NOERROR;
+    return key->exportKeyToBytes(exportedKey);
 }
 
 shared_ptr<OpenABEKey>
@@ -290,7 +289,7 @@ OpenABEKeystore::parseKeyHeader(const std::string keyID, OpenABEByteString &keyB
 
 shared_ptr<OpenABEKey>
 OpenABEKeystore::constructKeyFromBytes(const string &keyID, OpenABEByteString &keyBlob, OpenABEByteString &keyBytes) {
-  size_t hdrLen = 3 + UID_LEN;
+  size_t hdrLen = UID_LEN + 2; // UID_LEN + 1 byte for library version, 1 byte for algorithm ID
   shared_ptr<OpenABEKey> key = nullptr;
 
   try {
@@ -307,13 +306,17 @@ OpenABEKeystore::constructKeyFromBytes(const string &keyID, OpenABEByteString &k
     //   OpenABECurveID curveID = OpenABE_getCurveID(keyHeader.at(1));
       uint8_t algID      = OpenABE_getSchemeID(keyHeader.at(1));
       OpenABEByteString uid  = keyHeader.getSubset(2, UID_LEN);
-      OpenABEByteString id   = keyHeader.getSubset(hdrLen, keyHeader.size()-hdrLen);
+      OpenABEByteString id;
+      if (keyHeader.size() > hdrLen) {
+        id = keyHeader.getSubset(hdrLen, keyHeader.size()-hdrLen);
+      }
 
       // alloc/construct the key
       key.reset(new OpenABEKey(algID, id.toString(), &uid));
       // return the serialized form of the key structure
       keyBytes.clear();
       keyBytes  = keyBlob.unpack(&index);
+      cout << "----------------------->>> JE suis content : " << id.toString() << endl;
     }
     else {
       THROW_ERROR(OpenABE_ERROR_INVALID_KEY_HEADER);

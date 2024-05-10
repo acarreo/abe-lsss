@@ -330,6 +330,7 @@ OpenABEContextSchemeCPA::encrypt(const string &mpkID, const OpenABEFunctionInput
     // cout << "encryptedData: " << y->toHex() << endl;
     mask_K.zeroize();
     K->zeroize();
+    cout << __func__ << " -->> PlainText size: " << plaintext.size() << endl;
   } catch (OpenABE_ERROR &error) {
     result = error;
   }
@@ -359,6 +360,7 @@ OpenABEContextSchemeCPA::decrypt(const string &mpkID, const string &keyID,
     ASSERT(result == OpenABE_NOERROR, result);
     // retrieve encrypted data
     OpenABEByteString *encMessage = ciphertext.getByteString("_ED"); // encryptedData
+    // cerr << __func__ << " -->> PlainText size: " << encMessage->size() << endl;
     if (encMessage == nullptr) {
       throw OpenABE_ERROR_INVALID_INPUT;
     }

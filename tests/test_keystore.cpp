@@ -166,6 +166,9 @@ TEST_P(KeystoreManagerTest, testBaseCases) {
     skBlob = sk.second;
     ASSERT_TRUE(schemeContext->loadUserSecretParams(decKey, skBlob) == OpenABE_NOERROR);
     ASSERT_TRUE(schemeContext->decrypt(MPK, decKey, plaintext1, ciphertext) == OpenABE_NOERROR);
+
+    // check if the decryption is correct
+    ASSERT_TRUE(plaintext == plaintext1);
     cout << "success!" << endl;
 }
 #endif

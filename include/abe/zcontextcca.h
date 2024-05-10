@@ -36,7 +36,7 @@
 
 #include "zcontextabe.h"
 
-
+#if 0
 
 ///
 /// @class  OpenABEContextCCA
@@ -184,5 +184,7 @@ public:
                                                const std::string &keyID,
                                                OpenABECiphertext &ciphertext);
 };
+
+#endif
 
 #endif /* ifdef __ZCONTEXTCCA_H__ */

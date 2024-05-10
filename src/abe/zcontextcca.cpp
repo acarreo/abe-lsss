@@ -40,6 +40,7 @@
 
 using namespace std;
 
+#if 0
 
 // extern declarations
 unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABECiphertext &ciphertext);
@@ -223,13 +224,9 @@ OpenABEContextGenericCCA::encryptKEM(const string &mpkID, const OpenABEFunctionI
     ASSERT_NOTNULL(encryptInput);
     ASSERT_NOTNULL(key);
 
-    // choose r
+    // choose r and K randomly
     getRandomBytes(r, keyByteLen);
-    // cout << "r : " << r.toHex() << endl;
-
-    // choose K
     getRandomBytes(K, keyByteLen);
-    // cout << "K : " << K.toHex() << endl;
 
     // set M = r || K
     OpenABEByteString M = r + K;
@@ -843,3 +840,5 @@ OpenABEContextSchemeCCAWithATZN::decrypt(const string &mpkID, const string &keyI
   symkeyBytes.zeroize();
   return keyHandle;
 }
+
+#endif
