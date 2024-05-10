@@ -52,6 +52,29 @@ using namespace std;
  * Implementation of the OpenABESymKey class
  ********************************************************************************/
 
+OpenABESymKey::OpenABESymKey(const std::string ID, OpenABEByteString *uid, uint8_t algorithmID)
+{
+  try {
+    if (ID.size() == 0) {
+      throw OpenABE_ERROR_INVALID_LENGTH;
+    }
+
+    this->libraryVersion = OpenABE_LIBRARY_VERSION;
+    this->algorithmID = OpenABE_getSchemeID(algorithmID);
+    this->key_type = OpenABEKEY_SK_ENC;
+    this->isPrivate = false;
+    this->ID = ID;
+    if (uid != NULL && uid->size() == UID_LEN) {
+      this->uid = *uid;
+    } else {
+      getRandomBytes(this->uid, UID_LEN);
+    }
+  } catch (OpenABE_ERROR &err) {
+    throw err;
+  }
+}
+
+
 /*!
  * Destructor for the STKSymKey class.
  *
