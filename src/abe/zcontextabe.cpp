@@ -330,7 +330,6 @@ OpenABEContextSchemeCPA::encrypt(const string &mpkID, const OpenABEFunctionInput
     // cout << "encryptedData: " << y->toHex() << endl;
     mask_K.zeroize();
     K->zeroize();
-    cout << __func__ << " -->> PlainText size: " << plaintext.size() << endl;
   } catch (OpenABE_ERROR &error) {
     result = error;
   }
@@ -352,15 +351,17 @@ OpenABEContextSchemeCPA::encrypt(const string &mpkID, const OpenABEFunctionInput
 OpenABE_ERROR
 OpenABEContextSchemeCPA::decrypt(const string &mpkID, const string &keyID,
                           OpenABEByteString& plaintext, OpenABECiphertext& ciphertext) {
-  OpenABE_ERROR result = OpenABE_NOERROR;
+  OpenABE_ERROR result = OpenABE_ERROR_UNKNOWN;
   shared_ptr<OpenABESymKey> K(new OpenABESymKey);
 
   try {
     result = this->m_KEM_->decryptKEM(mpkID, keyID, ciphertext, DEFAULT_SYM_KEY_BYTES, K);
-    ASSERT(result == OpenABE_NOERROR, result);
+    if (result != OpenABE_NOERROR) {
+      throw result;
+    }
+
     // retrieve encrypted data
     OpenABEByteString *encMessage = ciphertext.getByteString("_ED"); // encryptedData
-    // cerr << __func__ << " -->> PlainText size: " << encMessage->size() << endl;
     if (encMessage == nullptr) {
       throw OpenABE_ERROR_INVALID_INPUT;
     }
@@ -376,6 +377,7 @@ OpenABEContextSchemeCPA::decrypt(const string &mpkID, const string &keyID,
     mask_K.zeroize();
     K->zeroize();
   } catch (OpenABE_ERROR &error) {
+    plaintext.clear();
     result = error;
   }
 

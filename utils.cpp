@@ -14,7 +14,9 @@ OpenABE_SCHEME OpenABE_getSchemeID(uint8_t id) {
   switch (id) {
     case OpenABE_SCHEME_NONE:
     case OpenABE_SCHEME_PKSIG_ECDSA:
+    case OpenABE_SCHEME_AES_CBC:
     case OpenABE_SCHEME_AES_GCM:
+    case OpenABE_SCHEME_AES_GCM_STREAM:
     case OpenABE_SCHEME_PK_OPDH:
     case OpenABE_SCHEME_CP_WATERS:
     case OpenABE_SCHEME_KP_GPSW:
@@ -33,6 +35,11 @@ const string OpenABE_convertSchemeIDToString(OpenABE_SCHEME id) {
   switch (id) {
     case OpenABE_SCHEME_NONE:
       scheme = "No Scheme";
+      break;
+    case OpenABE_SCHEME_AES_CBC:
+    case OpenABE_SCHEME_AES_GCM:
+    case OpenABE_SCHEME_AES_GCM_STREAM:
+      scheme = OpenABE_SK_ENC;
       break;
     case OpenABE_SCHEME_PKSIG_ECDSA:
       scheme = OpenABE_EC_DSA;
@@ -55,6 +62,7 @@ const string OpenABE_convertSchemeIDToString(OpenABE_SCHEME id) {
 }
 
 OpenABE_SCHEME OpenABE_convertStringToSchemeID(const string id) {
+  if (id == OpenABE_SK_ENC) return OpenABE_SCHEME_AES_GCM;
   if (id == OpenABE_EC_DSA) return OpenABE_SCHEME_PKSIG_ECDSA;
   if (id == OpenABE_PK_ENC) return OpenABE_SCHEME_PK_OPDH;
   if (id == OpenABE_CP_ABE) return OpenABE_SCHEME_CP_WATERS;
@@ -147,7 +155,7 @@ OpenABEKeyType OpenABE_KeyTypeFromAlgorithmID(uint8_t algorithmID) {
   switch (algorithmID) {
     case OpenABE_SCHEME_AES_CBC:
     case OpenABE_SCHEME_AES_GCM:
-    case OpneABE_SCHEME_AES_GCM_STREAM:
+    case OpenABE_SCHEME_AES_GCM_STREAM:
       return OpenABEKEY_SK_ENC;
 
     case OpenABE_SCHEME_PK_OPDH:

@@ -563,7 +563,6 @@ TEST_P(CPASecurityForSchemeTest, testWorkingExamples) {
     ciphertext2.loadFromBytes(ctBlob);
     // ASSERT_TRUE(ciphertext == ciphertext2);
 
-    cout << "------------------------------------------------------------------" << endl;
     OpenABEByteString ctBlob2Debug;
     ciphertext2.exportToBytes(ctBlob2Debug);
     // verify header is thesame
@@ -571,7 +570,6 @@ TEST_P(CPASecurityForSchemeTest, testWorkingExamples) {
     ciphertext.getHeader(hdr1);
     ciphertext2.getHeader(hdr2);
     ASSERT_TRUE(hdr1 == hdr2);
-    cout << "hdr1 == hdr2: " << (hdr1 == hdr2) << endl;
 
     // for both auth1 and auth2
     unique_ptr<OpenABEFunctionInput> keyInput = getKeyInput(input.scheme_type, input.key_input);
@@ -583,7 +581,15 @@ TEST_P(CPASecurityForSchemeTest, testWorkingExamples) {
     ASSERT_TRUE(schemeContext->loadUserSecretParams("DecKey", skBlob) == OpenABE_NOERROR);
 
     // Decrypt the ciphertext with multiple keys
-    ASSERT_TRUE(schemeContext->decrypt(MPK, "DecKey", plaintext1, ciphertext2) == OpenABE_NOERROR);
+    OpenABE_ERROR result = schemeContext->decrypt(MPK, "DecKey", plaintext1, ciphertext2);
+
+    if(input.expect_pass_) {
+        ASSERT_TRUE(result == OpenABE_NOERROR);
+        ASSERT_TRUE(plaintext == plaintext1);
+    } else {
+        ASSERT_FALSE(result == OpenABE_NOERROR);
+        ASSERT_FALSE(plaintext == plaintext1);
+    }
 
     if (input.verbose_) {
         cout << "Input Plaintext: " << plaintext.toHex() << endl;
@@ -591,11 +597,6 @@ TEST_P(CPASecurityForSchemeTest, testWorkingExamples) {
     	cout << "Key Input used: " << input.key_input << endl;
     	cout << "Rec Plaintext: " << plaintext1.toHex() << endl;
     	cout << "Test expected to pass: " << (input.expect_pass_ ? "true" : "false") << endl;
-    }
-    if(input.expect_pass_) {
-        ASSERT_TRUE(plaintext == plaintext1);
-    } else {
-        ASSERT_FALSE(plaintext == plaintext1);
     }
 }
 
@@ -739,7 +740,6 @@ INSTANTIATE_TEST_CASE_P(ABETest1, CPASecurityForSchemeTest,
     // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice and Bob) and Charlie)", false)
 ));
 
-#if 0
 INSTANTIATE_TEST_CASE_P(ABETest2, CPASecurityForSchemeTest,
     ::testing::Values(
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice and Bob) or uid:567abc)", "uid:567abc", true),
@@ -760,6 +760,7 @@ INSTANTIATE_TEST_CASE_P(ABETest3, CPASecurityForSchemeTest,
     // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|Date = June 30, 2014", "((Alice and Date = June 21-28, 2014) and Charlie)", false)
 ));
 
+#if 0
 INSTANTIATE_TEST_CASE_P(ABETest4, CCASecurityForKEMTest,
     ::testing::Values(
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Alice|Charlie", true),

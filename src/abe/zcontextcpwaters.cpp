@@ -151,7 +151,7 @@ OpenABE_ERROR
 OpenABEContextCPWaters::generateDecryptionKey(
     OpenABEFunctionInput* keyInput, const string &keyID, const string &mpkID,
     const string &mskID, const string &gpkID = "", const string &GID = "") {
-  OpenABE_ERROR result = OpenABE_NOERROR;
+  OpenABE_ERROR result = OpenABE_ERROR_UNKNOWN;
   shared_ptr<OpenABEKey> decKey = nullptr;
   OpenABEAttributeList* attrList = nullptr;
   OpenABEByteString *k = nullptr;
@@ -203,6 +203,7 @@ OpenABEContextCPWaters::generateDecryptionKey(
     // Add the decryption key to the keystore
     this->getKeystore()->addKey(keyID, decKey, KEY_TYPE_SECRET);
 
+    result = OpenABE_NOERROR;
   } catch (OpenABE_ERROR &err) {
     result = err;
   }
@@ -223,7 +224,7 @@ OpenABE_ERROR
 OpenABEContextCPWaters::encryptKEM(const string &mpkID, const OpenABEFunctionInput* encryptInput,
                                uint32_t keyByteLen, const std::shared_ptr<OpenABESymKey> &key,
                                OpenABECiphertext& ciphertext) {
-  OpenABE_ERROR result = OpenABE_NOERROR;
+  OpenABE_ERROR result = OpenABE_ERROR_ENCRYPTION_ERROR;
   OpenABEByteString *k = nullptr;
 
   try {
@@ -248,8 +249,7 @@ OpenABEContextCPWaters::encryptKEM(const string &mpkID, const OpenABEFunctionInp
     GT C = MPK->getGT("A")->exp(s);
 
     // Use the Linear Secret Sharing Scheme (LSSS) to compute an enumerated list
-    // of all
-    // attributes and corresponding secret shares of s.
+    // of all attributes and corresponding secret shares of s.
     OpenABELSSS lsss;
     lsss.shareSecret(policy, s);
 
@@ -284,6 +284,7 @@ OpenABEContextCPWaters::encryptKEM(const string &mpkID, const OpenABEFunctionInp
     key->hashToSymmetricKey(C, keyByteLen);
     ciphertext.setSchemeType(this->algID);
 
+    result = OpenABE_NOERROR;
   } catch (OpenABE_ERROR &err) {
     result = err;
   }
@@ -306,7 +307,7 @@ OpenABE_ERROR
 OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
                                OpenABECiphertext& ciphertext, uint32_t keyByteLen,
                                const std::shared_ptr<OpenABESymKey> &key) {
-  OpenABE_ERROR result = OpenABE_NOERROR;
+  OpenABE_ERROR result = OpenABE_ERROR_UNKNOWN;
   ZP coeff;
   G1 prod1 = this->getPairing()->initG1();
   G1 *Kx, *Cx;
@@ -321,17 +322,20 @@ OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
     // Obtain the attribute list from the decryption key
     OpenABEAttributeList *attrList = (OpenABEAttributeList *)decKey->getComponent("input");
 
+    OpenABEByteString *policy_str = ciphertext.getByteString("policy");
+    ASSERT_NOTNULL(policy_str);
+
+    unique_ptr<OpenABEPolicy> policy = createPolicyTree(policy_str->toString());
+
     // Initialize an LSSS structure. Given an attribute list and policy
     // it will identify the necessary solution and return the appropriate
     // components of the access/policy and secret key along with coefficients.
     // If the policy is not satisfied, it throws an error.
     OpenABELSSS lsss;
-
-    OpenABEByteString *policy_str = ciphertext.getByteString("policy");
-    ASSERT_NOTNULL(policy_str);
-
-    unique_ptr<OpenABEPolicy> policy = createPolicyTree(policy_str->toString());
-    lsss.recoverCoefficients(policy.get(), attrList);
+    if (!lsss.recoverCoefficients(policy.get(), attrList)) {
+      // Policy not satisfied, could not recover LSSS coefficients.
+      throw OpenABE_ERROR_DECRYPTION_FAILED;
+    }
 
     // Compute prod1  = prod_{attr_i \in S} C[attr_i]^{coefficient[attr_i]}
     //         prodT = prod_{attr_i \in S} e(KX[attr_i]^{coefficient[attr_i]},
@@ -340,6 +344,7 @@ OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
     vector<G2> g2s;
     string attr_key, attr_deckey;
     OpenABELSSSRowMap lsssRows = lsss.getRows();
+
     for (auto it = lsssRows.begin(); it != lsssRows.end(); ++it) {
       coeff = it->second.element();
       attr_key = OpenABEHashKey(it->first);
@@ -350,8 +355,6 @@ OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
       Dx = ciphertext.getG2(OpenABEMakeElementLabel("D", attr_key));
       ASSERT_NOTNULL(Dx);
       prod1 += (*Cx * coeff);
-      // G1 Kxpr = Kx->exp(coeff);
-      // prodT *= this->getPairing()->pairing(Kxpr,  *Dx);
       g1s.push_back(*Kx * coeff);
       g2s.push_back(*Dx);
     }
@@ -368,8 +371,8 @@ OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
                (prodT * this->getPairing()->pairing(prod1, *L));
     // Compute key = hash_to_bitstring( prodT );
     key->hashToSymmetricKey(final, keyByteLen);
+    result = OpenABE_NOERROR;
   } catch (OpenABE_ERROR &err) {
-    cerr << "----------->> Error: " << OpenABE_errorToString(err) << endl;
     result = err;
   }
 

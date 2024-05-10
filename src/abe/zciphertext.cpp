@@ -96,11 +96,11 @@ void OpenABECiphertext::exportToBytes(OpenABEByteString &output) {
   // serialize the ciphertext elements
   this->serialize(ciphertextBytes);
 
-  cout << "------> CiphertextBytes serialized" << endl;
-  OpenABEByteString tempDebug;
-  tempDebug.fillBuffer(0, SHA256_LEN);
-  _hash_to_bytes_(tempDebug.getInternalPtr(), ciphertextBytes.data(), ciphertextBytes.size());
-  cout << tempDebug.toHex() << endl;
+  // cout << "------> CiphertextBytes serialized" << endl;
+  // OpenABEByteString tempDebug;
+  // tempDebug.fillBuffer(0, SHA256_LEN);
+  // _hash_to_bytes_(tempDebug.getInternalPtr(), ciphertextBytes.data(), ciphertextBytes.size());
+  // cout << tempDebug.toHex() << endl;
 
   // first pack the key header
   // then pack the key bytes
@@ -140,11 +140,11 @@ void OpenABECiphertext::loadFromBytes(OpenABEByteString &input) {
     ASSERT(ciphertextBytes.size() > 0, OpenABE_ERROR_INVALID_CIPHERTEXT_BODY);
     this->deserialize(ciphertextBytes);
 
-    cout << "------> CiphertextBytes deserialized" << endl;
-    OpenABEByteString tempDebug;
-    tempDebug.fillBuffer(0, SHA256_LEN);
-    _hash_to_bytes_(tempDebug.getInternalPtr(), ciphertextBytes.data(), ciphertextBytes.size());
-    cout << tempDebug.toHex() << endl;
+    // cout << "------> CiphertextBytes deserialized" << endl;
+    // OpenABEByteString tempDebug;
+    // tempDebug.fillBuffer(0, SHA256_LEN);
+    // _hash_to_bytes_(tempDebug.getInternalPtr(), ciphertextBytes.data(), ciphertextBytes.size());
+    // cout << tempDebug.toHex() << endl;
   } else {
     cerr << "------> Ciphertext header size: " << ciphertextHeader.size() << endl;
     throw OpenABE_ERROR_INVALID_CIPHERTEXT_HEADER;

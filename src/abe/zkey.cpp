@@ -127,7 +127,6 @@ OpenABEKey::exportKeyToBytes(OpenABEByteString &output) const {
 
 OpenABE_ERROR
 OpenABEKey::loadKeyFromBytes(OpenABEByteString &input) {
-  cout << "*******************************************************************" << endl;
   this->deserialize(input);
   return OpenABE_NOERROR;
 }

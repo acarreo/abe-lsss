@@ -316,7 +316,6 @@ OpenABEKeystore::constructKeyFromBytes(const string &keyID, OpenABEByteString &k
       // return the serialized form of the key structure
       keyBytes.clear();
       keyBytes  = keyBlob.unpack(&index);
-      cout << "----------------------->>> JE suis content : " << id.toString() << endl;
     }
     else {
       THROW_ERROR(OpenABE_ERROR_INVALID_KEY_HEADER);
