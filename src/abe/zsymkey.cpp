@@ -59,9 +59,12 @@ OpenABESymKey::OpenABESymKey(const std::string ID, OpenABEByteString *uid, uint8
       throw OpenABE_ERROR_INVALID_LENGTH;
     }
 
-    this->libraryVersion = OpenABE_LIBRARY_VERSION;
     this->algorithmID = OpenABE_getSchemeID(algorithmID);
-    this->key_type = OpenABEKEY_SK_ENC;
+    this->key_type = OpenABE_KeyTypeFromAlgorithmID(algorithmID);
+    if (this->key_type != OpenABEKEY_SK_ENC) {
+      throw OpenABE_ERROR_INVALID_SCHEME_ID;
+    }
+    this->libraryVersion = OpenABE_LIBRARY_VERSION;
     this->isPrivate = false;
     this->ID = ID;
     if (uid != NULL && uid->size() == UID_LEN) {

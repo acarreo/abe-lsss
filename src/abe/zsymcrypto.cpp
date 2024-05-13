@@ -208,6 +208,13 @@ SymKeyEncHandler::~SymKeyEncHandler() {
 void SymKeyEncHandler::setSKEHandler(const std::shared_ptr<OpenABESymKey>& key) {
   OpenABEByteString keyBytes;
   keyBytes = key->getKeyBytes();
+
+  auto algID = key->getAlgorithmID();
+  auto scheme = SchemeFromEncryptionMode(this->encryption_mode_);
+  if (algID != scheme && algID != OpenABE_SCHEME_NONE) {
+    throw OpenABE_ERROR_INVALID_KEY;
+  }
+
   switch (this->encryption_mode_) {
     case EncryptionMode::CBC:
       this->cbc_handler_ = std::make_unique<OpenABESymKeyEnc>(keyBytes.toString());
@@ -385,4 +392,17 @@ std::string SymKeyEncHandler::decrypt(const std::string& ciphertext) {
     std::cerr << e.what() << '\n';
   }
   return "";
+}
+
+OpenABE_SCHEME SchemeFromEncryptionMode(EncryptionMode mode) {
+  switch (mode) {
+    case EncryptionMode::CBC:
+      return OpenABE_SCHEME_AES_CBC;
+    case EncryptionMode::GCM:
+      return OpenABE_SCHEME_AES_GCM;
+    case EncryptionMode::STREAM_GCM:
+      return OpenABE_SCHEME_AES_GCM_STREAM;
+    default:
+      return OpenABE_SCHEME_NONE;
+  }
 }

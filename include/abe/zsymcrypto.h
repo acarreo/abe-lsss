@@ -111,4 +111,6 @@ private:
   std::unique_ptr<OpenABESymKeyAuthEnc> gcm_handler_;
 };
 
+OpenABE_SCHEME SchemeFromEncryptionMode(EncryptionMode mode);
+
 #endif // __ZSYMCRYPTO__
