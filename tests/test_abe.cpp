@@ -736,8 +736,8 @@ INSTANTIATE_TEST_CASE_P(ABETest1, CPASecurityForSchemeTest,
     ::testing::Values(
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Alice|Charlie", true),
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Bob|David", true),
-    Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Bob|Eve", false)
-    ,Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice or Bob) and (Charlie or David)) and Alice", true),
+    Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Bob|Eve", false),
+    Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice or Bob) and (Charlie or David)) and Alice", true),
     Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice or Bob) and Alice)", true),
     Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice and Bob) and Charlie)", false)
 ));
@@ -746,20 +746,20 @@ INSTANTIATE_TEST_CASE_P(ABETest2, CPASecurityForSchemeTest,
     ::testing::Values(
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice and Bob) or uid:567abc)", "uid:567abc", true),
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice and Bob) or uid:567abc)", "Alice|Bob", true),
-    Input(OpenABE_SCHEME_CP_WATERS, "((Alice and Bob) or uid:567abc)", "Bob|Eve", false)
-    // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|uid:567abcdef", "((Alice or Bob) and (Charlie or David)) and Alice", true),
-    // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|uid:567abcdef", "((Alice or Bob) and Alice)", true),
-    // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|uid:567abcdef", "((Alice and Bob) and Charlie)", false)
+    Input(OpenABE_SCHEME_CP_WATERS, "((Alice and Bob) or uid:567abc)", "Bob|Eve", false),
+    Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|uid:567abcdef", "((Alice or Bob) and (Charlie or David)) and Alice", true),
+    Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|uid:567abcdef", "((Alice or Bob) and Alice)", true),
+    Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|uid:567abcdef", "((Alice and Bob) and Charlie)", false)
 ));
 
 INSTANTIATE_TEST_CASE_P(ABETest3, CPASecurityForSchemeTest,
     ::testing::Values(
     Input(OpenABE_SCHEME_CP_WATERS, "Alice and Date = May 1-10, 2016", "Alice|Date=May 5, 2016", true),
     Input(OpenABE_SCHEME_CP_WATERS, "Date = May 1-10, 2016 and (Alice or Bob)", "Bob|Date=May 8, 2016", true),
-    Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and Date = May 1-10, 2016)", "Bob|Eve|Date=May 12, 2016", false)
-    // Input(OpenABE_SCHEME_KP_GPSW, "Charlie|Date = June 12, 2014", "(Date = June 10-20, 2014 and (Charlie or David))", true),
-    // Input(OpenABE_SCHEME_KP_GPSW, "David|Date = June 25, 2014", "((David or Bob) and Date = June 21-28, 2014)", true),
-    // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|Date = June 30, 2014", "((Alice and Date = June 21-28, 2014) and Charlie)", false)
+    Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and Date = May 1-10, 2016)", "Bob|Eve|Date=May 12, 2016", false),
+    Input(OpenABE_SCHEME_KP_GPSW, "Charlie|Date = June 12, 2014", "(Date = June 10-20, 2014 and (Charlie or David))", true),
+    Input(OpenABE_SCHEME_KP_GPSW, "David|Date = June 25, 2014", "((David or Bob) and Date = June 21-28, 2014)", true),
+    Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie|Date = June 30, 2014", "((Alice and Date = June 21-28, 2014) and Charlie)", false)
 ));
 
 #if 0

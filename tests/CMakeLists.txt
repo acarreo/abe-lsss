@@ -16,6 +16,7 @@ set(LIBRARIES
 
 set(ABE_SOURCES
   ../schemes/zcontextcpwaters.cpp
+  ../schemes/zcontextkpgpsw.cpp
   ../utils/abecontext.cpp
 )
 
