@@ -12,7 +12,7 @@ extern "C" {
 
 #include "zerror.h"
 #include "zexception.h"
-#include "../../common.h"
+#include "../../utils/common.h"
 
 
 /// @typedef    OpenABE_STATE

@@ -33,7 +33,7 @@ set(SOURCE_FILES
     ${ABE_SOURCES}
     ${LSSS_SOURCES}
     src/lsss/zparser.tab.cc
-    utils.cpp
+    utils/utils.cpp
 )
 
 add_library(lsss_abe SHARED ${SOURCE_FILES})

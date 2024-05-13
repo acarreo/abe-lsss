@@ -39,9 +39,10 @@
 #include <string>
 #include <assert.h>
 
-#include "abe/zkeymgr.h"
 #include <lsss_abe.h>
-#include "../../utils.h"
+
+// helper function to get the function input, this method is implemented utils.cpp
+std::unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABEKey *key);
 
 using namespace std;
 
