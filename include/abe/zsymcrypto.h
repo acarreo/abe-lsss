@@ -95,6 +95,8 @@ public:
   void setSKEHandler(const std::shared_ptr<OpenABESymKey>& key);
   void setSKEHandler(const std::string& key);
 
+  OpenABE_ERROR encrypt(OpenABEByteString& ciphertext, const OpenABEByteString& plaintext);
+  OpenABE_ERROR decrypt(OpenABEByteString& plaintext, const OpenABEByteString& ciphertext);
   std::string encrypt(const std::string& plaintext);
   std::string decrypt(const std::string& ciphertext);
 

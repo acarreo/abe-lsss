@@ -233,22 +233,27 @@ void SymKeyEncHandler::setAuthData(const OpenABEByteString& authData) {
   this->authData_ = authData;
 }
 
-std::string SymKeyEncHandler::encrypt(const std::string& plaintext) {
+OpenABE_ERROR SymKeyEncHandler::encrypt(OpenABEByteString& ciphertext,
+                                        const OpenABEByteString& plaintext) {
+  OpenABE_ERROR ret = OpenABE_ERROR_ENCRYPTION_ERROR;
   OpenABEByteString zciphertext;
   OpenABEByteString ziv, zct, ztag;
-  string ciphertext;
+
+
+  string plain_str = const_cast<OpenABEByteString&>(plaintext).toString();
 
   switch (this->encryption_mode_) {
     case EncryptionMode::CBC:
       try
       {
-        OpenABE_ERROR error = cbc_handler_->encrypt(plaintext, ziv, zct);
+        OpenABE_ERROR error = cbc_handler_->encrypt(plain_str, ziv, zct);
         if (error != OpenABE_NOERROR) {
           throw error;
         }
 
         zciphertext.smartPack(ziv);
         zciphertext.smartPack(zct);
+        ret = OpenABE_NOERROR;
       }
       catch(OpenABE_ERROR& error) {
         throw runtime_error(OpenABE_errorToString(error));
@@ -265,13 +270,14 @@ std::string SymKeyEncHandler::encrypt(const std::string& plaintext) {
           gcm_handler_->setAddAuthData(NULL, 0);
         }
         // now we can encrypt with sym key
-        if (gcm_handler_->encrypt(plaintext, ziv, zct, ztag) != OpenABE_NOERROR) {
+        if (gcm_handler_->encrypt(plain_str, ziv, zct, ztag) != OpenABE_NOERROR) {
           throw runtime_error("Encryption failed");
         }
 
         zciphertext.smartPack(ziv);
         zciphertext.smartPack(zct);
         zciphertext.smartPack(ztag);
+        ret = OpenABE_NOERROR;
       }
       catch (OpenABE_ERROR& error) {
         string msg = OpenABE_errorToString(error);
@@ -286,19 +292,21 @@ std::string SymKeyEncHandler::encrypt(const std::string& plaintext) {
   if (this->b64_encode_) {
     ciphertext = Base64Encode(zciphertext.data(), zciphertext.size());
   } else {
-    ciphertext = zciphertext.toString();
+    ciphertext = zciphertext;
   }
 
-  return ciphertext;
+  return ret;
 }
 
-std::string SymKeyEncHandler::decrypt(const std::string& ciphertext) {
-  string plaintext;
+OpenABE_ERROR SymKeyEncHandler::decrypt(OpenABEByteString& plaintext,
+                                        const OpenABEByteString& ciphertext) {
+  OpenABE_ERROR ret = OpenABE_ERROR_DECRYPTION_FAILED;  
   OpenABEByteString zciphertext, ziv, zct, ztag;
+  string plain_str;
   size_t index = 0;
 
   if (this->b64_encode_) {
-    zciphertext = Base64Decode(ciphertext);
+    zciphertext = Base64Decode(const_cast<OpenABEByteString&>(ciphertext).toString());
   } else {
     zciphertext = ciphertext;
   }
@@ -309,9 +317,11 @@ std::string SymKeyEncHandler::decrypt(const std::string& ciphertext) {
   switch (encryption_mode_) {
     case EncryptionMode::CBC:
       try {
-        if (!cbc_handler_->decrypt(plaintext, ziv, zct)) {
+        if (!cbc_handler_->decrypt(plain_str, ziv, zct)) {
           throw OpenABE_ERROR_DECRYPTION_FAILED;
         }
+        plaintext = plain_str;
+        ret = OpenABE_NOERROR;
       } catch (OpenABE_ERROR& error) {
         string msg = OpenABE_errorToString(error);
         throw runtime_error(msg);
@@ -327,9 +337,11 @@ std::string SymKeyEncHandler::decrypt(const std::string& ciphertext) {
           gcm_handler_->setAddAuthData(NULL, 0);
         }
 
-        if (!gcm_handler_->decrypt(plaintext, ziv, zct, ztag)) {
+        if (!gcm_handler_->decrypt(plain_str, ziv, zct, ztag)) {
           throw OpenABE_ERROR_DECRYPTION_FAILED;
         }
+        plaintext = plain_str;
+        ret = OpenABE_NOERROR;
       } catch(const OpenABE_ERROR& error) {
         string msg = OpenABE_errorToString(error);
         throw runtime_error(msg);
@@ -340,5 +352,37 @@ std::string SymKeyEncHandler::decrypt(const std::string& ciphertext) {
       throw OpenABE_ERROR_UNKNOWN_SCHEME;
   }
 
-  return plaintext;
+  return ret;
+}
+
+std::string SymKeyEncHandler::encrypt(const std::string& plaintext) {
+  OpenABEByteString zplaintext, zciphertext;
+  try
+  {
+    zplaintext = plaintext;
+    OpenABE_ERROR error = encrypt(zciphertext, zplaintext);
+    if (error != OpenABE_NOERROR) {
+      throw runtime_error(OpenABE_errorToString(error));
+    }
+    return zciphertext.toString();
+  } catch(const runtime_error& e) {
+    std::cerr << e.what() << '\n';
+  }
+  return "";
+}
+
+std::string SymKeyEncHandler::decrypt(const std::string& ciphertext) {
+  OpenABEByteString zplaintext, zciphertext;
+  try
+  {
+    zciphertext = ciphertext;
+    OpenABE_ERROR error = decrypt(zplaintext, zciphertext);
+    if (error != OpenABE_NOERROR) {
+      throw runtime_error(OpenABE_errorToString(error));
+    }
+    return zplaintext.toString();
+  } catch(const runtime_error& e) {
+    std::cerr << e.what() << '\n';
+  }
+  return "";
 }
