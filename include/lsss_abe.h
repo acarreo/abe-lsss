@@ -14,7 +14,6 @@
 #include "abe/zcontextcca.h"
 #include "abe/zcontextske.h"
 #include "abe/zcontextpke.h"
-#include "abe/zcontextcpwaters.h"
 #include "abe/zcontextpksig.h"
 #include "abe/zkeymgr.h"
 
@@ -36,8 +35,8 @@ const std::string OpenABE_convertSchemeIDToString(OpenABE_SCHEME schemeID);
 OpenABE_SCHEME OpenABE_convertStringToSchemeID(const std::string id);
 
 // creates KEM context for PKE & ABE schemes
-OpenABEContextPKE *OpenABE_createContextPKE(OpenABE_SCHEME scheme_type);
-OpenABEContextABE *OpenABE_createContextABE(OpenABE_SCHEME scheme_type);
+// OpenABEContextPKE *OpenABE_createContextPKE(OpenABE_SCHEME scheme_type);
+// OpenABEContextABE *OpenABE_createContextABE(OpenABE_SCHEME scheme_type);
 
 // // PKE scheme context API
 // std::unique_ptr<OpenABEContextSchemePKE>
@@ -110,13 +109,5 @@ void getRandomBytes(OpenABEByteString &buf, size_t buf_len);
 inline void _hash_to_bytes_(uint8_t* digest, uint8_t *buf, uint32_t buf_len) {
   md_map(digest, buf, buf_len);
 }
-
-
-// Define shorter aliases for some classes for easier usage in code
-using ByteString = OpenABEByteString;      // Alias for OpenABEByteString class
-using CryptoKDF = OpenABEKDF;              // Alias for OpenABEKDF class
-using CryptoSymKey = OpenABESymKey;        // Alias for OpenABESymKey class
-using CryptoKeyStore = OpenABEKeystore;    // Alias for OpenABEKeystore class
-using CryptoContainer = OpenABEContainer;  // Alias for OpenABEContainer class
 
 #endif // __LSSS_ABE_H__

@@ -34,7 +34,7 @@
 #ifndef __ZCONTEXTCPWATERS_H__
 #define __ZCONTEXTCPWATERS_H__
 
-#include "zcontextabe.h"
+#include <lsss_abe.h>
 
 ///
 /// @class  OpenABEContextCPWaters

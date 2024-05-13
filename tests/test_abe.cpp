@@ -42,7 +42,7 @@
 
 #include <lsss_abe.h>
 
-#include "../utils.h"
+#include "../utils/utils.h"
 
 using namespace std;
 
@@ -542,7 +542,9 @@ TEST_P(CPASecurityForSchemeTest, testWorkingExamples) {
     		input.key_input + "' and Enc: '" + input.func_input + "'");
     OpenABECiphertext ciphertext, ciphertext2;
     cout << "* Testing CPA security for " << printScheme(input.scheme_type) << " schemes..." << endl;
-    unique_ptr<OpenABEContextSchemeCPA> schemeContext = OpenABE_createContextABESchemeCPA(input.scheme_type); // OpenABE_SCHEME_CP_WATERS
+    unique_ptr<OpenABEContextSchemeCPA> schemeContext = createContextABESchemeCPA(input.scheme_type);
+
+    ASSERT_TRUE(schemeContext != nullptr);
 
     // Generate a set of parameters for an ABE authority
     ASSERT_TRUE(schemeContext->generateParams(MPK, MSK) == OpenABE_NOERROR);
@@ -735,9 +737,9 @@ INSTANTIATE_TEST_CASE_P(ABETest1, CPASecurityForSchemeTest,
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Alice|Charlie", true),
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Bob|David", true),
     Input(OpenABE_SCHEME_CP_WATERS, "((Alice or Bob) and (Charlie or David))", "Bob|Eve", false)
-    // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice or Bob) and (Charlie or David)) and Alice", true),
-    // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice or Bob) and Alice)", true),
-    // Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice and Bob) and Charlie)", false)
+    ,Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice or Bob) and (Charlie or David)) and Alice", true),
+    Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice or Bob) and Alice)", true),
+    Input(OpenABE_SCHEME_KP_GPSW, "Alice|Charlie", "((Alice and Bob) and Charlie)", false)
 ));
 
 INSTANTIATE_TEST_CASE_P(ABETest2, CPASecurityForSchemeTest,

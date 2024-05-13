@@ -14,10 +14,24 @@ set(LIBRARIES
     GTest::gtest_main pthread
 )
 
+set(ABE_SOURCES
+  ../schemes/zcontextcpwaters.cpp
+  ../utils/abecontext.cpp
+)
+
 add_executable(test_ske_out test_ske.cpp)
 add_executable(test_zsym_out test_zsym.cpp)
-add_executable(test_abe_out test_abe.cpp)
-add_executable(test_keystore_out test_keystore.cpp)
+
+add_executable(
+  test_keystore_out
+  ${ABE_SOURCES}
+  test_keystore.cpp
+)
+add_executable(
+  test_abe_out
+  ${ABE_SOURCES}
+  test_abe.cpp
+)
 
 target_link_libraries(test_ske_out ${LIBRARIES})
 target_link_libraries(test_zsym_out ${LIBRARIES})

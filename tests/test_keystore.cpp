@@ -41,7 +41,7 @@
 #include <gtest/gtest.h>
 
 #include <lsss_abe.h>
-#include "../utils.h"
+#include "../utils/utils.h"
 
 using namespace std;
 
@@ -116,7 +116,7 @@ TEST_P(KeystoreManagerTest, testBaseCases) {
     const string userId = "user";
 
     cout << "* Testing keystore management for " << printScheme(scheme_type) << " schemes..." << endl;
-    unique_ptr<OpenABEContextSchemeCPA> schemeContext = OpenABE_createContextABESchemeCPA(scheme_type);
+    unique_ptr<OpenABEContextSchemeCPA> schemeContext = createContextABESchemeCPA(scheme_type);
     // where each string represents a list of attributes or a policy string
     vector<string> keyInput = input.keyInputs;
 
