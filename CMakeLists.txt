@@ -41,7 +41,16 @@ target_link_libraries(lsss_abe ${LIBRARIES})
 target_include_directories(lsss_abe PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION /usr/local/include/lsss_abe)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/utils/common.h DESTINATION /usr/local/include/lsss_abe)
 install(TARGETS lsss_abe DESTINATION /usr/local/lib)
+
+# During the install phase, this code will replace the include path in zabe.h
+# from "../../utils/common.h" to "../common.h"
+install(CODE "
+    file(READ /usr/local/include/lsss_abe/abe/zabe.h CONTENT)
+    string(REPLACE \"#include \\\"../../utils/common.h\\\"\" \"#include \\\"../common.h\\\"\" MODIFIED_CONTENT \"\${CONTENT}\")
+    file(WRITE /usr/local/include/lsss_abe/abe/zabe.h \"\${MODIFIED_CONTENT}\")
+")
 
 enable_testing()
 add_subdirectory(tests)
