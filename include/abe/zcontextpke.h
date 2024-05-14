@@ -36,7 +36,6 @@
 #ifndef __ZCONTEXTPKE_H__
 #define __ZCONTEXTPKE_H__
 
-#include <lsss_abe.h>
 #include "zcontext.h"
 #include "zciphertext.h"
 
