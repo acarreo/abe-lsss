@@ -53,6 +53,7 @@
 #undef yyFlexLexer
 #endif
 
+#include <cstdint>
 #include "lsss/zparser.tab.hh"
 
 #define EXPINT_KEYWORD  "expint"

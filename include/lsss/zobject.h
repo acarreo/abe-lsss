@@ -35,6 +35,7 @@
 #ifndef openabe_ZObject_h
 #define openabe_ZObject_h
 
+#include <cstdint>
 #include <cstdlib>
 #include <string>
 #include <vector>
