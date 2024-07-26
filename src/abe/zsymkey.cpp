@@ -99,14 +99,21 @@ OpenABE_ERROR OpenABESymKey::loadKeyFromBytes(OpenABEByteString &input) {
   uint8_t algoID, libVersion;
 
   header = input.smartUnpack(&index);
-  id_len = header.size() - UID_LEN - sizeof(algoID) - sizeof(libVersion);
+  if (header.size() < sizeof(algoID) + sizeof(libVersion)) {
+    throw OpenABE_ERROR_INVALID_LENGTH;
+  }
 
   libVersion = header.at(h_index++);
   algoID = header.at(h_index++);
-  uid = header.getSubset(h_index, UID_LEN); h_index += UID_LEN;
-  idBytes = header.getSubset(h_index, id_len);
 
-  OpenABESymKey key(idBytes.toString(), &uid, algoID);
+  OpenABESymKey key;
+  if (header.size() >= UID_LEN + sizeof(algoID) + sizeof(libVersion)) {
+    id_len = header.size() - UID_LEN - sizeof(algoID) - sizeof(libVersion);
+    uid = header.getSubset(h_index, UID_LEN); h_index += UID_LEN;
+    idBytes = header.getSubset(h_index, id_len);
+
+    key = OpenABESymKey(idBytes.toString(), &uid, algoID);
+  }
 
   // Set the key data
   keyBytes = input.smartUnpack(&index);
