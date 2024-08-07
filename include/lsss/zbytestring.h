@@ -103,7 +103,7 @@ public:
     uint8_t *lhs_ptr = this->getInternalPtr();
     uint8_t *rhs_ptr = rhs.getInternalPtr();
     for(size_t i = 0; i < this->size(); i++) {
-      lhs_ptr[i] = this->at(i) ^ rhs_ptr[i];
+      lhs_ptr[i] = this->at(i) ^ rhs_ptr[i % rhs.size()];
     }
     return *this;
   }
