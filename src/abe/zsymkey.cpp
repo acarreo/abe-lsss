@@ -428,10 +428,10 @@ bool
 OpenABESymKeyAuthEnc::decrypt(string& plaintext, OpenABEByteString& iv,
                               OpenABEByteString& ciphertext, OpenABEByteString& tag)
 {
-  if(ciphertext.size() == 0) {
-    /* ciphertext has to be greater than 0 */
-    return false;
-  }
+  // if(ciphertext.size() == 0) {
+  //   /* ciphertext has to be greater than 0 */
+  //   return false;
+  // }
 
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   uint8_t *pt = nullptr;

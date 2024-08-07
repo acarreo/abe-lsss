@@ -337,7 +337,14 @@ OpenABE_ERROR SymKeyEncHandler::decrypt(OpenABEByteString& plaintext,
 
     case EncryptionMode::GCM:
       try {
-        ztag = zciphertext.smartUnpack(&index);
+        // The tag is the final element in the ciphertext. It is always present
+        // and has a fixed size of AES_BLOCK_SIZE.
+        if (index < zciphertext.size()) { // If the ciphertext (zct) is empty
+          ztag = zciphertext.smartUnpack(&index);
+        } else {
+          ztag = zct; zct.clear();
+        }
+
         if (this->authData_.size() > 0) {
           gcm_handler_->setAddAuthData(this->authData_);
         } else {
