@@ -151,6 +151,18 @@ public:
     return new OpenABEByteString(*this);
   }
 
+  void hashToBytes(OpenABEByteString &hash) const {
+    hash.clear();
+#ifdef RELIC_VERSION
+extern "C" {
+#include <relic/relic.h>
+}
+    uint8_t hash_buf[SHA256_LEN];
+    md_map(hash_buf, this->data(), this->size());
+    hash.appendArray(hash_buf, SHA256_LEN);
+#endif
+  }
+
   std::string toHex() const {
     std::stringstream ss;
     int hex_len = 2;
