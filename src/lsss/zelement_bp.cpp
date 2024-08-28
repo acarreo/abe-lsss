@@ -44,6 +44,19 @@
 #include "lsss/zobject.h"
 #include "lsss/zelement_bp.h"
 
+#ifndef _COMPRESSION_
+#define _COMPRESSION_    1
+#endif
+
+#define G1_SIZE_BIN             ((RLC_PC_BYTES) * 2 + 1)
+#define G2_SIZE_BIN             ((RLC_PC_BYTES) * 4 + 1)
+
+#define G1_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) + 1)
+#define G2_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) * 2 + 1)
+
+#define G1_SIZE    (_COMPRESSION_ ? G1_SIZE_BIN_COMPRESSED : G1_SIZE_BIN)
+#define G2_SIZE    (_COMPRESSION_ ? G2_SIZE_BIN_COMPRESSED : G2_SIZE_BIN)
+
 using namespace std;
 
 void ro_error(void) {
@@ -466,6 +479,15 @@ int G1::getSize() const {
   return g1_size_bin(this->m_G1, _COMPRESSION_);
 }
 
+/**
+ * @brief This static method returns the default size of the G1 element.
+ *        The real size of the element can be obtained by calling getSize() method.
+ * @return int
+ */
+int G1::getDefaultSize() {
+  return (_COMPRESSION_ ? G1_SIZE_BIN_COMPRESSED : G1_SIZE_BIN);
+}
+
 size_t G1::getSizeInBytes() const {
   //Add 3 bytes : 1 byte for the group type and 2 bytes for the length
   return this->getSize() + sizeof(uint8_t) + sizeof(uint16_t);
@@ -628,6 +650,15 @@ uint8_t* G2::hashToBytes(size_t *size) const {
   *size = RLC_MD_LEN;
 
   return hash.release();
+}
+
+/**
+ * @brief This static method returns the default size of the G2 element.
+ *       The real size of the element can be obtained by calling getSize() method.
+ * @return int
+ */
+int G2::getDefaultSize() {
+  return (_COMPRESSION_ ? G2_SIZE_BIN_COMPRESSED : G2_SIZE_BIN);
 }
 
 int G2::getSize() const {
