@@ -1,8 +1,7 @@
-# Variables
-RELIC_IMAGE_NAME = cryptolib/relic-toolkit
-RELIC_IMAGE_VERSION = 0.6.0
+# Variables par défaut
 CURVE = bls12-381
-RELIC_TAG = $(RELIC_IMAGE_VERSION)
+RELIC_TAG = 0.6.0
+RELIC_IMAGE_NAME = cryptolib/relic-toolkit
 RELIC_FULL_IMAGE_NAME = $(RELIC_IMAGE_NAME):$(RELIC_TAG)-$(CURVE)
 
 ABE_LSSS_IMAGE_NAME = cryptolib/abe-lsss
@@ -21,7 +20,7 @@ build_abe_lsss: check_relic_image
 check_relic_image:
 	@if ! docker image inspect $(RELIC_FULL_IMAGE_NAME) > /dev/null 2>&1; then \
 		echo "Image $(RELIC_FULL_IMAGE_NAME) not found. Building it..."; \
-		$(MAKE) build_relic; \
+		$(MAKE) build_relic RELIC_TAG=$(RELIC_TAG) CURVE=$(CURVE); \
 	fi
 
 # Default target to build both images
