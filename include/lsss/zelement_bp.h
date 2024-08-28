@@ -44,19 +44,6 @@ extern "C" {
 #include "zbytestring.h"
 #include "zobject.h"
 
-#ifndef _COMPRESSION_
-#define _COMPRESSION_    1
-#endif
-
-#define G1_SIZE_BIN             ((RLC_PC_BYTES) * 2 + 1)
-#define G2_SIZE_BIN             ((RLC_PC_BYTES) * 4 + 1)
-
-#define G1_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) + 1)
-#define G2_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) * 2 + 1)
-
-#define G1_SIZE    (_COMPRESSION_ ? G1_SIZE_BIN_COMPRESSED : G1_SIZE_BIN)
-#define G2_SIZE    (_COMPRESSION_ ? G2_SIZE_BIN_COMPRESSED : G2_SIZE_BIN)
-
 class OpenABEByteString;
 
 void ro_error(void);
@@ -163,6 +150,7 @@ public:
   G1 operator+(const G1 &x) const;
   bool operator==(const G1 &x) const;
 
+  static int getDefaultSize();
   int getSize() const;
   size_t getSizeInBytes() const;
   bool ismember() const;
@@ -202,6 +190,7 @@ public:
   G2 operator+(const G2 &x) const;
   bool operator==(const G2 &x) const;
 
+  static int getDefaultSize();
   int getSize() const;
   size_t getSizeInBytes() const;
   bool ismember() const;
