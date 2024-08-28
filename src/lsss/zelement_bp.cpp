@@ -485,7 +485,7 @@ int G1::getSize() const {
  * @return int
  */
 int G1::getDefaultSize() {
-  return (_COMPRESSION_ ? G1_SIZE_BIN_COMPRESSED : G1_SIZE_BIN);
+  return G1_SIZE;
 }
 
 size_t G1::getSizeInBytes() const {
@@ -658,7 +658,7 @@ uint8_t* G2::hashToBytes(size_t *size) const {
  * @return int
  */
 int G2::getDefaultSize() {
-  return (_COMPRESSION_ ? G2_SIZE_BIN_COMPRESSED : G2_SIZE_BIN);
+  return G2_SIZE;
 }
 
 int G2::getSize() const {
