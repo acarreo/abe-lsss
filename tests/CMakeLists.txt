@@ -8,7 +8,7 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(LIBRARIES
-    lsss_abe
+    ${LIBRARY_NAME}
     OpenSSL::SSL
     ${RLC_LIBRARY} gmp
     GTest::gtest_main pthread
@@ -39,8 +39,10 @@ target_link_libraries(test_zsym_out ${LIBRARIES})
 target_link_libraries(test_abe_out ${LIBRARIES})
 target_link_libraries(test_keystore_out ${LIBRARIES})
 
-# target_include_directories(test_ske_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
-# target_include_directories(test_zsym_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(test_ske_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(test_zsym_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(test_abe_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(test_keystore_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
 
 include(GoogleTest)
 add_test(NAME test_ske COMMAND test_ske_out)

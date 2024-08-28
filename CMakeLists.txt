@@ -11,8 +11,10 @@ option(COMPRESSION_ENABLED "Enable compression" ON)
 
 if(COMPRESSION_ENABLED)
     set(_COMPRESSION_ true)
+    set(LIBRARY_NAME "lsss_abe_compression")
 else()
     set(_COMPRESSION_ false)
+    set(LIBRARY_NAME "lsss_abe_no_compression")
 endif()
 
 # set value of _COMPRESSION_ in CXXFLAGS
@@ -36,13 +38,15 @@ set(SOURCE_FILES
     utils/utils.cpp
 )
 
-add_library(lsss_abe SHARED ${SOURCE_FILES})
-target_link_libraries(lsss_abe ${LIBRARIES})
-target_include_directories(lsss_abe PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+add_library(${LIBRARY_NAME} SHARED ${SOURCE_FILES})
+target_link_libraries(${LIBRARY_NAME} ${LIBRARIES})
+target_include_directories(${LIBRARY_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION /usr/local/include/lsss_abe)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/utils/common.h DESTINATION /usr/local/include/lsss_abe)
-install(TARGETS lsss_abe DESTINATION /usr/local/lib)
+
+# Install the shared library with the custom name
+install(TARGETS ${LIBRARY_NAME} DESTINATION /usr/local/lib)
 
 # During the install phase, this code will replace the include path in zabe.h
 # from "../../utils/common.h" to "../common.h"
@@ -54,5 +58,3 @@ install(CODE "
 
 enable_testing()
 add_subdirectory(tests)
-
-add_subdirectory(abe)
