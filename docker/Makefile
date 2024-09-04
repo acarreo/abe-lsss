@@ -6,8 +6,9 @@ ENABLE_COMPRESSION ?= OFF
 
 RELIC_IMAGE_NAME = cryptolib/relic-toolkit
 RELIC_FULL_IMAGE_NAME = $(RELIC_IMAGE_NAME):$(RELIC_TAG)--$(CURVE)
+RELIC_IMAGE_SUFFIX := $(shell echo $(RELIC_FULL_IMAGE_NAME) | cut -d':' -f2)
 ABE_LSSS_IMAGE_NAME = cryptolib/abe-lsss
-ABE_LSSS_FULL_IMAGE_NAME = $(ABE_LSSS_IMAGE_NAME):$(ABE_LSSS_VERSION)--$(CURVE)
+ABE_LSSS_FULL_IMAGE_NAME = $(ABE_LSSS_IMAGE_NAME):relic-$(RELIC_IMAGE_SUFFIX)--v$(ABE_LSSS_VERSION)
 
 # Target to build the relic-toolkit image
 build_relic:

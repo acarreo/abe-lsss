@@ -1,7 +1,8 @@
 ARG RELIC_IMAGE="cryptolib/relic-toolkit:0.6.0-bls12-381"
-ARG ENABLE_COMPRESSION="OFF"
 
 FROM ${RELIC_IMAGE}
+
+ARG ENABLE_COMPRESSION="OFF"
 
 RUN apt-get update && apt-get upgrade -y
 
@@ -10,7 +11,7 @@ WORKDIR /tmp/abe-lsss
 RUN mkdir -p /tmp/abe-lsss/build
 WORKDIR /tmp/abe-lsss/build
 RUN cmake -DCOMPRESSION_ENABLED=${ENABLE_COMPRESSION} ..
-RUN make && make install
+RUN make -j && make install
 RUN ldconfig
 
 WORKDIR /root
