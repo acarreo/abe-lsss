@@ -11,7 +11,7 @@ ABE_LSSS_FULL_IMAGE_NAME = $(ABE_LSSS_IMAGE_NAME):$(ABE_LSSS_VERSION)--$(CURVE)
 
 # Target to build the relic-toolkit image
 build_relic:
-	docker build --build-arg RELIC_TAG=$(RELIC_TAG) --build-arg TARGET_CURVE=x64-pbc-$(CURVE) -t $(RELIC_FULL_IMAGE_NAME) -f relic-toolkit.Dockerfile .
+	docker build --no-cache --build-arg RELIC_TAG=$(RELIC_TAG) --build-arg TARGET_CURVE=x64-pbc-$(CURVE) -t $(RELIC_FULL_IMAGE_NAME) -f relic-toolkit.Dockerfile .
 
 # Target to build the abe-lsss image
 build_abe_lsss: check_relic_image
