@@ -209,7 +209,7 @@ OpenABEPairing::multi_pairing(GT& gt, std::vector<G1>& g1, std::vector<G2>& g2) 
     g2_init(g_2[i]);
     g2_copy(g_2[i], g2.at(i).m_G2);
   }
-  pp_map_sim_oatep_k12(gt.m_GT, g_1, g_2, n);
+  pc_map_sim(gt.m_GT, g_1, g_2, n);
   for (size_t i = 0; i < n; i++) {
     g1_free(g_1[i]);
     g2_free(g_2[i]);
