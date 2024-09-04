@@ -1,4 +1,5 @@
 ARG RELIC_IMAGE="cryptolib/relic-toolkit:0.6.0-bls12-381"
+ARG ENABLE_COMPRESSION="OFF"
 
 FROM ${RELIC_IMAGE}
 
@@ -8,7 +9,7 @@ RUN git clone https://github.com/acarreo/abe-lsss.git /tmp/abe-lsss
 WORKDIR /tmp/abe-lsss
 RUN mkdir -p /tmp/abe-lsss/build
 WORKDIR /tmp/abe-lsss/build
-RUN cmake ..
+RUN cmake -DCOMPRESSION_ENABLED=${ENABLE_COMPRESSION} ..
 RUN make && make install
 RUN ldconfig
 
