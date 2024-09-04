@@ -48,15 +48,6 @@
 #define _COMPRESSION_    1
 #endif
 
-#define G1_SIZE_BIN             ((RLC_PC_BYTES) * 2 + 1)
-#define G2_SIZE_BIN             ((RLC_PC_BYTES) * 4 + 1)
-
-#define G1_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) + 1)
-#define G2_SIZE_BIN_COMPRESSED  ((RLC_PC_BYTES) * 2 + 1)
-
-#define G1_SIZE    (_COMPRESSION_ ? G1_SIZE_BIN_COMPRESSED : G1_SIZE_BIN)
-#define G2_SIZE    (_COMPRESSION_ ? G2_SIZE_BIN_COMPRESSED : G2_SIZE_BIN)
-
 using namespace std;
 
 void ro_error(void) {
@@ -432,7 +423,8 @@ G1::G1(const g1_t &w) {
 }
 
 G1::G1(uint8_t *buffer, int bufferSize) {
-  if (bufferSize != G1_SIZE) {
+  // Check if the buffer size is valid: 1 byte for G1 unity or the default size
+  if (bufferSize != 1 && bufferSize != G1::getDefaultSize()) {
     cerr << "Error : Invalid buffer size for G1 element." << endl;
     exit(-1);
   }
@@ -485,7 +477,8 @@ int G1::getSize() const {
  * @return int
  */
 int G1::getDefaultSize() {
-  return G1_SIZE;
+  G1 tmp; tmp.setGenerator();
+  return tmp.getSize();
 }
 
 size_t G1::getSizeInBytes() const {
@@ -597,7 +590,7 @@ G2::G2(const g2_t &w) {
 }
 
 G2::G2(uint8_t *buffer, int bufferSize) {
-  if (bufferSize != G2_SIZE) {
+  if (bufferSize != 1 && bufferSize != G2::getDefaultSize()) {
     cerr << "Error : Invalid buffer size for G2 element." << endl;
     exit(-1);
   }
@@ -658,7 +651,8 @@ uint8_t* G2::hashToBytes(size_t *size) const {
  * @return int
  */
 int G2::getDefaultSize() {
-  return G2_SIZE;
+  G2 tmp; tmp.setGenerator();
+  return tmp.getSize();
 }
 
 int G2::getSize() const {
