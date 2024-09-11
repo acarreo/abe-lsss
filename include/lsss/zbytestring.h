@@ -45,6 +45,10 @@
 #include "zconstants.h"
 #include "zobject.h"
 
+extern "C" {
+#include <relic/relic.h>
+}
+
 #define HEX_CHARS   "0123456789abcdefABCDEF"
 #define BYTESTRING	0x1D
 #define DEBUG_VAR(a,b) std::cerr << a << b << std::endl;
@@ -153,14 +157,9 @@ public:
 
   void hashToBytes(OpenABEByteString &hash) const {
     hash.clear();
-#if 1 // #ifdef RELIC_VERSION // TODO: fix this issues
-extern "C" {
-#include <relic/relic.h>
-}
     uint8_t hash_buf[SHA256_LEN];
     md_map(hash_buf, this->data(), this->size());
     hash.appendArray(hash_buf, SHA256_LEN);
-#endif
   }
 
   std::string toHex() const {
