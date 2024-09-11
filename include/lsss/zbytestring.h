@@ -153,7 +153,7 @@ public:
 
   void hashToBytes(OpenABEByteString &hash) const {
     hash.clear();
-#ifdef RELIC_VERSION
+#ifdef 1 // RELIC_VERSION // TODO: fix this issues
 extern "C" {
 #include <relic/relic.h>
 }
