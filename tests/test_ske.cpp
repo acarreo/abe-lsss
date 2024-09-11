@@ -80,34 +80,6 @@ TEST(SK, TestStreamAuthEncForSKScheme) {
     ASSERT_FALSE(authEncStream->decryptFinalize(plaintext) == OpenABE_NOERROR);
 }
 
-TEST(SK, TestSymKeyHandlerForCBCMode) {
-    TEST_DESCRIPTION("Testing Symmetric Key Handler with CBC mode using randomly generated keys");
-
-    shared_ptr<OpenABESymKey> symKey(new OpenABESymKey);
-    symKey->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES);
-    string keyStr = symKey->getKeyBytes().toString();
-
-    string plaintext, decrypted1, ciphertext1, decrypted2, ciphertext2;
-    OpenABEByteString randomPlaintext, aad;
-
-    getRandomBytes(randomPlaintext, TEST_MSG_LEN);
-
-    plaintext = randomPlaintext.toString();
-
-    unique_ptr<SymKeyEncHandler> SKEHandler1(new SymKeyEncHandler(keyStr, EncryptionMode::CBC));
-    ciphertext1 = SKEHandler1->encrypt(plaintext);
-    decrypted1 = SKEHandler1->decrypt(ciphertext1);
-
-    ASSERT_TRUE(plaintext == decrypted1);
-
-    unique_ptr<SymKeyEncHandler> SKEHandler2 = make_unique<SymKeyEncHandler>(keyStr, EncryptionMode::CBC);
-    ciphertext2 = SKEHandler2->encrypt(plaintext);
-    decrypted2 = SKEHandler2->decrypt(ciphertext2);
-
-    ASSERT_TRUE(plaintext == decrypted2);
-}
-
-
 TEST(SK, TestSymKeyHandlerForGCMMode) {
     TEST_DESCRIPTION("Testing Symmetric Key Handler with GCM mode using randomly generated keys");
 

@@ -107,7 +107,6 @@ private:
   std::shared_ptr<OpenABESymKey> key_;
 
   // Pointers to different encryption handlers
-  std::unique_ptr<OpenABESymKeyEnc> cbc_handler_;
   std::unique_ptr<OpenABESymKeyAuthEnc> gcm_handler_;
 };
 

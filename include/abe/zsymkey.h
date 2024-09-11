@@ -84,35 +84,6 @@ public:
   friend bool operator==(const OpenABESymKey&, const OpenABESymKey&);
 };
 
-
-///
-/// @class  OpenABESymKeyEnc
-///
-/// @brief  Class for performing symmetric key encryption using AES in CBC mode
-///
-
-class OpenABESymKeyEnc : ZObject {
-private:
-  int seclevel;
-  std::string guid, keyStr;
-  uint8_t iv[AES_BLOCK_SIZE+1];
-  AES_KEY *key;
-  bool status, iv_set;
-
-public:
-  OpenABESymKeyEnc(std::string key);
-  OpenABESymKeyEnc(int securitylevel, std::string key);
-  OpenABESymKeyEnc(int securitylevel, uint8_t *iv, std::string key);
-  ~OpenABESymKeyEnc();
-
-  OpenABE_ERROR encrypt(const std::string& plaintext, OpenABEByteString& iv,
-                        OpenABEByteString& ciphertext);
-  bool decrypt(std::string& plaintext, OpenABEByteString& iv,
-                                     OpenABEByteString& ciphertext);
-  bool getDecryptionStatus() { return status; }
-};
-
-
 ///
 /// @class  OpenABESymKeyAuthEnc
 ///

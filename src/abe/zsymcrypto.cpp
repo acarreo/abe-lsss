@@ -201,7 +201,6 @@ SymKeyEncHandler::SymKeyEncHandler(const shared_ptr<OpenABESymKey>& key,
 }
 
 SymKeyEncHandler::~SymKeyEncHandler() {
-  cbc_handler_.reset();
   gcm_handler_.reset();
 }
 
@@ -216,9 +215,6 @@ void SymKeyEncHandler::setSKEHandler(const std::shared_ptr<OpenABESymKey>& key) 
   }
 
   switch (this->encryption_mode_) {
-    case EncryptionMode::CBC:
-      this->cbc_handler_ = std::make_unique<OpenABESymKeyEnc>(keyBytes.toString());
-      break;
     case EncryptionMode::GCM:
       this->gcm_handler_ = std::make_unique<OpenABESymKeyAuthEnc>(DEFAULT_AES_SEC_LEVEL, keyBytes);
       break;
@@ -250,24 +246,6 @@ OpenABE_ERROR SymKeyEncHandler::encrypt(OpenABEByteString& ciphertext,
   string plain_str = const_cast<OpenABEByteString&>(plaintext).toString();
 
   switch (this->encryption_mode_) {
-    case EncryptionMode::CBC:
-      try
-      {
-        OpenABE_ERROR error = cbc_handler_->encrypt(plain_str, ziv, zct);
-        if (error != OpenABE_NOERROR) {
-          throw error;
-        }
-
-        zciphertext.smartPack(ziv);
-        zciphertext.smartPack(zct);
-        ret = OpenABE_NOERROR;
-      }
-      catch(OpenABE_ERROR& error) {
-        throw runtime_error(OpenABE_errorToString(error));
-      }
-
-      break;
-
     case EncryptionMode::GCM:
       try {
         // set the additional auth data (if set)
@@ -322,19 +300,6 @@ OpenABE_ERROR SymKeyEncHandler::decrypt(OpenABEByteString& plaintext,
   zct = zciphertext.smartUnpack(&index);
 
   switch (encryption_mode_) {
-    case EncryptionMode::CBC:
-      try {
-        if (!cbc_handler_->decrypt(plain_str, ziv, zct)) {
-          throw OpenABE_ERROR_DECRYPTION_FAILED;
-        }
-        plaintext = plain_str;
-        ret = OpenABE_NOERROR;
-      } catch (OpenABE_ERROR& error) {
-        string msg = OpenABE_errorToString(error);
-        throw runtime_error(msg);
-      }
-      break;
-
     case EncryptionMode::GCM:
       try {
         // The tag is the final element in the ciphertext. It is always present
