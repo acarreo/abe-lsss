@@ -110,4 +110,9 @@ inline void _hash_to_bytes_(uint8_t* digest, uint8_t *buf, uint32_t buf_len) {
   md_map(digest, buf, buf_len);
 }
 
+static void relic_print_params() {
+  pc_param_print();
+  printf("-- Security level: %d\n", ep_param_level());
+}
+
 #endif // __LSSS_ABE_H__
