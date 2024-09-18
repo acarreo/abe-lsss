@@ -40,6 +40,10 @@ int main(int argc, char **argv) {
 
   InitializeOpenABE();
 
+  relic_print_params();
+  std::cout << "--------------------------------------------------" << std::endl;
+  std::cout << "Compresion's flag for serialization: " << OpenABE_GetCompressionOption() << std::endl;
+
   ::testing::InitGoogleTest(&argc, argv);
   rc = RUN_ALL_TESTS();
 
