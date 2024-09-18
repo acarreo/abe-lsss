@@ -267,3 +267,13 @@ void OpenABEStateContext::shutdownThread() {
 const uint32_t OpenABE_getLibraryVersion() {
   return OpenABE_LIBRARY_VERSION;
 }
+
+bool OpenABE_GetCompressionOption() {
+  G1 __g1__; __g1__.setGenerator();
+  return (g1_size_bin(__g1__.m_G1, 1) == G1::getDefaultSize());
+}
+
+void relic_print_params() {
+  pc_param_print();
+  printf("-- Security level: %d bits\n\n", pc_param_level());
+}
