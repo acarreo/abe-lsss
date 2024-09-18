@@ -29,6 +29,7 @@ TEST(SK, TestStreamAuthEncForSKScheme) {
     shared_ptr<OpenABESymKey> symkey(new OpenABESymKey);
     OpenABEByteString plaintext, ciphertext, iv, tag;
     OpenABEByteString ptBlock1, ptBlock2, ctBlock1, ctBlock2;
+    OpenABEByteString decrypted, decryptedBlock1, decryptedBlock2;
 
     // generate a random secret key of a certain size
     symkey->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES);
@@ -62,11 +63,13 @@ TEST(SK, TestStreamAuthEncForSKScheme) {
     ASSERT_TRUE(authEncStream->setAddAuthData() == OpenABE_NOERROR);
 
     // perform decrypt updates in order (note: order of blocks must be managed by the user)
-    ASSERT_TRUE(authEncStream->decryptUpdate(ctBlock1, plaintext) == OpenABE_NOERROR);
-    ASSERT_TRUE(authEncStream->decryptUpdate(ctBlock2, plaintext) == OpenABE_NOERROR);
-    ASSERT_TRUE(authEncStream->decryptFinalize(plaintext) == OpenABE_NOERROR);
+    ASSERT_TRUE(authEncStream->decryptUpdate(ctBlock1, decryptedBlock1) == OpenABE_NOERROR);
+    ASSERT_TRUE(authEncStream->decryptUpdate(ctBlock2, decryptedBlock2) == OpenABE_NOERROR);
 
-    ASSERT_TRUE(plaintext == (ptBlock1 + ptBlock2));
+    decrypted = decryptedBlock1 + decryptedBlock2;
+    ASSERT_TRUE(authEncStream->decryptFinalize(decrypted) == OpenABE_NOERROR);
+    ASSERT_TRUE(decrypted == (ptBlock1 + ptBlock2));
+
     // FAILURE TEST: now try to decrypt the ciphertexts (out of order)
     plaintext.clear();
     ASSERT_TRUE(authEncStream->decryptInit(iv, tag) == OpenABE_NOERROR);
@@ -101,6 +104,53 @@ TEST(SK, TestSymKeyHandlerForGCMMode) {
 
     ASSERT_TRUE(plaintext == decrypted);
 }
+
+
+// Test encryption and decryption from SymKeyEncHandler class
+TEST(SKETest, TestSKEWithOpenABESymKey) {
+  OpenABEByteString key_bytes, aad;
+  OpenABEByteString plaintext, ciphertext, decrypted;
+  std::string keyID = "testKeyID";
+
+  getRandomBytes(plaintext, 128);
+  getRandomBytes(aad, MIN_BYTE_LEN);
+
+  std::shared_ptr<OpenABESymKey> key = std::make_unique<OpenABESymKey>(keyID);
+  std::shared_ptr<OpenABESymKey> key_loaded = std::make_unique<OpenABESymKey>();
+
+  ASSERT_TRUE(key->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES));
+  ASSERT_TRUE(key->exportKeyToBytes(key_bytes) == OpenABE_NOERROR);
+  ASSERT_TRUE(key_loaded->loadKeyFromBytes(key_bytes) == OpenABE_NOERROR);
+
+  ASSERT_EQ(*key, *key_loaded);
+
+  std::unique_ptr<SymKeyEncHandler> encHandler = std::make_unique<SymKeyEncHandler>(key);
+  ASSERT_NO_THROW(ASSERT_NOTNULL(encHandler));
+  encHandler->setAuthData(aad);
+
+  ASSERT_TRUE(encHandler->encrypt(ciphertext, plaintext) == OpenABE_NOERROR);
+
+  std::unique_ptr<SymKeyEncHandler> decHandler = std::make_unique<SymKeyEncHandler>(key_loaded);
+  ASSERT_TRUE(decHandler->decrypt(decrypted, ciphertext) == OpenABE_NOERROR);
+
+  ASSERT_EQ(plaintext, decrypted);
+}
+
+
+// Test encryption and decryption from SymKeyEncHandler class
+TEST(SKETest, TestSKEWithSymKey) {
+  OpenABEByteString sym_key;
+  OpenABEByteString plaintext, ciphertext, decrypted;
+
+  getRandomBytes(plaintext, 128);
+  getRandomBytes(sym_key, DEFAULT_SYM_KEY_BYTES);
+
+  std::unique_ptr<SymKeyEncHandler> encHandler = std::make_unique<SymKeyEncHandler>(sym_key.toString());
+  ASSERT_TRUE(encHandler->encrypt(ciphertext, plaintext) == OpenABE_NOERROR);
+  ASSERT_TRUE(encHandler->decrypt(decrypted, ciphertext) == OpenABE_NOERROR);
+  ASSERT_EQ(plaintext, decrypted);
+}
+
 
 TEST(hashToSymmetricKey, TestKDF2) {
     TEST_DESCRIPTION("Testing hashToSymmetricKey using KDF2");

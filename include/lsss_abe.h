@@ -110,4 +110,9 @@ inline void _hash_to_bytes_(uint8_t* digest, uint8_t *buf, uint32_t buf_len) {
   md_map(digest, buf, buf_len);
 }
 
+void relic_print_params();
+
+// Returns the compression option used for serialization: true if compression is enabled, false otherwise
+bool OpenABE_GetCompressionOption();
+
 #endif // __LSSS_ABE_H__

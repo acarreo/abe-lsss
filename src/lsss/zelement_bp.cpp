@@ -46,11 +46,6 @@
 
 #ifndef _COMPRESSION_
 #define _COMPRESSION_    1
-#else
-#if _COMPRESSION_ != 0
-#undef _COMPRESSION_
-#define _COMPRESSION_    0
-#endif
 #endif
 
 using namespace std;
