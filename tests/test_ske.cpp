@@ -130,10 +130,73 @@ TEST(SKETest, TestSKEWithOpenABESymKey) {
 
   ASSERT_TRUE(encHandler->encrypt(ciphertext, plaintext) == OpenABE_NOERROR);
 
+  OpenABE_ERROR ret = OpenABE_ERROR_UNKNOWN;
   std::unique_ptr<SymKeyEncHandler> decHandler = std::make_unique<SymKeyEncHandler>(key_loaded);
-  ASSERT_TRUE(decHandler->decrypt(decrypted, ciphertext) == OpenABE_NOERROR);
-
+  ASSERT_NO_THROW(ASSERT_NOTNULL(decHandler));
+  ASSERT_NO_THROW(ret = decHandler->decrypt(decrypted, ciphertext));
+  ASSERT_TRUE(ret == OpenABE_NOERROR);
   ASSERT_EQ(plaintext, decrypted);
+}
+
+TEST(SKETest, TestSKEWrongKeyAndWrongAAD) {
+  OpenABEByteString key, aad;
+  OpenABEByteString plaintext, ciphertext;
+  std::string keyID = "testKeyID";
+
+  getRandomBytes(plaintext, 128);
+
+  getRandomBytes(aad, MIN_BYTE_LEN);
+  getRandomBytes(key, DEFAULT_SYM_KEY_BYTES);
+
+  // Encryption -- generate ciphertext
+  {
+    std::unique_ptr<SymKeyEncHandler> encHandler = std::make_unique<SymKeyEncHandler>(key.toString());
+    ASSERT_NO_THROW(ASSERT_NOTNULL(encHandler));
+    ASSERT_TRUE(encHandler->encrypt(ciphertext, plaintext) == OpenABE_NOERROR);
+  }
+
+  // Test decryption with correct key
+  {
+    OpenABEByteString decrypted;
+    OpenABE_ERROR ret = OpenABE_ERROR_UNKNOWN;
+
+    std::unique_ptr<SymKeyEncHandler> encHandler = std::make_unique<SymKeyEncHandler>(key.toString());
+    ASSERT_NO_THROW( ret = encHandler->decrypt(decrypted, ciphertext) );
+    ASSERT_TRUE(ret == OpenABE_NOERROR);
+    ASSERT_EQ(plaintext, decrypted);
+  }
+
+  // Test with wrong key
+  {
+    OpenABEByteString decrypted, wrong_key;
+    OpenABE_ERROR ret = OpenABE_ERROR_UNKNOWN;
+
+    getRandomBytes(wrong_key, DEFAULT_SYM_KEY_BYTES);
+
+    std::unique_ptr<SymKeyEncHandler> encHandler = std::make_unique<SymKeyEncHandler>(wrong_key.toString());
+    ASSERT_NO_THROW(ASSERT_NOTNULL(encHandler));
+    ASSERT_ANY_THROW( ret = encHandler->decrypt(decrypted, ciphertext));
+    ASSERT_NE(ret, OpenABE_NOERROR);
+    ASSERT_TRUE(decrypted.size() == 0);
+    ASSERT_NE(plaintext, decrypted);
+  }
+
+  // Test with wrong AAD
+  {
+    OpenABEByteString decrypted, wrong_aad;
+    OpenABE_ERROR ret = OpenABE_ERROR_UNKNOWN;
+
+    getRandomBytes(wrong_aad, MIN_BYTE_LEN);
+
+    std::unique_ptr<SymKeyEncHandler> encHandler = std::make_unique<SymKeyEncHandler>(key.toString());
+    ASSERT_NO_THROW(ASSERT_NOTNULL(encHandler));
+    encHandler->setAuthData(wrong_aad);
+
+    ASSERT_ANY_THROW( ret = encHandler->decrypt(decrypted, ciphertext) );
+    ASSERT_NE(ret, OpenABE_NOERROR);
+    ASSERT_EQ(decrypted.size(), 0);
+    ASSERT_NE(plaintext, decrypted);
+  }
 }
 
 
