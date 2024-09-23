@@ -233,14 +233,20 @@ void SymKeyEncHandler::setSKEHandler(const std::string& key) {
 }
 
 void SymKeyEncHandler::setAuthData(const OpenABEByteString& authData) {
-  this->authData_ = authData;
+  if (authData.size() > AES_BLOCK_SIZE) {
+    OpenABEByteString aad;
+    authData.hashToBytes(aad);
+    this->authData_ = aad.getSubset(0, AES_BLOCK_SIZE);
+  } else {
+    this->authData_ = authData;
+  }
 }
 
 OpenABE_ERROR SymKeyEncHandler::encrypt(OpenABEByteString& ciphertext,
                                         const OpenABEByteString& plaintext) {
   OpenABE_ERROR ret = OpenABE_ERROR_ENCRYPTION_ERROR;
   OpenABEByteString zciphertext;
-  OpenABEByteString ziv, zct, ztag;
+  OpenABEByteString ziv, zct, ztag, aad;
 
 
   string plain_str = const_cast<OpenABEByteString&>(plaintext).toString();
@@ -251,6 +257,7 @@ OpenABE_ERROR SymKeyEncHandler::encrypt(OpenABEByteString& ciphertext,
         // set the additional auth data (if set)
         if (this->authData_.size() > 0) {
           gcm_handler_->setAddAuthData(this->authData_);
+          aad = this->authData_;
         } else {
           gcm_handler_->setAddAuthData(NULL, 0);
         }
@@ -262,6 +269,7 @@ OpenABE_ERROR SymKeyEncHandler::encrypt(OpenABEByteString& ciphertext,
         zciphertext.smartPack(ziv);
         zciphertext.smartPack(zct);
         zciphertext.smartPack(ztag);
+        zciphertext.smartPack(aad);
         ret = OpenABE_NOERROR;
       }
       catch (OpenABE_ERROR& error) {
@@ -286,7 +294,7 @@ OpenABE_ERROR SymKeyEncHandler::encrypt(OpenABEByteString& ciphertext,
 OpenABE_ERROR SymKeyEncHandler::decrypt(OpenABEByteString& plaintext,
                                         const OpenABEByteString& ciphertext) {
   OpenABE_ERROR ret = OpenABE_ERROR_DECRYPTION_FAILED;  
-  OpenABEByteString zciphertext, ziv, zct, ztag;
+  OpenABEByteString zciphertext, ziv, zct, ztag, aad;
   string plain_str;
   size_t index = 0;
 
@@ -306,12 +314,22 @@ OpenABE_ERROR SymKeyEncHandler::decrypt(OpenABEByteString& plaintext,
         // and has a fixed size of AES_BLOCK_SIZE.
         if (index < zciphertext.size()) { // If the ciphertext (zct) is empty
           ztag = zciphertext.smartUnpack(&index);
+          if (index < zciphertext.size()) {
+            aad = zciphertext.smartUnpack(&index);
+          }
         } else {
           ztag = zct; zct.clear();
         }
 
         if (this->authData_.size() > 0) {
+          if (aad.size() != 0 && aad != this->authData_) {
+            std::cerr << "-----------> " << typeid(*this).name() << "::" << __func__
+                      << " -- Error: Invalid additional authentication data" << std::endl;
+            throw OpenABE_ERROR_DECRYPTION_FAILED;
+          }
           gcm_handler_->setAddAuthData(this->authData_);
+        } else if (aad.size() > 0) {
+          gcm_handler_->setAddAuthData(aad);
         } else {
           gcm_handler_->setAddAuthData(NULL, 0);
         }
