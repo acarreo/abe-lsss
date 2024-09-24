@@ -24,6 +24,10 @@ build_relic:
 build_abe_lsss: check_relic_image
 	docker build --no-cache --build-arg RELIC_IMAGE=$(RELIC_FULL_IMAGE_NAME) --build-arg ENABLE_COMPRESSION=$(ENABLE_COMPRESSION) -t $(ABE_LSSS_FULL_IMAGE_NAME) -f abe-lsss.Dockerfile .
 
+# Build abe-lsss image from the current project -- source directory ../
+build_local: check_relic_image
+	./install-lib.sh $(RELIC_FULL_IMAGE_NAME) $(ABE_LSSS_FULL_IMAGE_NAME)
+
 # Check if the relic-toolkit image exists, build it if not
 check_relic_image:
 	@if ! docker image inspect $(RELIC_FULL_IMAGE_NAME) > /dev/null 2>&1; then \
