@@ -41,7 +41,7 @@
 #include <string>
 
 #include "abe/zpairing.h"
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 
 using namespace std;
 

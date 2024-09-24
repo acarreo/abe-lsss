@@ -39,7 +39,7 @@
 
 using namespace std;
 
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 
 /********************************************************************************
  * Implementation of the OpenABEContextABE class

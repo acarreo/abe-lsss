@@ -38,7 +38,7 @@
 #include <string>
 #include <gtest/gtest.h>
 
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 
 using namespace std;
 

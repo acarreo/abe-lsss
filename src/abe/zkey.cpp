@@ -40,7 +40,7 @@
 #include <string>
 
 #include "abe/zkey.h"
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 
 using namespace std;
 

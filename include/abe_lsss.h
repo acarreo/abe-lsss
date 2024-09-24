@@ -1,5 +1,5 @@
-#ifndef __LSSS_ABE_H__
-#define __LSSS_ABE_H__
+#ifndef __ABE_LSSS_H__
+#define __ABE_LSSS_H__
 
 #include "abe/zabe.h"
 #include "abe/zcontainer.h"
@@ -115,4 +115,4 @@ void relic_print_params();
 // Returns the compression option used for serialization: true if compression is enabled, false otherwise
 bool OpenABE_GetCompressionOption();
 
-#endif // __LSSS_ABE_H__
+#endif // __ABE_LSSS_H__

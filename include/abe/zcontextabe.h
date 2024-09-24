@@ -34,7 +34,7 @@
 #ifndef __ZCONTEXTABE_H__
 #define __ZCONTEXTABE_H__
 
-// #include <lsss_abe.h>
+// #include <abe_lsss.h>
 
 #include "zcontext.h"
 #include "zciphertext.h"

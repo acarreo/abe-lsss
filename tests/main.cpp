@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include <lsss_abe/abe/zabe.h>
-#include <lsss_abe/lsss/zlsss.h>
+#include <abe_lsss/abe/zabe.h>
+#include <abe_lsss/lsss/zlsss.h>
 
 using namespace std;
 
