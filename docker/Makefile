@@ -2,19 +2,12 @@
 CURVE ?= bls12-381
 RELIC_TAG ?= 0.6.0
 ABE_LSSS_VERSION ?= 0.1.0
-ENABLE_COMPRESSION ?= OFF
-
-ifeq ($(ENABLE_COMPRESSION), ON)
-	COMPRESSION_SUFFIX = compression
-else
-	COMPRESSION_SUFFIX = no-compression
-endif
 
 RELIC_IMAGE_NAME = cryptolib/relic-toolkit
 RELIC_FULL_IMAGE_NAME = $(RELIC_IMAGE_NAME):$(RELIC_TAG)--$(CURVE)
 RELIC_IMAGE_SUFFIX := $(shell echo $(RELIC_FULL_IMAGE_NAME) | cut -d':' -f2)
 ABE_LSSS_IMAGE_NAME = cryptolib/abe-lsss
-ABE_LSSS_FULL_IMAGE_NAME = $(ABE_LSSS_IMAGE_NAME):relic-$(RELIC_IMAGE_SUFFIX)--v$(ABE_LSSS_VERSION)--$(COMPRESSION_SUFFIX)
+ABE_LSSS_FULL_IMAGE_NAME = $(ABE_LSSS_IMAGE_NAME):relic-$(RELIC_IMAGE_SUFFIX)--v$(ABE_LSSS_VERSION)
 
 # Target to build the relic-toolkit image
 build_relic:
@@ -22,7 +15,11 @@ build_relic:
 
 # Target to build the abe-lsss image
 build_abe_lsss: check_relic_image
-	docker build --no-cache --build-arg RELIC_IMAGE=$(RELIC_FULL_IMAGE_NAME) --build-arg ENABLE_COMPRESSION=$(ENABLE_COMPRESSION) -t $(ABE_LSSS_FULL_IMAGE_NAME) -f abe-lsss.Dockerfile .
+	docker build --no-cache --build-arg RELIC_IMAGE=$(RELIC_FULL_IMAGE_NAME) -t $(ABE_LSSS_FULL_IMAGE_NAME) -f abe-lsss.Dockerfile .
+
+# Build abe-lsss image from the current project -- source directory ../
+build_local: check_relic_image
+	./install-lib.sh $(RELIC_FULL_IMAGE_NAME) $(ABE_LSSS_FULL_IMAGE_NAME)
 
 # Check if the relic-toolkit image exists, build it if not
 check_relic_image:
@@ -39,8 +36,7 @@ print_variables:
 	@echo "CURVE: $(CURVE)"
 	@echo "RELIC_TAG: $(RELIC_TAG)"
 	@echo "ABE_LSSS_VERSION: $(ABE_LSSS_VERSION)"
-	@echo "ENABLE_COMPRESSION: $(ENABLE_COMPRESSION)"
 	@echo "RELIC_FULL_IMAGE_NAME: $(RELIC_FULL_IMAGE_NAME)"
 	@echo "ABE_LSSS_FULL_IMAGE_NAME: $(ABE_LSSS_FULL_IMAGE_NAME)"
 
-.PHONY: all build_relic build_abe_lsss check_relic_image print_variables
+.PHONY: all build_relic build_local build_abe_lsss check_relic_image print_variables

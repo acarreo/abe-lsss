@@ -39,7 +39,7 @@
 #include <string>
 
 // #include "zcontextpksig.h"
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 
 using namespace std;
 

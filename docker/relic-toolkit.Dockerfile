@@ -15,3 +15,5 @@ RUN sed -i 's/-DSHLIB=OFF -DSTBIN=ON/-DSHLIB=ON -DSTBIN=OFF/' ../preset/${TARGET
 RUN ../preset/${TARGET_CURVE}.sh ..
 RUN make -j && make install
 RUN cp -u /tmp/relic/src/md/blake2.h /usr/local/include/
+
+WORKDIR /root

@@ -36,7 +36,7 @@
 #ifndef __ZCONTEXTKPGPSW_H__
 #define __ZCONTEXTKPGPSW_H__
 
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 
 ///
 /// @class  OpenABEContextKPGPSW

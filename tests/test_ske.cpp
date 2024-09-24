@@ -12,8 +12,8 @@
 #include <string>
 #include <gtest/gtest.h>
 
-// #include <lsss_abe/lsss_abe.h>
-#include <lsss_abe.h>
+// #include <abe_lsss/abe_lsss.h>
+#include <abe_lsss.h>
 
 using namespace std;
 

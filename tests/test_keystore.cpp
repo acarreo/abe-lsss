@@ -40,7 +40,7 @@
 #include <math.h>
 #include <gtest/gtest.h>
 
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 #include "../utils/utils.h"
 
 using namespace std;

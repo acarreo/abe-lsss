@@ -20,12 +20,28 @@ make CURVE=bls12-446
 ```
 
 ### Install the abe-lsss Library
-You can customize the build by passing options to cmake. For example, to disable compression, you can do the following:
+To install the library, you can use the following commands:
 
 ```bash
 mkdir ../build && cd ../build
-cmake -DCOMPRESSION_ENABLED=OFF ..
+cmake ..
 make && make install
 ```
 
-By default, compression is enabled. If you want to enable or disable specific features, you can pass additional cmake options as needed.
+By default, compression is enabled for serialization of group elements. If you want to enable or disable specific features, you can call the `set_compression_flag` in your main program. For example, to disable compression, you can do the following:
+
+```c
+#include <abe-lsss.h>
+
+int main() {
+  InitializeOpenABE();
+
+  set_compression_flag(0);
+  
+  // Your code here
+
+  ShutdownOpenABE();
+  return 0;
+}
+```
+

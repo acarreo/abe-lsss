@@ -39,7 +39,7 @@
 #include <string>
 #include <assert.h>
 
-#include <lsss_abe.h>
+#include <abe_lsss.h>
 
 // helper function to get the function input, this method is implemented utils.cpp
 std::unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABEKey *key);
