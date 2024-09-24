@@ -1,19 +1,22 @@
 #!/bin/bash
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <RELIC_IMAGE_NAME> <LSSS_IMAGE_NAME> <COMPRESSION>"
+RELIC_IMAGE_NAME="$1"
+LSSS_IMAGE_NAME="$2"
+
+if [ -z "$RELIC_IMAGE_NAME" ] || [ -z "$LSSS_IMAGE_NAME" ]; then
+  echo "Usage: $0 <relic-image-name> <lsss-image-name>"
   exit 1
 fi
 
-RELIC_IMAGE_NAME="$1"
-LSSS_IMAGE_NAME="$2"
-COMPRESSION="$3"
+if ! docker image inspect ${RELIC_IMAGE_NAME} > /dev/null 2>&1; then
+  echo "Relic image not found. Please build it first."
+  exit 1
+fi
+
 
 cd ../
-docker run -e COMPRESSION_OPTION=${COMPRESSION} --name build-lsss--container -v $(pwd):/lsss -w /lsss ${RELIC_IMAGE_NAME} /bin/bash -c "mkdir -p /tmp/build-lsss && cd /tmp/build-lsss && cmake /lsss && make && make install && rm -rf * && cmake /lsss -DCOMPRESSION_ENABLED=OFF -DBUILD_TESTS=ON && make && make install && rm -rf *"
-
-# -DCOMPRESSION_ENABLED=${COMPRESSION_OPTION} -DBUILD_TESTS=ON
+docker run --name lsss--container -v $(pwd):/lsss ${RELIC_IMAGE_NAME} /bin/bash -c "mkdir -p /tmp/build-lsss && cd /tmp/build-lsss && cmake -S /lsss -B . && make -j && make install && rm -rf /tmp/build-lsss"
 
 # export this container as an image
-docker commit build-lsss--container ${LSSS_IMAGE_NAME}
-docker rm build-lsss--container
+docker commit --change='CMD ["/bin/bash"]' lsss--container ${LSSS_IMAGE_NAME}
+docker rm lsss--container
