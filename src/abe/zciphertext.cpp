@@ -54,7 +54,7 @@ using namespace std;
 OpenABECiphertext::OpenABECiphertext() : OpenABEContainer() {
   this->algorithmID = 0; // OpenABE_SCHEME_NONE 
   this->libraryVersion = OpenABE_LIBRARY_VERSION;
-  this->uid.fillBuffer(0, UID_LEN);
+  getRandomBytes(this->uid, UID_LEN); // Add randomly a uid
   this->uid_set_extern = false;
 }
 
@@ -62,7 +62,7 @@ OpenABECiphertext::OpenABECiphertext(std::shared_ptr<BPGroup> group)
     : OpenABEContainer(group) {
   this->algorithmID = 0; // OpenABE_SCHEME_NONE;
   this->libraryVersion = OpenABE_LIBRARY_VERSION;
-  this->uid.fillBuffer(0, UID_LEN);
+  getRandomBytes(this->uid, UID_LEN);
   this->uid_set_extern = false;
 }
 
@@ -74,7 +74,7 @@ OpenABECiphertext::OpenABECiphertext(const OpenABEByteString &uid) : OpenABECont
     this->uid_set_extern = true;
   } else {
     // failed to set externally, so one will be generated randomly
-    this->uid.fillBuffer(0, UID_LEN);
+    getRandomBytes(this->uid, UID_LEN);
     this->uid_set_extern = false;
   }
 }
