@@ -14,42 +14,25 @@ set(LIBRARIES
     GTest::gtest_main pthread
 )
 
+include(GoogleTest)
+macro (test TEST_NAME TEST_FILE EXTRA_SOURCES)
+    add_executable(${TEST_NAME} ${TEST_FILE} ${EXTRA_SOURCES})
+    target_link_libraries(${TEST_NAME} ${LIBRARIES})
+    target_include_directories(${TEST_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    # add_custom_target(${CUSTOM_TARGET_NAME} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME})
+endmacro()
+
 set(ABE_SOURCES
   ../schemes/zcontextcpwaters.cpp
   ../schemes/zcontextkpgpsw.cpp
   ../utils/abecontext.cpp
 )
 
-add_executable(test_ske_out test_ske.cpp)
-add_executable(test_zsym_out test_zsym.cpp)
-add_executable(test_bytestring_out test_bytestring.cpp)
+test(test_demo test_demo.cpp "${ABE_SOURCES}")
+test(test_keystore test_keystore.cpp "${ABE_SOURCES}")
+test(test_abe test_abe.cpp "${ABE_SOURCES}")
+test(test_ske test_ske.cpp "")
+test(test_zsym test_zsym.cpp "")
+test(test_bytestring test_bytestring.cpp "")
 
-add_executable(
-  test_keystore_out
-  ${ABE_SOURCES}
-  test_keystore.cpp
-)
-add_executable(
-  test_abe_out
-  ${ABE_SOURCES}
-  test_abe.cpp
-)
-
-target_link_libraries(test_ske_out ${LIBRARIES})
-target_link_libraries(test_zsym_out ${LIBRARIES})
-target_link_libraries(test_abe_out ${LIBRARIES})
-target_link_libraries(test_keystore_out ${LIBRARIES})
-target_link_libraries(test_bytestring_out ${LIBRARIES})
-
-target_include_directories(test_ske_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(test_zsym_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(test_abe_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(test_keystore_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_include_directories(test_bytestring_out PRIVATE ${PROJECT_SOURCE_DIR}/include)
-
-include(GoogleTest)
-add_test(NAME test_ske COMMAND test_ske_out)
-add_test(NAME test_zsym COMMAND test_zsym_out)
-add_test(NAME test_keystore COMMAND test_keystore_out)
-add_test(NAME test_abe COMMAND test_abe_out)
-add_test(NAME test_bytestring COMMAND test_bytestring_out)
