@@ -43,9 +43,9 @@ install(CODE "
 ")
 
 
-option(BUILD_TESTS "Build the tests" OFF)
+option(TESTS "Build the tests" OFF)
 
-if(BUILD_TESTS)
+if(TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
