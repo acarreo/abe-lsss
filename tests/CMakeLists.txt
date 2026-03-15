@@ -8,10 +8,12 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(LIBRARIES
-    ${LIBRARY_NAME}
+    ${ABE_LSSS_LIB}
     OpenSSL::SSL
-    ${RLC_LIBRARY} gmp
-    GTest::gtest_main pthread
+    RELIC::relic
+    gmp
+    GTest::gtest_main
+    pthread
 )
 
 include(GoogleTest)

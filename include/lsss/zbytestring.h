@@ -46,7 +46,7 @@
 #include "zobject.h"
 
 extern "C" {
-#include <relic/relic.h>
+#include <relic.h>
 }
 
 #define HEX_CHARS   "0123456789abcdefABCDEF"

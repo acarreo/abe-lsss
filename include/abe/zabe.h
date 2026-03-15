@@ -5,7 +5,7 @@
 #include <string>
 
 extern "C" {
-#include <relic/relic.h>
+#include <relic.h>
 }
 
 #include "../lsss/zlsss.h"

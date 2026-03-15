@@ -34,7 +34,7 @@
 #ifndef __ZELEMENT_H__
 #define __ZELEMENT_H__
 
-#include <relic/relic.h>
+#include <relic.h>
 
 /* BEGIN RELIC macro definitions (default if BN_WITH_OEPNSSL not set) */
 typedef bn_t bignum_t;

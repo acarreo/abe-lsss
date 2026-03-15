@@ -237,10 +237,12 @@ void replaceAll(std::string& str, const std::string& oldWord, const std::string&
  * @return std::string The hashed attribute.
  */
 std::string hashAttribute(const std::string& attribute) {
-  uint8_t digest[SIZEOF_ATTRIBUTE];
-  blake2s(digest, SIZEOF_ATTRIBUTE, (uint8_t*)attribute.c_str(), attribute.size(), NULL, 0);
-
-  return "A:" + Base64Encode(digest, SIZEOF_ATTRIBUTE);
+  // uint8_t digest[SIZEOF_ATTRIBUTE];
+	uint8_t hash[RLC_MD_LEN];
+  md_map(hash, (uint8_t*)attribute.c_str(), attribute.size());
+  // memcp(digest, hash, SIZEOF_ATTRIBUTE)
+  // return "A:" + Base64Encode(digest, SIZEOF_ATTRIBUTE);
+  return "A:" + Base64Encode(hash, SIZEOF_ATTRIBUTE);
 }
 
 /**
