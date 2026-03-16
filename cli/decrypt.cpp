@@ -46,7 +46,8 @@ bool getPrivateKey(OpenABEByteString& privateKey, string& id, string& suffix) {
 }
 
 
-int runPkDecrypt(string& suffix, string& sender_id, string& recipient_id,
+#if 0
+int runPKDecrypt(string& suffix, string& sender_id, string& recipient_id,
                   string& ciphertextFile, string& outputFile, bool verbose) {
     OpenABE_ERROR result = OpenABE_NOERROR;
     int err_code = 0;
@@ -113,13 +114,15 @@ int runPkDecrypt(string& suffix, string& sender_id, string& recipient_id,
 
     return err_code;
 }
+#endif
 
-int runAbeDecrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix,
+
+int runABEDecrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix,
     	       string& skFile, string& ciphertextFile, string& outputFile, bool verbose)
 {
   OpenABE_ERROR result = OpenABE_NOERROR;
   std::unique_ptr<OpenABEContextSchemeCPA> schemeContext = nullptr;
-  std::unique_ptr<OpenABECiphertext> ciphertext1 = nullptr, ciphertext2 = nullptr;
+  std::unique_ptr<OpenABECiphertext> ciphertext = nullptr;
 
   int err_code = 0;
   string mpkID = MPK_ID, skID = skFile;
@@ -128,12 +131,12 @@ int runAbeDecrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix,
     mpkFile = prefix + mpkFile;
   }
   // read the file
-  OpenABEByteString mpkBlob, skBlob, ct1Blob, ct2Blob;
-  string plaintext;
+  OpenABEByteString mpkBlob, skBlob, ctBlob;
+  OpenABEByteString plaintext;
 
   try {
     // Initialize a OpenABEContext structure
-    schemeContext = OpenABE_createContextABESchemeCPA(scheme_type);
+    schemeContext = createContextABESchemeCPA(scheme_type);
     if (schemeContext == nullptr) {
       cerr << "unable to create a new context" << endl;
       return -1;
@@ -157,24 +160,18 @@ int runAbeDecrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix,
       return -1;
     }
 
-    ct1Blob = ReadBlockFromFile(CT1_BEGIN_HEADER, CT1_END_HEADER, ciphertextFile.c_str());
-    if (ct1Blob.size() == 0) {
+    ctBlob = ReadBlockFromFile(CT1_BEGIN_HEADER, CT1_END_HEADER, ciphertextFile.c_str());
+    if (ctBlob.size() == 0) {
       cerr << "ABE ciphertext not encoded properly." << endl;
       return -1;
     }
 
     // Load the ciphertext components
-    ciphertext1.reset(new OpenABECiphertext);
-    ciphertext1->loadFromBytes(ct1Blob);
-
-    ct2Blob = ReadBlockFromFile(CT2_BEGIN_HEADER, CT2_END_HEADER, ciphertextFile.c_str());
-    if (ct2Blob.size() == 0) {
-      cerr << "AEAD ciphertext not encoded properly." << endl;
-    }
+    ciphertext.reset(new OpenABECiphertext);
+    ciphertext->loadFromBytes(ctBlob);
 
     if (verbose) {
-      cout << "read " << ct1Blob.size() << " bytes" << endl;
-      cout << "read " << ct2Blob.size() << " bytes" << endl;
+      cout << "read " << ctBlob.size() << " bytes" << endl;
     }
   } catch (OpenABE_ERROR& error) {
     cout << "caught exception: " << OpenABE_errorToString(error) << endl;
@@ -189,11 +186,9 @@ int runAbeDecrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix,
           throw result;
         }
 
-        ciphertext2.reset(new OpenABECiphertext);
-        ciphertext2->loadFromBytesWithoutHeader(ct2Blob);
-
+        ciphertext.reset(new OpenABECiphertext);
         // now we can decrypt
-        if ((result = schemeContext->decrypt(mpkID, skID, plaintext, ciphertext1.get(), ciphertext2.get())) != OpenABE_NOERROR) {
+        if ((result = schemeContext->decrypt(mpkID, skID, plaintext, *ciphertext)) != OpenABE_NOERROR) {
           throw result;
         }
 
@@ -201,7 +196,7 @@ int runAbeDecrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix,
         if(verbose) {
           cout << "writing " << plaintext.size() << " bytes to " << outputFile << endl;
         }
-        WriteBinaryFile(outputFile.c_str(), (uint8_t *)plaintext.c_str(), plaintext.size());
+        WriteBinaryFile(outputFile.c_str(), plaintext.getInternalPtr(), plaintext.size());
     } catch (OpenABE_ERROR & error) {
         cout << "caught exception: " << OpenABE_errorToString(error) << endl;
         err_code = error;
@@ -264,10 +259,11 @@ int main(int argc, char **argv)
       cerr << "missing sender ID (-e option) and/or recipient ID (-r option)" << endl;
       goto cleanup;
     }
-    err_code = runPkDecrypt(suffix, sender_id, recipient_id, ciphertext_file, out_file, verbose);
+    // err_code = runPKDecrypt(suffix, sender_id, recipient_id, ciphertext_file, out_file, verbose);
+    cout << "------------> Je suis en maintenance, je reviendrai plus fort." << endl;
   } else {
     cout << "user's SK file: " << key_file << endl;
-    err_code = runAbeDecrypt(scheme_type, prefix, suffix, key_file, ciphertext_file, out_file, verbose);
+    err_code = runABEDecrypt(scheme_type, prefix, suffix, key_file, ciphertext_file, out_file, verbose);
   }
 
 cleanup:

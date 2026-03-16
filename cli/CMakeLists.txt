@@ -16,9 +16,9 @@ endmacro()
 
 # Commandes CLI
 cli(abe-setup   setup.cpp)
-# cli(abe-keygen  keygen.cpp)
-# cli(abe-encrypt encrypt.cpp)
-# cli(abe-decrypt decrypt.cpp)
+cli(abe-keygen  keygen.cpp)
+cli(abe-encrypt encrypt.cpp)
+cli(abe-decrypt decrypt.cpp)
 
 # Installation
 # install(TARGETS

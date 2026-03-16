@@ -10,8 +10,8 @@
 /// \author J. Ayo Akinyele
 ///
 
-#ifndef __COMMON_H__
-#define __COMMON_H__
+#ifndef __COMMON_CLI_H__
+#define __COMMON_CLI_H__
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,8 +22,8 @@
 #include <string>
 #include <abe_lsss.h>
 
-#define DEFAULT_PARAMETER_STRING    DEFAULT_BP_PARAM // "BN_P256"
-#define DEFAULT_NIST_PARAM_STRING   DEFAULT_EC_PARAM // "NIST_P256"
+// #define DEFAULT_PARAMETER_STRING    DEFAULT_BP_PARAM // "BN_P256"
+// #define DEFAULT_NIST_PARAM_STRING   DEFAULT_EC_PARAM // "NIST_P256"
 #define OpenABE_CLI_STRING          "OpenABE command-line: "
 
 //#define	DEFAULT_SECURITY_LEVEL	128
@@ -76,4 +76,4 @@ OpenABE_SCHEME checkForScheme(std::string type, std::string &suffix);
 void addNameSeparator(std::string &prefix);
 void addFileExtension(std::string &filename, std::string ext);
 
-#endif /* common header */
+#endif /* common_cli header */

@@ -23,6 +23,7 @@ using namespace std;
     "\t-o : output file for generated secret key\n" \
         "\t-p : prefix for generated authority public and secret parameter files (optional)\n\n"
 
+#if 0
 int runPkeKeygen(string& id, string& suffix) {
   OpenABE_ERROR result = OpenABE_NOERROR;
   int err_code = -1;
@@ -65,12 +66,13 @@ int runPkeKeygen(string& id, string& suffix) {
 
   return err_code;
 }
+#endif
 
-int runAbeKeygen(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, string& keyInput, string& keyFile, string& userGlobID, bool verbose)
+int runABEKeyGen(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, string& keyInput, string& keyFile, string& userGlobID, bool verbose)
 {
   int err_code = -1;
   OpenABE_ERROR result = OpenABE_NOERROR;
-  std::unique_ptr<OpenABEContextSchemeCCA> schemeContext = nullptr;
+  std::unique_ptr<OpenABEContextSchemeCPA> schemeContext = nullptr;
   std::unique_ptr<OpenABEFunctionInput> funcInput = nullptr;
   OpenABEByteString mpkBlob, mskBlob, skBlob;
 
@@ -82,7 +84,7 @@ int runAbeKeygen(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, str
   }
 
   // Initialize a OpenABEContext structure
-  schemeContext = OpenABE_createContextABESchemeCPA(scheme_type);
+  schemeContext = createContextABESchemeCPA(scheme_type);
   if (schemeContext == nullptr) {
     cerr << "unable to create a new context" << endl;
     return err_code;
@@ -187,10 +189,11 @@ int main(int argc, char **argv)
         status = -1;
         goto cleanup;
     }
-    runPkeKeygen(key_id, suffix);
+    // runPkeKeygen(key_id, suffix);
+    cout << "------------> Je suis en maintenance, je reviendrai plus fort." << endl;
   } else {
     cout << "functional key input: "<< funcInputStr << endl;
-    status = runAbeKeygen(scheme, prefix, suffix, funcInputStr, keyOutfile, userGlobID, verbose);
+    status = runABEKeyGen(scheme, prefix, suffix, funcInputStr, keyOutfile, userGlobID, verbose);
   }
 
 cleanup:

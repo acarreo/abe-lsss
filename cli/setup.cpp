@@ -40,14 +40,14 @@ void runSetup(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, bool v
       mskID   = prefix + mskID;
     }
     // Initialize a OpenABEContext structure
-    schemeContext = OpenABE_createContextABESchemeCPA(scheme_type);
+    schemeContext = createContextABESchemeCPA(scheme_type);
     if (schemeContext == nullptr) {
       cerr << "unable to create a new context" << endl;
       return;
     }
 
     // Generate a set of parameters for an ABE authority
-    if (schemeContext->generateParams(DEFAULT_PARAMETER_STRING, mpkID, mskID) != OpenABE_NOERROR) {
+    if (schemeContext->generateParams(mpkID, mskID) != OpenABE_NOERROR) {
       cerr << "unable to generate parameters" << endl;
       return;
     }

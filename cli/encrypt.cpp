@@ -35,7 +35,8 @@ bool getPublicKey(OpenABEByteString& publicKey, string& id, string& suffix) {
     return true;
 }
 
-void runPkEncrypt(string& suffix, string& sender_id, string& recipient_id,
+#if 0
+void runPKEncrypt(string& suffix, string& sender_id, string& recipient_id,
                   string& inputStr, string& ciphertextFile, bool verbose) {
 
     OpenABE_ERROR result = OpenABE_NOERROR;
@@ -56,8 +57,8 @@ void runPkEncrypt(string& suffix, string& sender_id, string& recipient_id,
         }
 
         // Generate a set of parameters for an ABE authority
-        if ( (result = schemeContext->generateParams(DEFAULT_NIST_PARAM_STRING)) != OpenABE_NOERROR) {
-            cerr << "unable to generate curve parameters: " << DEFAULT_NIST_PARAM_STRING << endl;
+        if ( (result = schemeContext->generateParams()) != OpenABE_NOERROR) {
+            cerr << "unable to generate curve parameters " << endl;
             throw result;
         }
 
@@ -97,9 +98,10 @@ void runPkEncrypt(string& suffix, string& sender_id, string& recipient_id,
 
     return;
 }
+#endif
 
 
-void runAbeEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, string& func_input,
+void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, string& func_input,
     	       string& inputStr, string& ciphertextFile, bool verbose)
 {
   OpenABE_ERROR result = OpenABE_NOERROR;
@@ -111,11 +113,12 @@ void runAbeEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
     mpkFile = prefix + mpkFile;
   }
 
-  OpenABEByteString ct1Blob, ct2Blob, mpkBlob;
+  OpenABEByteString ctBlob, mpkBlob;
+  OpenABEByteString plaintext, ciphertext;
 
     try {
     // Initialize a OpenABEContext structure
-    schemeContext = OpenABE_createContextABESchemeCPA(scheme_type);
+    schemeContext = createContextABESchemeCPA(scheme_type);
     if (schemeContext == nullptr) {
       cerr << "unable to create a new context" << endl;
       return;
@@ -141,26 +144,26 @@ void runAbeEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
       throw result;
     }
 
-    std::unique_ptr<OpenABECiphertext> ciphertext1(new OpenABECiphertext);
-    std::unique_ptr<OpenABECiphertext> ciphertext2(new OpenABECiphertext);
-    if ((result = schemeContext->encrypt(mpkID, funcInput.get(), inputStr, ciphertext1.get(), ciphertext2.get())) != OpenABE_NOERROR) {
+    plaintext = ReadFile(inputStr.c_str());
+    if (plaintext.size() == 0) {
+        cerr << "Cannot read plaintext file" << endl;
+        return;
+    }
+
+    std::unique_ptr<OpenABECiphertext> ciphertext(new OpenABECiphertext);
+    if ((result = schemeContext->encrypt(mpkID, funcInput.get(), plaintext, *ciphertext)) != OpenABE_NOERROR) {
       cerr << "error occurred during encryption" << endl;
       throw result;
     }
 
     // write to disk
-    ciphertext1->exportToBytes(ct1Blob);
-    ciphertext2->exportToBytesWithoutHeader(ct2Blob);
+    ciphertext->exportToBytes(ctBlob);
     string ctBlobStr = CT1_BEGIN_HEADER;
-    ctBlobStr += NL + Base64Encode(ct1Blob.getInternalPtr(), ct1Blob.size()) + NL;
+    ctBlobStr += NL + Base64Encode(ctBlob.getInternalPtr(), ctBlob.size()) + NL;
     ctBlobStr += CT1_END_HEADER;
     ctBlobStr += NL;
-    ctBlobStr += CT2_BEGIN_HEADER;
-    ctBlobStr += NL + Base64Encode(ct2Blob.getInternalPtr(), ct2Blob.size()) + NL;
-    ctBlobStr += CT2_END_HEADER;
-    ctBlobStr += NL;
 
-    if(verbose) { cout << "writing " << ct2Blob.size() << " bytes" << endl; }
+    if(verbose) { cout << "writing " << ctBlob.size() << " bytes" << endl; }
     WriteToFile(ciphertextFile.c_str(), ctBlobStr);
 
     } catch (OpenABE_ERROR & error) {
@@ -236,10 +239,11 @@ int main(int argc, char **argv)
     }
     cout << "sender ID: " << sender_id << endl;
     cout << "recipient ID: " << recipient_id << endl;
-    runPkEncrypt(suffix, sender_id, recipient_id, inputStr, ciphertext_file, verbose);
+    // runPKEncrypt(suffix, sender_id, recipient_id, inputStr, ciphertext_file, verbose);
+    cout << "------------> Je suis en maintenance, je reviendrai plus fort." << endl;
   } else {
     cout << "encryption functional input: "<< func_input << endl;
-    runAbeEncrypt(scheme, prefix, suffix, func_input, inputStr, ciphertext_file, verbose);
+    runABEEncrypt(scheme, prefix, suffix, func_input, inputStr, ciphertext_file, verbose);
   }
 
 cleanup:

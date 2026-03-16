@@ -1,5 +1,5 @@
-#ifndef __ALL_HPP__
-#define __ALL_HPP__
+#ifndef __ZABE_H__
+#define __ZABE_H__
 
 #include <cstdint>
 #include <string>
@@ -77,4 +77,4 @@ const std::string DEFAULT_MATH_LIB = "OpenSSL";
 const std::string DEFAULT_MATH_LIB = "RELIC";
 #endif
 
-#endif // __ALL_HPP__
+#endif // __ZABE_H__

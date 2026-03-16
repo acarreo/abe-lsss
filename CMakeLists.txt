@@ -98,7 +98,7 @@ add_library(${ABE_LSSS_LIB} SHARED ${SOURCE_FILES})
 # Ajoute les include dirs du projet
 target_include_directories(${ABE_LSSS_LIB} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/utils"
+    # "${CMAKE_CURRENT_SOURCE_DIR}/utils"
 )
 
 # Ajouter les includes dirs de RELIC
