@@ -7,28 +7,19 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(LIBRARIES
-    ${ABE_LSSS_LIB}
-    OpenSSL::SSL
-    RELIC::relic
-    gmp
-    GTest::gtest_main
-    pthread
-)
-
 include(GoogleTest)
+
 macro (test TEST_NAME TEST_FILE EXTRA_SOURCES)
     add_executable(${TEST_NAME} ${TEST_FILE} ${EXTRA_SOURCES})
-    target_link_libraries(${TEST_NAME} ${LIBRARIES})
+		target_link_libraries(${TEST_NAME} PRIVATE ${ABE_LSSS_LIB} GTest::gtest_main pthread)
     target_include_directories(${TEST_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
-    # add_custom_target(${CUSTOM_TARGET_NAME} COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME})
 endmacro()
 
 set(ABE_SOURCES
   ../schemes/zcontextcpwaters.cpp
   ../schemes/zcontextkpgpsw.cpp
-  ../utils/abecontext.cpp
+  ../schemes/abecontext.cpp
 )
 
 test(test_demo test_demo.cpp "${ABE_SOURCES}")

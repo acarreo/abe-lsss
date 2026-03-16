@@ -8,11 +8,10 @@ extern "C" {
 #include <relic.h>
 }
 
+#include "../../utils/common.h"
 #include "../lsss/zlsss.h"
-
 #include "zerror.h"
 #include "zexception.h"
-#include "../../utils/common.h"
 
 
 /// @typedef    OpenABE_STATE

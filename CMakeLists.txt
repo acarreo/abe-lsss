@@ -9,7 +9,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-Wall")
 
-option(TESTS "Build the tests" ON)
 set(RELIC_CURVE "bls12-381" CACHE STRING "Courbe RELIC à compiler (ex: bls12-381, bn254, etc)")
 
 # ------------------------------------------------------------------------------
@@ -99,6 +98,7 @@ add_library(${ABE_LSSS_LIB} SHARED ${SOURCE_FILES})
 # Ajoute les include dirs du projet
 target_include_directories(${ABE_LSSS_LIB} PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+		"${CMAKE_CURRENT_SOURCE_DIR}/utils"
 )
 
 # Ajouter les includes dirs de RELIC
@@ -111,8 +111,12 @@ if(NOT RLC_LIBRARY)
     add_dependencies(${ABE_LSSS_LIB} RELIC::relic relic_project)
 endif()
 
-target_link_libraries(${ABE_LSSS_LIB} PUBLIC ${LIBRARIES})
-
+target_link_libraries(${ABE_LSSS_LIB}
+    PUBLIC
+        OpenSSL::SSL
+        RELIC::relic
+        gmp
+)
 
 # ------------------------------------------------------------------------------
 # Installation
@@ -137,7 +141,13 @@ endif()
 # ------------------------------------------------------------------------------
 # Tests optionnels
 # ------------------------------------------------------------------------------
+option(TESTS "Build the tests" OFF)
 if(TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+option(CLI "Build the tests" ON)
+if(CLI)
+    add_subdirectory(cli)
 endif()

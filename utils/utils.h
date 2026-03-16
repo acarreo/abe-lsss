@@ -4,11 +4,11 @@
 #include "lsss/zfunctioninput.h"
 
 // Define shorter aliases for some classes for easier usage in code
-using ByteString = OpenABEByteString;      // Alias for OpenABEByteString class
-using CryptoKDF = OpenABEKDF;              // Alias for OpenABEKDF class
-using CryptoSymKey = OpenABESymKey;        // Alias for OpenABESymKey class
-using CryptoKeystore = OpenABEKeystore;    // Alias for OpenABEKeystore class
-using CryptoContainer = OpenABEContainer;  // Alias for OpenABEContainer class
+// using ByteString = OpenABEByteString;      // Alias for OpenABEByteString class
+// using CryptoKDF = OpenABEKDF;              // Alias for OpenABEKDF class
+// using CryptoSymKey = OpenABESymKey;        // Alias for OpenABESymKey class
+// using CryptoKeystore = OpenABEKeystore;    // Alias for OpenABEKeystore class
+// using CryptoContainer = OpenABEContainer;  // Alias for OpenABEContainer class
 
 
 std::unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABECiphertext& ciphertext);
