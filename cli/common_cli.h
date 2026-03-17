@@ -76,4 +76,6 @@ OpenABE_SCHEME checkForScheme(std::string type, std::string &suffix);
 void addNameSeparator(std::string &prefix);
 void addFileExtension(std::string &filename, std::string ext);
 
+bool readBytesFromFile(const std::string &filename, OpenABEByteString &buff);
+
 #endif /* common_cli header */

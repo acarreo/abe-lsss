@@ -48,6 +48,9 @@ if(NOT RLC_LIBRARY)
             && ${CMAKE_MAKE_PROGRAM} -C ${RELIC_BUILD_DIR} -j
 
         INSTALL_COMMAND ""
+
+				BUILD_BYPRODUCTS ${RELIC_BUILD_DIR}/lib/librelic.so
+				UPDATE_COMMAND ""
     )
 
     # Déclare la librairie importée

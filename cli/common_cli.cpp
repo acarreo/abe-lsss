@@ -10,6 +10,7 @@
 /// \author J. Ayo Akinyele
 ///
 
+#include <filesystem>
 #include "common_cli.h"
 
 using namespace std;
@@ -82,6 +83,7 @@ string ReadFile(const char* filename)
     string line = "";
     // read everthing between the headers
     if (input.is_open()) {
+			cout << "JE suis quelque part dans ReadFile" << endl;
     	while(getline(input, line)) {
     		/* finish this
     		if(line.compare(begin_header) == 0)
@@ -151,3 +153,67 @@ string ReadBinaryFile(const char* filename)
 
     return inputBlob;
 }
+
+
+//
+// The following functions come from
+// https://github.com/acarreo/secure-file-transfer/blob/main/src/protocol/user.cpp
+//
+
+bool readBytesFromFile(const std::string &filename, OpenABEByteString &buff) {
+  std::ifstream file(filename, std::ios::binary | std::ios::ate);
+  if (!file) {
+    std::cerr << "ERROR --> Could not open file: " << filename << std::endl;
+    return false;
+  }
+
+	std::uintmax_t f_size = std::filesystem::file_size(filename);
+	if (f_size > std::numeric_limits<size_t>::max()) {
+		throw std::runtime_error("File too large");
+	}
+	size_t size = static_cast<size_t>(f_size);
+
+  buff.clear();
+  buff.fillBuffer(0, size);
+  file.read(reinterpret_cast<char *>(buff.getInternalPtr()),
+            static_cast<std::streamsize>(size));
+  bool err = file.good();
+  if (err == false) {
+    std::cerr << "ERROR --> Could not read file: " << filename << std::endl;
+  }
+
+  file.close();
+  return err;
+}
+
+void writeBytesToFile(const std::string &filename,
+                      const OpenABEByteString &buff) {
+  std::ofstream file(filename, std::ios::binary);
+  file.write(reinterpret_cast<const char *>(buff.data()),
+             static_cast<std::streamsize>(buff.size()));
+  file.close();
+}
+
+int __create_directory(const std::string &path) {
+  try {
+    std::filesystem::path dir(path);
+    if (std::filesystem::exists(dir)) {
+      if (!std::filesystem::is_directory(dir)) {
+        std::cerr << "ERROR --> Path exists but is not a directory: " << path
+                  << std::endl;
+        return 1; // Path exists but is not a directory
+      }
+    } else {
+      if (!std::filesystem::create_directory(dir)) {
+        std::cerr << "ERROR --> Failed to create directory: " << path
+                  << std::endl;
+        return 2; // Failed to create directory
+      }
+    }
+  } catch (const std::filesystem::filesystem_error &e) {
+    std::cerr << __func__ << " ---> ERROR: " << e.what() << std::endl;
+    return -1; // Handle filesystem error
+  }
+  return 0;
+}
+

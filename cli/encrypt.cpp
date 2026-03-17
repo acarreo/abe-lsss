@@ -10,6 +10,7 @@
 /// \author J. Ayo Akinyele
 ///
 
+#include <filesystem>
 #include "common_cli.h"
 #include "../utils/utils.h"
 
@@ -102,7 +103,7 @@ void runPKEncrypt(string& suffix, string& sender_id, string& recipient_id,
 
 
 void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, string& func_input,
-    	       string& inputStr, string& ciphertextFile, bool verbose)
+    	       string& plaintext_file, string& ciphertext_file, bool verbose)
 {
   OpenABE_ERROR result = OpenABE_NOERROR;
   std::unique_ptr<OpenABEContextSchemeCPA> schemeContext = nullptr;
@@ -144,8 +145,7 @@ void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
       throw result;
     }
 
-    plaintext = ReadFile(inputStr.c_str());
-    if (plaintext.size() == 0) {
+    if (!readBytesFromFile(plaintext_file, plaintext)) {
         cerr << "Cannot read plaintext file" << endl;
         return;
     }
@@ -164,7 +164,7 @@ void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
     ctBlobStr += NL;
 
     if(verbose) { cout << "writing " << ctBlob.size() << " bytes" << endl; }
-    WriteToFile(ciphertextFile.c_str(), ctBlobStr);
+    WriteToFile(ciphertext_file.c_str(), ctBlobStr);
 
     } catch (OpenABE_ERROR & error) {
     	cout << "caught exception: " << OpenABE_errorToString(error) << endl;
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
   int opt;
   string func_input = "", input_file = "", prefix = "", suffix = "", scheme_type = "";
   string mpk_file, recipient_id = "", ciphertext_file;
-  string inputStr;
+	size_t inputLen;
 
   bool verbose = false;
   while ((opt = getopt(argc,argv,"p:s:i:e:o:r:v")) != EOF)
@@ -211,19 +211,20 @@ int main(int argc, char **argv)
   }
 
   try {
-    getFile(inputStr, input_file);
-    size_t inputLen = inputStr.size();
-    if (inputLen == 0 || inputLen > MAX_FILE_SIZE) {
-      cerr << "input file is either empty or too big! Can encrypt up to 4GB files." << endl;
+    auto f_size = std::filesystem::file_size(input_file);
+    if (f_size == 0 || f_size > std::numeric_limits<size_t>::max()) {
+			std::cerr << "input file is either empty or too big! Can encrypt up to 4GB files." << std::endl;
       return -1;
     }
+		inputLen = static_cast<size_t>(f_size);
+
   } catch(const std::ios_base::failure& e) {
-    cerr << e.what() << endl;
+		std::cerr << e.what() << std::endl;
     return -1;
   }
 
   if (verbose) {
-    cout << "read " << inputStr.size() << " bytes from " << input_file << endl;
+    cout << "read " << inputLen << " bytes from " << input_file << endl;
   }
 
   // see if suffix has been added to the ciphertext filename
@@ -242,8 +243,8 @@ int main(int argc, char **argv)
     // runPKEncrypt(suffix, sender_id, recipient_id, inputStr, ciphertext_file, verbose);
     cout << "------------> Je suis en maintenance, je reviendrai plus fort." << endl;
   } else {
-    cout << "encryption functional input: "<< func_input << endl;
-    runABEEncrypt(scheme, prefix, suffix, func_input, inputStr, ciphertext_file, verbose);
+    cout << "66666666666encryption functional input: "<< func_input << endl;
+    runABEEncrypt(scheme, prefix, suffix, func_input, input_file, ciphertext_file, verbose);
   }
 
 cleanup:
