@@ -3,7 +3,7 @@
 /// 
 /// This file is part of Zeutro's OpenABE.
 ///
-/// \file   common.cpp
+/// \file   common.h
 ///
 /// \brief  Common routines and shared functionality
 ///
@@ -64,18 +64,21 @@
 #define CT2_BEGIN_HEADER	"-----BEGIN CIPHERTEXT BLOCK-----"
 #define CT2_END_HEADER		"-----END CIPHERTEXT BLOCK-----"
 
+bool getPublicKey(OpenABEByteString& publicKey, std::string& id, std::string& suffix);
+bool getPrivateKey(OpenABEByteString& privateKey, std::string& id, std::string& suffix);
+
 void getFile(std::string &result, const std::string &filename);
 std::string ReadFile(const char* filename);
 std::string ReadBlockFromFile(const char* begin_header, const char* end_header, const char* filename);
 std::string ReadBinaryFile(const char* filename);
+bool ReadBinaryFile(const std::string &filename, OpenABEByteString &buff);
 void WriteToFile(const char* filename, std::string outputStr);
 void WriteBinaryFile(const char* filename, std::string& outputStr);
 void WriteBinaryFile(const char* filename, uint8_t *buf, uint32_t len);
+void WriteBinaryFile(const std::string &filename, const OpenABEByteString &buff);
 
 OpenABE_SCHEME checkForScheme(std::string type, std::string &suffix);
 void addNameSeparator(std::string &prefix);
 void addFileExtension(std::string &filename, std::string ext);
-
-bool readBytesFromFile(const std::string &filename, OpenABEByteString &buff);
 
 #endif /* common_cli header */

@@ -26,16 +26,6 @@ using namespace std;
     "\t-o : output file for ciphertext\n" \
     "\t-p : prefix for generated authority public and secret parameter files (optional)\n\n" \
 
-bool getPublicKey(OpenABEByteString& publicKey, string& id, string& suffix) {
-    const string pubKeyFile = id + ".pk" + suffix;
-    publicKey = ReadFile(pubKeyFile.c_str());
-    if (publicKey.size() == 0) {
-        cerr << "public key file not encoded properly in: " << pubKeyFile << endl;
-        return false;
-    }
-    return true;
-}
-
 #if 0
 void runPKEncrypt(string& suffix, string& sender_id, string& recipient_id,
                   string& inputStr, string& ciphertextFile, bool verbose) {
@@ -102,9 +92,10 @@ void runPKEncrypt(string& suffix, string& sender_id, string& recipient_id,
 #endif
 
 
-void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, string& func_input,
+bool runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, string& func_input,
     	       string& plaintext_file, string& ciphertext_file, bool verbose)
 {
+    int ret = -1;
   OpenABE_ERROR result = OpenABE_NOERROR;
   std::unique_ptr<OpenABEContextSchemeCPA> schemeContext = nullptr;
   std::unique_ptr<OpenABEFunctionInput> funcInput = nullptr;
@@ -122,7 +113,7 @@ void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
     schemeContext = createContextABESchemeCPA(scheme_type);
     if (schemeContext == nullptr) {
       cerr << "unable to create a new context" << endl;
-      return;
+      return ret;
     }
 
     // next, get the functional input for encryption (based on scheme type)
@@ -137,7 +128,7 @@ void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
     mpkBlob = ReadFile(mpkFile.c_str());
     if (mpkBlob.size() == 0) {
       cerr << "master public parameters not encoded properly." << endl;
-      return;
+      return ret;
     }
 
     if ((result = schemeContext->loadMasterPublicParams(mpkID, mpkBlob)) != OpenABE_NOERROR) {
@@ -145,9 +136,9 @@ void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
       throw result;
     }
 
-    if (!readBytesFromFile(plaintext_file, plaintext)) {
+    if (!ReadBinaryFile(plaintext_file, plaintext)) {
         cerr << "Cannot read plaintext file" << endl;
-        return;
+        return ret;
     }
 
     std::unique_ptr<OpenABECiphertext> ciphertext(new OpenABECiphertext);
@@ -166,11 +157,12 @@ void runABEEncrypt(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, s
     if(verbose) { cout << "writing " << ctBlob.size() << " bytes" << endl; }
     WriteToFile(ciphertext_file.c_str(), ctBlobStr);
 
+    ret = 0;
     } catch (OpenABE_ERROR & error) {
     	cout << "caught exception: " << OpenABE_errorToString(error) << endl;
     }
 
-    return;
+    return ret;
 }
 
 int main(int argc, char **argv)
@@ -232,6 +224,7 @@ int main(int argc, char **argv)
 
   InitializeOpenABE();
 
+    int enc_ret = -1;
   if (scheme == OpenABE_SCHEME_PK_OPDH) {
     string sender_id = func_input;
     if (sender_id == "" || recipient_id == "") {
@@ -243,12 +236,12 @@ int main(int argc, char **argv)
     // runPKEncrypt(suffix, sender_id, recipient_id, inputStr, ciphertext_file, verbose);
     cout << "------------> Je suis en maintenance, je reviendrai plus fort." << endl;
   } else {
-    cout << "66666666666encryption functional input: "<< func_input << endl;
-    runABEEncrypt(scheme, prefix, suffix, func_input, input_file, ciphertext_file, verbose);
+    cout << "encryption functional input: "<< func_input << endl;
+    enc_ret = runABEEncrypt(scheme, prefix, suffix, func_input, input_file, ciphertext_file, verbose);
   }
 
 cleanup:
   ShutdownOpenABE();
 
-  return 0;
+  return enc_ret;
 }

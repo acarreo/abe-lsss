@@ -94,10 +94,8 @@ int runABEKeyGen(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, str
     // Get the functional input
     if(scheme_type == OpenABE_SCHEME_CP_WATERS) {
       funcInput = createAttributeList(keyInput);
-			cout << "Je suis ici..." << endl;
     } else if(scheme_type == OpenABE_SCHEME_KP_GPSW) {
       funcInput = createPolicyTree(keyInput);
-			cout << "Je suis là..." << endl;
     }
     ASSERT(funcInput != nullptr, OpenABE_ERROR_INVALID_INPUT);
 
@@ -146,8 +144,7 @@ int runABEKeyGen(OpenABE_SCHEME scheme_type, string& prefix, string& suffix, str
     return err_code;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     if(argc <= 1) {
     cout << OpenABE_CLI_STRING << "keygen utility, v" << (OpenABE_LIBRARY_VERSION / 100.) << endl;
     fprintf(stderr, USAGE);

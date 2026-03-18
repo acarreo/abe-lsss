@@ -15,6 +15,56 @@
 
 using namespace std;
 
+bool getPublicKey(OpenABEByteString& publicKey, string& id, string& suffix) {
+    const string pubKeyFile = id + ".pk" + suffix;
+    publicKey = ReadFile(pubKeyFile.c_str());
+    if (publicKey.size() == 0) {
+        cerr << "public key file not encoded properly in: " << pubKeyFile << endl;
+        return false;
+    }
+    return true;
+}
+
+bool getPrivateKey(OpenABEByteString& privateKey, string& id, string& suffix) {
+    const string privKeyFile = id + ".sk" + suffix;
+    privateKey = ReadFile(privKeyFile.c_str());
+    if (privateKey.size() == 0) {
+        cerr << "private key file not encoded properly in: " << privKeyFile << endl;
+        return false;
+    }
+    return true;
+}
+
+OpenABE_SCHEME checkForScheme(string type, string &suffix) {
+    suffix.clear();
+    if(type == CP_ABE) {
+    	suffix = ".cpabe";
+    	return OpenABE_SCHEME_CP_WATERS;
+    } else if(type == KP_ABE) {
+    	suffix = ".kpabe";
+    	return OpenABE_SCHEME_KP_GPSW;
+    } else if(type == PK_ENC) {
+        suffix = ".pkenc";
+        return OpenABE_SCHEME_PK_OPDH;
+    } else {
+    	return OpenABE_SCHEME_NONE;
+    }
+}
+
+void addNameSeparator(string &prefix) {
+    // check if last character of prefix is a name separator (if not, add it)
+    if(prefix.size() > 0 && prefix[prefix.size()-1] != NAME_SEP) {
+    	prefix += NAME_SEP;
+    }
+}
+
+// adds an extension if not present
+void addFileExtension(string &filename, string ext) {
+    if(filename.find(ext) == string::npos) {
+    	filename += ext;
+    }
+}
+
 void getFile(std::string &result, const std::string &filename) {
   result.clear();
 
@@ -35,68 +85,31 @@ void getFile(std::string &result, const std::string &filename) {
   fs.close();
 }
 
-
-OpenABE_SCHEME checkForScheme(string type, string &suffix)
-{
-    suffix.clear();
-    if(type == CP_ABE) {
-    	suffix = ".cpabe";
-    	return OpenABE_SCHEME_CP_WATERS;
-    } else if(type == KP_ABE) {
-    	suffix = ".kpabe";
-    	return OpenABE_SCHEME_KP_GPSW;
-    } else if(type == PK_ENC) {
-        suffix = ".pkenc";
-        return OpenABE_SCHEME_PK_OPDH;
-    } else {
-    	return OpenABE_SCHEME_NONE;
-    }
-}
-
-void addNameSeparator(string &prefix)
-{
-    // check if last character of prefix is a name separator (if not, add it)
-    if(prefix.size() > 0 && prefix[prefix.size()-1] != NAME_SEP) {
-    	prefix += NAME_SEP;
-    }
-}
-
-// adds an extension if not present
-void addFileExtension(string &filename, string ext)
-{
-    if(filename.find(ext) == string::npos) {
-    	filename += ext;
-    }
-}
-
-void WriteToFile(const char* filename, string outputStr)
-{
+void WriteToFile(const char* filename, string outputStr) {
     ofstream file;
     file.open(filename);
     file << outputStr;
     file.close();
 }
 
-string ReadFile(const char* filename)
-{
-    ifstream input(filename);
-    string line = "";
-    // read everthing between the headers
-    if (input.is_open()) {
-			cout << "JE suis quelque part dans ReadFile" << endl;
-    	while(getline(input, line)) {
-    		/* finish this
-    		if(line.compare(begin_header) == 0)
-    		   continue;
-    		*/
-    		if(line.find(BLOCK) == std::string::npos) {
-    			break;
-    		}
-    	}
-    	input.close();
-    }
+void WriteBinaryFile(const char* filename, string& outputStr) {
+    ofstream file;
+    file.open(filename, ios::out | ios::binary);
+    file << outputStr;
+    file.close();
+}
 
-    return Base64Decode(line);
+void WriteBinaryFile(const char* filename, uint8_t *buf, uint32_t len) {
+    ofstream file;
+    file.open(filename, ios::out | ios::binary);
+    file.write((const char *) buf, (int) len);
+    file.close();
+}
+
+void WriteBinaryFile(const std::string &filename, const OpenABEByteString &buff) {
+  std::ofstream file(filename, std::ios::binary);
+  file.write(reinterpret_cast<const char *>(buff.data()), static_cast<std::streamsize>(buff.size()));
+  file.close();
 }
 
 string ReadBlockFromFile(const char* begin_header, const char* end_header, const char* filename)
@@ -108,8 +121,8 @@ string ReadBlockFromFile(const char* begin_header, const char* end_header, const
     if(input.is_open()) {
     	while(getline(input, line)) {
     		if(line.compare(begin_header) == 0) {
-    		   found_header = true;
-    			continue;
+          found_header = true;
+          continue;
     		}
     		else if(line.compare(end_header) == 0) {
     			break;
@@ -122,21 +135,19 @@ string ReadBlockFromFile(const char* begin_header, const char* end_header, const
     return Base64Decode(block);
 }
 
-void WriteBinaryFile(const char* filename, string& outputStr)
-{
-    ofstream file;
-    file.open(filename, ios::out | ios::binary);
-    file << outputStr;
-    file.close();
-}
+string ReadFile(const char* filename) {
+    ifstream input(filename);
+    string line = "";
 
-void WriteBinaryFile(const char* filename, uint8_t *buf, uint32_t len)
-{
-    ofstream file;
-    file.open(filename, ios::out | ios::binary);
-    // file << outputStr;
-    file.write((const char *) buf, (int) len);
-    file.close();
+    // read everthing between the headers
+    if (input.is_open()) {
+    	while(getline(input, line)) {
+    		if(line.find(BLOCK) == std::string::npos) break;
+    	}
+    	input.close();
+    }
+
+    return Base64Decode(line);
 }
 
 string ReadBinaryFile(const char* filename)
@@ -154,31 +165,21 @@ string ReadBinaryFile(const char* filename)
     return inputBlob;
 }
 
-
-//
-// The following functions come from
 // https://github.com/acarreo/secure-file-transfer/blob/main/src/protocol/user.cpp
-//
-
-bool readBytesFromFile(const std::string &filename, OpenABEByteString &buff) {
+bool ReadBinaryFile(const std::string &filename, OpenABEByteString &buff) {
   std::ifstream file(filename, std::ios::binary | std::ios::ate);
   if (!file) {
     std::cerr << "ERROR --> Could not open file: " << filename << std::endl;
     return false;
   }
+  std::streamsize size = file.tellg(); // Get the size of the file
+  file.seekg(0, std::ios::beg);        // Move the file pointer to the beginning
 
-	std::uintmax_t f_size = std::filesystem::file_size(filename);
-	if (f_size > std::numeric_limits<size_t>::max()) {
-		throw std::runtime_error("File too large");
-	}
-	size_t size = static_cast<size_t>(f_size);
+  buff.clear(); buff.fillBuffer(0, size);
+  file.read(reinterpret_cast<char *>(buff.getInternalPtr()), static_cast<std::streamsize>(size));
 
-  buff.clear();
-  buff.fillBuffer(0, size);
-  file.read(reinterpret_cast<char *>(buff.getInternalPtr()),
-            static_cast<std::streamsize>(size));
   bool err = file.good();
-  if (err == false) {
+  if (!err) {
     std::cerr << "ERROR --> Could not read file: " << filename << std::endl;
   }
 
@@ -186,13 +187,6 @@ bool readBytesFromFile(const std::string &filename, OpenABEByteString &buff) {
   return err;
 }
 
-void writeBytesToFile(const std::string &filename,
-                      const OpenABEByteString &buff) {
-  std::ofstream file(filename, std::ios::binary);
-  file.write(reinterpret_cast<const char *>(buff.data()),
-             static_cast<std::streamsize>(buff.size()));
-  file.close();
-}
 
 int __create_directory(const std::string &path) {
   try {
