@@ -3,6 +3,9 @@
 
 #include "lsss/zfunctioninput.h"
 
+std::unique_ptr<OpenABEFunctionInput> getEncInput(OpenABE_SCHEME type, const std::string& enc_input);
+std::unique_ptr<OpenABEFunctionInput> getKeyInput(OpenABE_SCHEME type, const std::string& key_input);
+
 std::unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABECiphertext& ciphertext);
 std::unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABEKey *key);
 OpenABEFunctionInputType getFunctionInputType(OpenABEKey *key);

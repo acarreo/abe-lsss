@@ -154,3 +154,10 @@ option(CLI "Build the tests" ON)
 if(CLI)
     add_subdirectory(cli)
 endif()
+
+option(BENCH "Build the benchmarks" ON)
+if(BENCH)
+    find_package(benchmark REQUIRED)
+    add_subdirectory(bench)
+endif()
+

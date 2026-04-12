@@ -1,0 +1,129 @@
+#include <benchmark/benchmark.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <math.h>
+
+#include <abe_lsss.h>
+#include "../utils/utils.h"
+
+#define TEST_MSG_LEN (1024 * 1024) // 1MB
+
+using namespace std;
+
+// Use the function OpenABE_convertSchemeIDToString from utils to convert scheme
+// enum to string for better readability in benchmarks
+
+/**
+ * Benchmark input configuration structure
+ * Encapsulates all parameters for a benchmark run
+ */
+typedef struct {
+    OpenABE_SCHEME scheme;
+    string enc_input;
+    string key_input;
+    int msg_size;
+} BenchmarkInput;
+
+
+static void BM_Setup(benchmark::State& state, BenchmarkInput input) {
+    auto schemeContext = createContextABESchemeCPA(input.scheme);
+    schemeContext->generateParams("MPK", "MSK");
+
+    OpenABEByteString plaintext;
+    getRandomBytes(plaintext, input.msg_size);
+
+    auto encInput = getEncInput(input.scheme, input.enc_input);
+    auto keyInput = getKeyInput(input.scheme, input.key_input);
+
+    for (auto _ : state) {
+        schemeContext->keygen(keyInput.get(), "DecKey", "MPK", "MSK");
+
+        OpenABECiphertext ct;
+        schemeContext->encrypt("MPK", encInput.get(), plaintext, ct);
+
+        OpenABEByteString recovered;
+        schemeContext->decrypt("MPK", "DecKey", recovered, ct);
+
+        // Optional: Verify correctness (can be commented out for pure performance benchmarking)
+        assert(plaintext == recovered);
+    }
+}
+
+
+static void BM_Encrypt_VaryingFileSize(benchmark::State& state) {
+    auto schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
+    schemeContext->generateParams("testMPK", "testMSK");
+
+    int msgSize = state.range(0);  // Get parameter: 1024, 16384, 262144, 1048576
+    OpenABEByteString plaintext;
+    getRandomBytes(plaintext, msgSize);
+
+    auto encInput = createPolicyTree("(Alice and Bob) or (Charlie and David)");
+
+    for (auto _ : state) {
+        OpenABECiphertext ct;
+        schemeContext->encrypt("testMPK", encInput.get(), plaintext, ct);
+    }
+}
+
+BENCHMARK(BM_Encrypt_VaryingFileSize)
+    ->RangeMultiplier(16)
+    ->Range(1024, 1024 * 1024);
+
+static void BM_Decrypt_VaryingFileSize(benchmark::State& state) {
+    auto schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
+    schemeContext->generateParams("testMPK", "testMSK");
+
+    int msgSize = state.range(0);
+    OpenABEByteString plaintext;
+    getRandomBytes(plaintext, msgSize);
+
+    auto encInput = createPolicyTree("(Alice and Bob) or (Charlie and David)");
+    OpenABECiphertext ct;
+    schemeContext->encrypt("testMPK", encInput.get(), plaintext, ct);
+
+    auto keyInput = createAttributeList("Alice|Bob");
+    schemeContext->keygen(keyInput.get(), "DecKey", "testMPK", "testMSK");
+
+    for (auto _ : state) {
+        OpenABEByteString recovered;
+        schemeContext->decrypt("testMPK", "DecKey", recovered, ct);
+    }
+}
+
+BENCHMARK(BM_Decrypt_VaryingFileSize)
+    ->RangeMultiplier(16)
+    ->Range(1024, 1024 * 1024);
+
+
+int main(int argc, char** argv) {
+    InitializeOpenABE();
+
+    BenchmarkInput input_CP = {
+        .scheme = OpenABE_SCHEME_CP_WATERS,
+        .enc_input = "((Alice or Bob) and (Charlie or David))",
+        .key_input = "Alice|Charlie",
+        .msg_size = TEST_MSG_LEN
+    };
+    benchmark::RegisterBenchmark("BM_Setup/CP-ABE", BM_Setup, input_CP);
+
+    BenchmarkInput input_KP = {
+        .scheme = OpenABE_SCHEME_KP_GPSW,
+        .enc_input = "Alice|Charlie",
+        .key_input = "((Alice or Bob) and (Charlie or David))",
+        .msg_size = TEST_MSG_LEN
+    };
+    benchmark::RegisterBenchmark("BM_Setup/KP-ABE", BM_Setup, input_KP);
+
+
+    // Run benchmarks
+    ::benchmark::Initialize(&argc, argv);
+    ::benchmark::RunSpecifiedBenchmarks();
+
+    ShutdownOpenABE();
+    return 0;
+}
