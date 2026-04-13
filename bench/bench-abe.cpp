@@ -29,17 +29,60 @@ typedef struct {
 } BenchmarkInput;
 
 
-static void BM_Setup(benchmark::State& state, BenchmarkInput input) {
+static void BM_Encrypt(benchmark::State& state, BenchmarkInput input) {
     auto schemeContext = createContextABESchemeCPA(input.scheme);
     schemeContext->generateParams("MPK", "MSK");
+    auto encInput = getEncInput(input.scheme, input.enc_input);
 
     OpenABEByteString plaintext;
     getRandomBytes(plaintext, input.msg_size);
 
+    for (auto _ : state) {
+        OpenABECiphertext ct;
+        schemeContext->encrypt("MPK", encInput.get(), plaintext, ct);
+    }
+
+    // Count the number of encryption operations performed per second
+    state.SetItemsProcessed(state.iterations());
+}
+
+static void BM_Decrypt(benchmark::State& state, BenchmarkInput input) {
+    auto schemeContext = createContextABESchemeCPA(input.scheme);
+    schemeContext->generateParams("MPK", "MSK");
+
+    OpenABEByteString plaintext;
     auto encInput = getEncInput(input.scheme, input.enc_input);
+    getRandomBytes(plaintext, input.msg_size);
+
+		OpenABECiphertext ct;
+		schemeContext->encrypt("MPK", encInput.get(), plaintext, ct);
+
     auto keyInput = getKeyInput(input.scheme, input.key_input);
+		schemeContext->keygen(keyInput.get(), "DecKey", "MPK", "MSK");
 
     for (auto _ : state) {
+        OpenABEByteString recovered;
+        schemeContext->decrypt("MPK", "DecKey", recovered, ct);
+
+        // Optional: Verify correctness (can be commented out for pure performance benchmarking)
+        // assert(plaintext == recovered);
+    }
+
+    // Count the number of decryption operations performed per second
+    state.SetItemsProcessed(state.iterations());
+}
+
+static void BM_ABE_CompleteCycle(benchmark::State& state, BenchmarkInput input) {
+    for (auto _ : state) {
+        auto schemeContext = createContextABESchemeCPA(input.scheme);
+        schemeContext->generateParams("MPK", "MSK");
+
+        OpenABEByteString plaintext;
+        getRandomBytes(plaintext, input.msg_size);
+
+        auto encInput = getEncInput(input.scheme, input.enc_input);
+        auto keyInput = getKeyInput(input.scheme, input.key_input);
+
         schemeContext->keygen(keyInput.get(), "DecKey", "MPK", "MSK");
 
         OpenABECiphertext ct;
@@ -49,7 +92,7 @@ static void BM_Setup(benchmark::State& state, BenchmarkInput input) {
         schemeContext->decrypt("MPK", "DecKey", recovered, ct);
 
         // Optional: Verify correctness (can be commented out for pure performance benchmarking)
-        assert(plaintext == recovered);
+        // assert(plaintext == recovered);
     }
 }
 
@@ -109,7 +152,6 @@ int main(int argc, char** argv) {
         .key_input = "Alice|Charlie",
         .msg_size = TEST_MSG_LEN
     };
-    benchmark::RegisterBenchmark("BM_Setup/CP-ABE", BM_Setup, input_CP);
 
     BenchmarkInput input_KP = {
         .scheme = OpenABE_SCHEME_KP_GPSW,
@@ -117,8 +159,14 @@ int main(int argc, char** argv) {
         .key_input = "((Alice or Bob) and (Charlie or David))",
         .msg_size = TEST_MSG_LEN
     };
-    benchmark::RegisterBenchmark("BM_Setup/KP-ABE", BM_Setup, input_KP);
 
+    benchmark::RegisterBenchmark("BM_ABE_CompleteCycle/CP-ABE", BM_ABE_CompleteCycle, input_CP);
+    benchmark::RegisterBenchmark("BM_ABE_CompleteCycle/KP-ABE", BM_ABE_CompleteCycle, input_KP);
+
+    benchmark::RegisterBenchmark("BM_Encrypt/CP-ABE", BM_Encrypt, input_CP);
+    benchmark::RegisterBenchmark("BM_Encrypt/KP-ABE", BM_Encrypt, input_KP);
+    benchmark::RegisterBenchmark("BM_Decrypt/CP-ABE", BM_Decrypt, input_CP);
+    benchmark::RegisterBenchmark("BM_Decrypt/KP-ABE", BM_Decrypt, input_KP);
 
     // Run benchmarks
     ::benchmark::Initialize(&argc, argv);

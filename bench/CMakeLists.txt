@@ -14,8 +14,6 @@ function(add_benchmark_target target_name)
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${target_name}
             --benchmark_out=${target_name}.json
             --benchmark_time_unit=ms
-            # --benchmark_min_time=1s
-            # --benchmark_warmup_rounds=3
             --benchmark_counters_tabular=true
     DEPENDS ${target_name}
     COMMENT "Running ${target_name} benchmark"
