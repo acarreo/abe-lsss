@@ -1,0 +1,14 @@
+./abe-encrypt -s CP -e "OneexExpert or (SecAgent and Approved)" -i ../../cli/passport__Adam_Oumar_Abdel-rahman.pdf -o passport-encrypted.cpabe
+
+./abe-keygen -s CP -i "OneexExpert" -o decKeyOneexExpert
+./abe-keygen -s CP -i "SecAgent|Approved" -o decKeySA
+./abe-keygen -s CP -i "Manager|Approved" -o decKeyMA
+
+./abe-decrypt -s CP -i passport-encrypted.cpabe -k decKeyOneexExpert.key -o decrypted-OneexExpert.pdf
+./abe-decrypt -s CP -i passport-encrypted.cpabe -k decKeySA.key -o decrypted-SecAgent.pdf
+./abe-decrypt -s CP -i passport-encrypted.cpabe -k decKeyMA.key -o decrypted-Manager.pdf
+
+diff ../../cli/passport__Adam_Oumar_Abdel-rahman.pdf decrypted-OneexExpert.pdf
+diff ../../cli/passport__Adam_Oumar_Abdel-rahman.pdf decrypted-SecAgent.pdf
+diff ../../cli/passport__Adam_Oumar_Abdel-rahman.pdf decrypted-Manager.pdf
+
