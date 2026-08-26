@@ -10,7 +10,8 @@
 #include <abe_lsss.h>
 #include "../utils/utils.h"
 
-#define TEST_MSG_LEN (1024 * 1024) // 1MB
+// #define TEST_MSG_LEN (1024 * 1024) // 1MB
+#define TEST_MSG_LEN 32 // 32 bytes -> 256 bits, which can be used for symmetric keys
 
 using namespace std;
 
@@ -26,6 +27,7 @@ typedef struct {
     string enc_input;
     string key_input;
     int msg_size;
+    bool expect_pass = true;
 } BenchmarkInput;
 
 
@@ -65,7 +67,7 @@ static void BM_Decrypt(benchmark::State& state, BenchmarkInput input) {
         schemeContext->decrypt("MPK", "DecKey", recovered, ct);
 
         // Optional: Verify correctness (can be commented out for pure performance benchmarking)
-        // assert(plaintext == recovered);
+        assert((plaintext == recovered) == input.expect_pass);
     }
 
     // Count the number of decryption operations performed per second
@@ -92,7 +94,7 @@ static void BM_ABE_CompleteCycle(benchmark::State& state, BenchmarkInput input) 
         schemeContext->decrypt("MPK", "DecKey", recovered, ct);
 
         // Optional: Verify correctness (can be commented out for pure performance benchmarking)
-        // assert(plaintext == recovered);
+        assert((plaintext == recovered) == input.expect_pass);
     }
 }
 
@@ -149,19 +151,37 @@ int main(int argc, char** argv) {
     BenchmarkInput input_CP = {
         .scheme = OpenABE_SCHEME_CP_WATERS,
         .enc_input = "((Alice or Bob) and (Charlie or David))",
-        .key_input = "Alice|Charlie",
+        .key_input = "Alice|Charlie|Dave|Eve",
         .msg_size = TEST_MSG_LEN
+    };
+
+    BenchmarkInput input_CP_policyNotSatisfied = {
+        .scheme = OpenABE_SCHEME_CP_WATERS,
+        .enc_input = "((Alice or Bob) and (Charlie or David))",
+        .key_input = "Eve|Frank|Grace|Henry",
+        .msg_size = TEST_MSG_LEN,
+        .expect_pass = false
     };
 
     BenchmarkInput input_KP = {
         .scheme = OpenABE_SCHEME_KP_GPSW,
-        .enc_input = "Alice|Charlie",
+        .enc_input = "Alice|Charlie|Dave|Eve",
         .key_input = "((Alice or Bob) and (Charlie or David))",
         .msg_size = TEST_MSG_LEN
     };
 
+    BenchmarkInput input_KP_policyNotSatisfied = {
+        .scheme = OpenABE_SCHEME_KP_GPSW,
+        .enc_input = "Eve|Frank|Grace|Henry",
+        .key_input = "((Alice or Bob) and (Charlie or David))",
+        .msg_size = TEST_MSG_LEN,
+        .expect_pass = false
+    };
+
     benchmark::RegisterBenchmark("BM_ABE_CompleteCycle/CP-ABE", BM_ABE_CompleteCycle, input_CP);
     benchmark::RegisterBenchmark("BM_ABE_CompleteCycle/KP-ABE", BM_ABE_CompleteCycle, input_KP);
+    benchmark::RegisterBenchmark("BM_ABE_CompleteCycle/CP-ABE_PolicyNotSatisfied", BM_ABE_CompleteCycle, input_CP_policyNotSatisfied);
+    benchmark::RegisterBenchmark("BM_ABE_CompleteCycle/KP-ABE_PolicyNotSatisfied", BM_ABE_CompleteCycle, input_KP_policyNotSatisfied);
 
     benchmark::RegisterBenchmark("BM_Encrypt/CP-ABE", BM_Encrypt, input_CP);
     benchmark::RegisterBenchmark("BM_Encrypt/KP-ABE", BM_Encrypt, input_KP);
