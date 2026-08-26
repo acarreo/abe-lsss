@@ -1,0 +1,40 @@
+# Exemples d'entrees pour abe-policy
+# Syntaxe : ./abe-policy policy "<politique>"
+# Syntaxe : ./abe-policy attributes "<attribut1>|<attribut2>|..."
+# Syntaxe : ./abe-policy logic "<politique>" "<attribut1>|<attribut2>|..." [true|false]
+
+# Politiques booleennes
+./abe-policy policy "(Alice or Bob)"
+./abe-policy policy "((Alice or Bob) and (Charlie or David))"
+./abe-policy policy "((Alice and Bob) or uid:567abc)"
+./abe-policy policy "((Alice or Bob) and (Charlie or David)) and Alice"
+
+# Listes d'attributs
+./abe-policy attributes "Alice|Bob|Charlie|David"
+./abe-policy attributes "Alice|Charlie|uid:567abcdef"
+./abe-policy attributes "Alice|Date=May 5, 2016"
+
+# Comparaisons numeriques et intervalles
+./abe-policy policy "Day > 5 and Charlie"
+./abe-policy policy "(Day >= 5)"
+./abe-policy policy "(Month == 7#4)"
+./abe-policy policy "(Month < 12#4 and Bob)"
+./abe-policy policy "(Level in (2-35))"
+./abe-policy policy "(Month in (3#4-15#4) and Bob)"
+
+# Dates exactes, comparaisons et intervalles
+./abe-policy policy "Date = January 1, 1968"
+./abe-policy policy "(Date < January 1, 2017 and Bob)"
+./abe-policy policy "(Date = May 1-10, 2016 and Alice)"
+./abe-policy policy "((Date = December 10-16, 2016) and Charlie)"
+
+# Verification de satisfaction d'une politique
+./abe-policy logic "((Alice or Bob) and (Charlie or David))" "Alice|Charlie" true
+./abe-policy logic "((Alice or Bob) and (Charlie or David))" "Bob|David"
+./abe-policy logic "((Alice or Bob) and (Charlie or David))" "Bob|Eve"
+./abe-policy logic "(Date < January 1, 2017 and Bob)" "Date=December 15, 2015|Bob" true
+./abe-policy logic "(Month in (3#4-15#4) and Bob)" "Bob|Month=7#4" true
+
+# Entrees invalides utilisees par test_abe.cpp (doivent echouer)
+./abe-policy policy "Month < 16#4"
+./abe-policy policy "Month > -1#4"
