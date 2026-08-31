@@ -39,6 +39,7 @@
 #include <math.h>
 #include <time.h>
 
+#include "abe/zerror.h"
 #include "lsss/zdriver.h"
 #include "lsss/zscanner.h"
 
@@ -489,9 +490,9 @@ OpenABETreeNode *Driver::ge_policy(const std::string &attr, OpenABEUInteger *num
 OpenABETreeNode *Driver::range_policy(const std::string &c, OpenABEUInteger *min_num,
                                   OpenABEUInteger *max_num) {
   if (min_num->getVal() > max_num->getVal()) {
-    //throw OpenABE_ERROR_INVALID_RANGE_NUMBERS;
+    throw OpenABE_ERROR_INVALID_RANGE_NUMBERS;
   } else if (min_num->getBits() != max_num->getBits()) {
-    //throw OpenABE_ERROR_INVALID_MISMATCH_BITS;
+    throw OpenABE_ERROR_INVALID_MISMATCH_BITS;
   }
   // translate to (LEAF > min_num AND LEAF < max_num)
   OpenABETreeNode *rootNode = new OpenABETreeNode();
@@ -508,9 +509,9 @@ OpenABETreeNode *Driver::range_incl_policy(const std::string &c,
                                        OpenABEUInteger *min_num,
                                        OpenABEUInteger *max_num) {
   if (min_num->getVal() > max_num->getVal()) {
-    //throw OpenABE_ERROR_INVALID_RANGE_NUMBERS;
+    throw OpenABE_ERROR_INVALID_RANGE_NUMBERS;
   } else if (min_num->getBits() != max_num->getBits()) {
-    //throw OpenABE_ERROR_INVALID_MISMATCH_BITS;
+    throw OpenABE_ERROR_INVALID_MISMATCH_BITS;
   }
   // translate to (LEAF >= min_num AND LEAF <= max_num)
   OpenABETreeNode *rootNode = new OpenABETreeNode();
@@ -589,20 +590,20 @@ uint32_t validate_date(const std::string &prefix, OpenABEUInteger *m,
   //    cout << "Year: " << y->getVal() << endl;
   if (prefix == MONTH_KEYWORD || prefix == DAY_KEYWORD ||
       prefix == YEAR_KEYWORD) {
-        //throw OpenABE_ERROR_INVALID_PREFIX_SPECIFIED;
+        throw OpenABE_ERROR_INVALID_PREFIX_SPECIFIED;
   }
 
   if (!(m->isFlexInt() && d->isFlexInt() && y->isFlexInt())) {
-    //throw OpenABE_ERROR_INVALID_ATTRIBUTE_STRUCTURE;
+    throw OpenABE_ERROR_INVALID_ATTRIBUTE_STRUCTURE;
   }
 
   if (!is_valid_date(m->getVal(), d->getVal(), y->getVal())) {
-    //throw OpenABE_ERROR_INVALID_DATE_SPECIFIED;
+    throw OpenABE_ERROR_INVALID_DATE_SPECIFIED;
   }
 
   // reject if before epoch
   if (y->getVal() < EPOCH_YEAR) {
-    //throw OpenABE_ERROR_INVALID_DATE_BEFORE_EPOCH;
+    throw OpenABE_ERROR_INVALID_DATE_BEFORE_EPOCH;
   }
 
   struct tm t = {0};
@@ -620,25 +621,25 @@ void validate_range_date(const std::string &prefix, OpenABEUInteger *m,
                          OpenABEUInteger *y) {
   if (prefix == MONTH_KEYWORD || prefix == DAY_KEYWORD ||
       prefix == YEAR_KEYWORD) {
-    //throw OpenABE_ERROR_INVALID_PREFIX_SPECIFIED;
+    throw OpenABE_ERROR_INVALID_PREFIX_SPECIFIED;
   }
 
   if (!(m->isFlexInt() && min_d->isFlexInt() && max_d->isFlexInt() &&
         y->isFlexInt())) {
-    //throw OpenABE_ERROR_INVALID_ATTRIBUTE_STRUCTURE;
+    throw OpenABE_ERROR_INVALID_ATTRIBUTE_STRUCTURE;
   }
 
   if (!is_valid_date(m->getVal(), min_d->getVal(), y->getVal())) {
-    //throw OpenABE_ERROR_INVALID_DATE_SPECIFIED;
+    throw OpenABE_ERROR_INVALID_DATE_SPECIFIED;
   }
 
   if (!is_valid_date(m->getVal(), max_d->getVal(), y->getVal())) {
-    //throw OpenABE_ERROR_INVALID_DATE_SPECIFIED;
+    throw OpenABE_ERROR_INVALID_DATE_SPECIFIED;
   }
 
   // reject if before epoch
   if (y->getVal() < EPOCH_YEAR) {
-    //throw OpenABE_ERROR_INVALID_DATE_BEFORE_EPOCH;
+    throw OpenABE_ERROR_INVALID_DATE_BEFORE_EPOCH;
   }
 }
 
@@ -726,7 +727,7 @@ OpenABETreeNode *Driver::range_date_in_policy(const std::string &prefix,
                                           OpenABEUInteger *m, OpenABEUInteger *min_d,
                                           OpenABEUInteger *max_d, OpenABEUInteger *y) {
   if (min_d->getVal() > max_d->getVal()) {
-    //throw OpenABE_ERROR_INVALID_RANGE_NUMBERS;
+    throw OpenABE_ERROR_INVALID_RANGE_NUMBERS;
   }
   validate_range_date(prefix, m, min_d, max_d, y);
 
@@ -815,9 +816,7 @@ pair<string, string> check_attribute(const string &c) {
         }
       }
     } else {
-      // throw an error here
-      //throw OpenABE_ERROR_INVALID_ATTRIBUTE_STRUCTURE;
-      //return;
+      throw OpenABE_ERROR_INVALID_ATTRIBUTE_STRUCTURE;
     }
   } else {
     // continue as before and means no prefix was specified

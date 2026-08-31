@@ -2,6 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -25,6 +26,7 @@ set(ABE_SOURCES
 test(test_demo test_demo.cpp "${ABE_SOURCES}")
 test(test_keystore test_keystore.cpp "${ABE_SOURCES}")
 test(test_abe test_abe.cpp "${ABE_SOURCES}")
+test(test_policy test_policy.cpp "")
 test(test_ske test_ske.cpp "")
 test(test_zsym test_zsym.cpp "")
 test(test_bytestring test_bytestring.cpp "")
