@@ -178,33 +178,27 @@ TEST_F(PolicyParser, InvalidDateFormat) {
 TEST_F(PolicyParser, IntegerRangePolicy) {
   TEST_DESCRIPTION("Testing that range of integers supported in the policy");
   ASSERT_TRUE(createPolicyTree("Level in (2-35)"));
-  unique_ptr<OpenABEPolicy> s1 = createPolicyTree("Level > 2 and Level < 35");
-  ASSERT_TRUE(s1 != nullptr);
+  ASSERT_TRUE(createPolicyTree("Level > 2 and Level < 35"));
 }
 
 TEST_F(PolicyParser, InvalidExpInts) {
-  // verifying invalid policies are caught appropriately
   TEST_DESCRIPTION("Testing that integers in expint can be represented by number of bits specified");
-  // make sure integers in expint can be represented by number of bits specified
   ASSERT_FALSE(createPolicyTree("Month < 16#4"));
 }
 
 TEST_F(PolicyParser, InvalidExpIntsWithZero) {
   TEST_DESCRIPTION("Testing that integers in expint can be represented by number of bits specified");
-  // make sure integers in expint can be represented by number of bits specified
   ASSERT_FALSE(createPolicyTree("Month < 4#0"));
 }
 
 TEST_F(PolicyParser, NegativeIntegerInPolicies) {
   TEST_DESCRIPTION("Testing that negative integers are not allowed");
-  // make sure negative integers are not allowed
   ASSERT_FALSE(createPolicyTree("Month > -1#4"));
   ASSERT_FALSE(createPolicyTree("Month < -3#4"));
 }
 
 TEST_F(PolicyParser, LessThanGreaterThanNotInAttributeList) {
   TEST_DESCRIPTION("Testing that >,<=,etc cannot be added in attribute lists");
-  // make sure we can't add >,<=,etc in attribute lists
   ASSERT_FALSE(createAttributeList("Alice|Day >= 100|Bob"));
 }
 
