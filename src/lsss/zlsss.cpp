@@ -125,6 +125,9 @@ OpenABELSSS::recoverCoefficients(OpenABEPolicy *policy, OpenABEAttributeList *at
   // Clear any existing results
   this->clearExistingResults();
 
+  // Stale Visited/Mark flags from a previous scan would skip the tree traversal
+  resetFlags(policy->getRootNode());
+
   // Recursively compute the coefficients
   if (this->performCoefficientRecovery(policy, attrList) == false) {
     // If there was an error, clear any partial results and
