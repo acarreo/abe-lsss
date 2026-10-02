@@ -38,7 +38,7 @@ add_benchmark_target(bench_abe)
 
 add_custom_target(benchmarks
   DEPENDS
-          # bench_policy_target
+          bench_policy_target
           bench_abe_target
   COMMENT "Running all benchmarks"
 )
