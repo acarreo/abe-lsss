@@ -57,22 +57,24 @@ bool TestAttributeList(const char *str) {
 }
 
 bool TestCheckSatisfy(const string& policy_str, const string& attributes, bool verbose) {
-  pair<bool,int> result;
   try {
     std::unique_ptr<OpenABEPolicy> policy = createPolicyTree(policy_str);
     std::unique_ptr<OpenABEAttributeList> attrList = createAttributeList(attributes);
     if (policy != nullptr && attrList != nullptr) {
       if (verbose) {
-        cout << "Policy: " << policy->toString() << endl;
-        cout << "Policy Compact: " << policy->toCompactString() << endl;
+        cout << "Policy Compact:   " << policy->toCompactString() << endl;
+        cout << "Policy Full:      " << policy->toString() << endl;
+        cout << "Policy Full size: " << policy->getAttrCompleteSet().size() << endl;
         cout << endl;
-        cout << "AttrList: " << attrList->toString() << endl;
-        cout << "AttrList Compact: " << attrList->toCompactString() << endl;
+        cout << "AttrList Compact:   " << attrList->toCompactString() << endl;
+        cout << "AttrList Full:      " << attrList->toString() << endl;
+        cout << "AttrList Full size: " << attrList->getAttributeList()->size() << endl;
         cout << endl;
       }
-      result = checkIfSatisfied(policy.get(), attrList.get());
+      auto result = checkIfSatisfied(policy.get(), attrList.get());
       cout << "Check if satisfied => " << (result.first ? "true" : "false") << endl;
-      cout << "Number of matches => " << result.second << endl;
+      cout << "Number of matches  => " << result.second << endl;
+      cout << endl;
       return result.first;
     } else {
       throw OpenABE_ERROR_INVALID_INPUT;
@@ -98,9 +100,7 @@ int main(int argc, char **argv) {
   } else if(cmd == "logic") {
     if (argc == 5) {
       const string verb = argv[4];
-      if (verb == "true") {
-        verbose = true;
-      }
+      verbose = (verb == "true");
     } else if (argc < 4) {
       cout << "expecting a 'policy' and an 'attribute list'" << endl;
       return -1;
@@ -112,6 +112,4 @@ int main(int argc, char **argv) {
     cout << "Command Options: 'policy', 'attributes' or 'logic' " << endl;
     return -1;
   }
-
-  return -1;
 }

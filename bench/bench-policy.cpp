@@ -9,16 +9,11 @@
 
 #include <abe_lsss.h>
 #include "../utils/utils.h"
+#include "policy_generators.h"
 
 #define TEST_MSG_LEN    32
 
 using namespace std;
-
-string createAttribute(int i) {
-		stringstream ss;
-		ss << "Attr_" << i;
-		return ss.str();
-}
 
 bool generatetAttributeList(int max, vector<string> & attrList) {
     if(max <= 0) { return false; }
@@ -36,19 +31,6 @@ string convertToAttributeListString(vector<string>& attr_list) {
     	a_str += a + "|";
     }
     return a_str;
-}
-
-// returns an evenly distributed / balanced policy tree
-string getBalancedOpenABETree(int start, int end) {
-    if(start == end) { return createAttribute(start); }
-
-    int mid = ceil((start + (end - start) / 2.0));
-    if(mid == 0) {
-        return "(" + createAttribute(start) + " and " + createAttribute(end) + ")";
-    }
-    else {
-        return "(" + getBalancedOpenABETree(start, mid-1) + " and " + getBalancedOpenABETree(mid, end) + ")";
-    }
 }
 
 // returns a right-sided skewed policy tree
