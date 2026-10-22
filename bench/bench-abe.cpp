@@ -59,20 +59,121 @@ static void addInputSizeCounters(benchmark::State& state, const BenchmarkInput& 
     state.counters["msa_size"] = lsss.getRows().size(); // Minimum Satisfying Attribute set size
 }
 
-
-static void BM_Encrypt(benchmark::State& state, BenchmarkInput input) {
-    auto schemeContext = createContextABESchemeCPA(input.scheme);
-    schemeContext->generateParams("MPK", "MSK");
+static bool addSerializedSizeCounters(benchmark::State& state,
+        OpenABEContextSchemeCPA& schemeContext, const BenchmarkInput& input) {
+    OpenABEByteString mpk, userKey, plaintext, ciphertextBytes;
+    OpenABECiphertext ciphertext;
+    auto keyInput = getKeyInput(input.scheme, input.key_input);
     auto encInput = getEncInput(input.scheme, input.enc_input);
-    addInputSizeCounters(state, input);
-    state.SetLabel(getPolicyTypeLabel(input.policy_type));
 
-    OpenABEByteString plaintext;
+    if (!keyInput || !encInput ||
+        schemeContext.exportKey("MPK", mpk) != OpenABE_NOERROR ||
+        schemeContext.keygen(keyInput.get(), "SizeKey", "MPK", "MSK") != OpenABE_NOERROR ||
+        schemeContext.exportKey("SizeKey", userKey) != OpenABE_NOERROR) {
+        return false;
+    }
+
     getRandomBytes(plaintext, input.msg_size);
+    if (schemeContext.encrypt("MPK", encInput.get(), plaintext, ciphertext) != OpenABE_NOERROR) {
+        return false;
+    }
+    ciphertext.exportToBytes(ciphertextBytes);
+
+    state.counters["mpk_bytes"] = mpk.size();
+    state.counters["user_key_bytes"] = userKey.size();
+    state.counters["ciphertext_bytes"] = ciphertextBytes.size();
+    state.counters["message_bytes"] = input.msg_size;
+    return true;
+}
+
+static void BM_Setup(benchmark::State& state, BenchmarkInput input) {
+    state.SetLabel(getPolicyTypeLabel(input.policy_type));
+    bool countersInitialized = false;
 
     for (auto _ : state) {
+        if (!countersInitialized) {
+            state.PauseTiming();
+            addInputSizeCounters(state, input);
+            state.ResumeTiming();
+            countersInitialized = true;
+        }
+        auto schemeContext = createContextABESchemeCPA(input.scheme);
+        if (!schemeContext ||
+            schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
+            state.SkipWithError("ABE setup failed");
+            break;
+        }
+    }
+}
+
+static void BM_Keygen(benchmark::State& state, BenchmarkInput input) {
+    state.SetLabel(getPolicyTypeLabel(input.policy_type));
+
+    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
+    std::unique_ptr<OpenABEFunctionInput> keyInput;
+    size_t keyIndex = 0;
+    bool initialized = false;
+    for (auto _ : state) {
+        if (!initialized) {
+            state.PauseTiming();
+            schemeContext = createContextABESchemeCPA(input.scheme);
+            keyInput = getKeyInput(input.scheme, input.key_input);
+            if (!schemeContext || !keyInput ||
+                schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
+                state.SkipWithError("ABE key-generation setup failed");
+                break;
+            }
+            addInputSizeCounters(state, input);
+            state.ResumeTiming();
+            initialized = true;
+        }
+        const string keyID = "DecKey_" + to_string(keyIndex++);
+        if (schemeContext->keygen(keyInput.get(), keyID, "MPK", "MSK") != OpenABE_NOERROR) {
+            state.SkipWithError("ABE key generation failed");
+            break;
+        }
+        state.PauseTiming();
+        const auto deleteResult = schemeContext->deleteKey(keyID);
+        state.ResumeTiming();
+        if (deleteResult != OpenABE_NOERROR) {
+            state.SkipWithError("Could not clear benchmark key");
+            break;
+        }
+    }
+}
+
+static void BM_Encrypt(benchmark::State& state, BenchmarkInput input) {
+    state.SetLabel(getPolicyTypeLabel(input.policy_type));
+
+    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
+    std::unique_ptr<OpenABEFunctionInput> encInput;
+    OpenABEByteString plaintext;
+    bool initialized = false;
+
+    for (auto _ : state) {
+        if (!initialized) {
+            state.PauseTiming();
+            schemeContext = createContextABESchemeCPA(input.scheme);
+            if (!schemeContext ||
+                schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
+                state.SkipWithError("ABE encryption setup failed");
+                break;
+            }
+            encInput = getEncInput(input.scheme, input.enc_input);
+            if (!encInput || !addSerializedSizeCounters(state, *schemeContext, input)) {
+                state.SkipWithError("Could not prepare ABE encryption benchmark");
+                break;
+            }
+            addInputSizeCounters(state, input);
+            getRandomBytes(plaintext, input.msg_size);
+            state.ResumeTiming();
+            initialized = true;
+        }
         OpenABECiphertext ct;
-        schemeContext->encrypt("MPK", encInput.get(), plaintext, ct);
+        if (schemeContext->encrypt("MPK", encInput.get(), plaintext, ct) != OpenABE_NOERROR) {
+            state.SkipWithError("ABE encryption failed");
+            break;
+        }
     }
 
     // Count the number of encryption operations performed per second
@@ -80,24 +181,48 @@ static void BM_Encrypt(benchmark::State& state, BenchmarkInput input) {
 }
 
 static void BM_Decrypt(benchmark::State& state, BenchmarkInput input) {
-    auto schemeContext = createContextABESchemeCPA(input.scheme);
-    schemeContext->generateParams("MPK", "MSK");
-
-    OpenABEByteString plaintext;
-    auto encInput = getEncInput(input.scheme, input.enc_input);
-    getRandomBytes(plaintext, input.msg_size);
-
-    OpenABECiphertext ct;
-    schemeContext->encrypt("MPK", encInput.get(), plaintext, ct);
-
-    auto keyInput = getKeyInput(input.scheme, input.key_input);
-    schemeContext->keygen(keyInput.get(), "DecKey", "MPK", "MSK");
-    addInputSizeCounters(state, input);
     state.SetLabel(getPolicyTypeLabel(input.policy_type));
 
+    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
+    OpenABEByteString plaintext;
+    OpenABECiphertext ct;
+    bool initialized = false;
+
     for (auto _ : state) {
+        if (!initialized) {
+            state.PauseTiming();
+            schemeContext = createContextABESchemeCPA(input.scheme);
+            if (!schemeContext ||
+                schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
+                state.SkipWithError("ABE decryption setup failed");
+                break;
+            }
+            auto encInput = getEncInput(input.scheme, input.enc_input);
+            if (!encInput) {
+                state.SkipWithError("Could not parse ABE encryption input");
+                break;
+            }
+            getRandomBytes(plaintext, input.msg_size);
+            if (schemeContext->encrypt("MPK", encInput.get(), plaintext, ct) != OpenABE_NOERROR) {
+                state.SkipWithError("Could not prepare ABE ciphertext");
+                break;
+            }
+            auto keyInput = getKeyInput(input.scheme, input.key_input);
+            if (!keyInput ||
+                schemeContext->keygen(keyInput.get(), "DecKey", "MPK", "MSK") != OpenABE_NOERROR ||
+                !addSerializedSizeCounters(state, *schemeContext, input)) {
+                state.SkipWithError("Could not prepare ABE decryption benchmark");
+                break;
+            }
+            addInputSizeCounters(state, input);
+            state.ResumeTiming();
+            initialized = true;
+        }
         OpenABEByteString recovered;
-        schemeContext->decrypt("MPK", "DecKey", recovered, ct);
+        if (schemeContext->decrypt("MPK", "DecKey", recovered, ct) != OpenABE_NOERROR) {
+            state.SkipWithError("ABE decryption failed");
+            break;
+        }
 
         // Optional: Verify correctness (can be commented out for pure performance benchmarking)
         assert((plaintext == recovered) == input.expect_pass);
@@ -197,18 +322,35 @@ static void BM_ABE_CompleteCycle(benchmark::State& state, BenchmarkInput input) 
 
 
 static void BM_Encrypt_VaryingFileSize(benchmark::State& state) {
-    auto schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
-    schemeContext->generateParams("testMPK", "testMSK");
-
-    int msgSize = state.range(0);  // Get parameter: 1024, 16384, 262144, 1048576
+    const int msgSize = state.range(0);
+    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
     OpenABEByteString plaintext;
-    getRandomBytes(plaintext, msgSize);
-
-    auto encInput = createPolicyTree("(Alice and Bob) or (Charlie and David)");
+    std::unique_ptr<OpenABEPolicy> encInput;
+    bool initialized = false;
 
     for (auto _ : state) {
+        if (!initialized) {
+            state.PauseTiming();
+            schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
+            if (!schemeContext ||
+                schemeContext->generateParams("testMPK", "testMSK") != OpenABE_NOERROR) {
+                state.SkipWithError("ABE encryption setup failed");
+                break;
+            }
+            getRandomBytes(plaintext, msgSize);
+            encInput = createPolicyTree("(Alice and Bob) or (Charlie and David)");
+            if (!encInput) {
+                state.SkipWithError("Could not parse ABE encryption policy");
+                break;
+            }
+            state.ResumeTiming();
+            initialized = true;
+        }
         OpenABECiphertext ct;
-        schemeContext->encrypt("testMPK", encInput.get(), plaintext, ct);
+        if (schemeContext->encrypt("testMPK", encInput.get(), plaintext, ct) != OpenABE_NOERROR) {
+            state.SkipWithError("ABE encryption failed");
+            break;
+        }
     }
 }
 
@@ -217,23 +359,46 @@ BENCHMARK(BM_Encrypt_VaryingFileSize)
     ->Range(1024, 1024 * 1024);
 
 static void BM_Decrypt_VaryingFileSize(benchmark::State& state) {
-    auto schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
-    schemeContext->generateParams("testMPK", "testMSK");
-
-    int msgSize = state.range(0);
+    const int msgSize = state.range(0);
+    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
     OpenABEByteString plaintext;
-    getRandomBytes(plaintext, msgSize);
-
-    auto encInput = createPolicyTree("(Alice and Bob) or (Charlie and David)");
     OpenABECiphertext ct;
-    schemeContext->encrypt("testMPK", encInput.get(), plaintext, ct);
-
-    auto keyInput = createAttributeList("Alice|Bob");
-    schemeContext->keygen(keyInput.get(), "DecKey", "testMPK", "testMSK");
+    std::unique_ptr<OpenABEPolicy> encInput;
+    bool initialized = false;
 
     for (auto _ : state) {
+        if (!initialized) {
+            state.PauseTiming();
+            schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
+            if (!schemeContext ||
+                schemeContext->generateParams("testMPK", "testMSK") != OpenABE_NOERROR) {
+                state.SkipWithError("ABE decryption setup failed");
+                break;
+            }
+            getRandomBytes(plaintext, msgSize);
+            encInput = createPolicyTree("(Alice and Bob) or (Charlie and David)");
+            if (!encInput) {
+                state.SkipWithError("Could not parse ABE encryption policy");
+                break;
+            }
+            if (schemeContext->encrypt("testMPK", encInput.get(), plaintext, ct) != OpenABE_NOERROR) {
+                state.SkipWithError("Could not prepare ABE ciphertext");
+                break;
+            }
+            auto keyInput = createAttributeList("Alice|Bob");
+            if (!keyInput ||
+                schemeContext->keygen(keyInput.get(), "DecKey", "testMPK", "testMSK") != OpenABE_NOERROR) {
+                state.SkipWithError("Could not prepare ABE decryption key");
+                break;
+            }
+            state.ResumeTiming();
+            initialized = true;
+        }
         OpenABEByteString recovered;
-        schemeContext->decrypt("testMPK", "DecKey", recovered, ct);
+        if (schemeContext->decrypt("testMPK", "DecKey", recovered, ct) != OpenABE_NOERROR) {
+            state.SkipWithError("ABE decryption failed");
+            break;
+        }
     }
 }
 
@@ -339,6 +504,14 @@ int main(int argc, char** argv) {
     static const vector<int> attributeListSizes = {1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
     registerVaryingInputBenchmarks(OpenABE_SCHEME_CP_WATERS, policySizes, attributeListSizes);
     registerVaryingInputBenchmarks(OpenABE_SCHEME_KP_GPSW, policySizes, attributeListSizes);
+    for (const auto scheme : {OpenABE_SCHEME_CP_WATERS, OpenABE_SCHEME_KP_GPSW}) {
+        const auto input = createVaryingInput(scheme, 10, 10, PolicyType::Mixed);
+        const string schemeName = scheme == OpenABE_SCHEME_CP_WATERS ? "CP-ABE" : "KP-ABE";
+        benchmark::RegisterBenchmark("BM_Setup/" + schemeName, BM_Setup, input);
+        benchmark::RegisterBenchmark("BM_Keygen/" + schemeName, BM_Keygen, input);
+        benchmark::RegisterBenchmark("BM_Encrypt/" + schemeName + "/10", BM_Encrypt, input);
+        benchmark::RegisterBenchmark("BM_Decrypt/" + schemeName + "/10", BM_Decrypt, input);
+    }
 
     // Run benchmarks
     ::benchmark::Initialize(&argc, argv);
