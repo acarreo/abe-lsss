@@ -29,7 +29,7 @@ std::string toHex(const std::string& str) {
 
 int main(int argc, char **argv) {
 
-  InitializeOpenABE();
+  abe_lsss::initialize();
 
   string the_key, derived_key, key_data, ciphertext, plaintext1, plaintext2;
   string the_key_str, derived_key_str;
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
   }
   cout << "Successful Decryption!" << endl;
 
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return 0;
 }

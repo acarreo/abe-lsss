@@ -1,11 +1,5 @@
-set(ABE_SOURCES
-  ../schemes/zcontextcpwaters.cpp
-  ../schemes/zcontextkpgpsw.cpp
-  ../schemes/abecontext.cpp
-)
-
 macro(cli CLI_NAME CLI_FILE)
-	add_executable(${CLI_NAME} ${CLI_FILE} common_cli.cpp ${ABE_SOURCES})
+	add_executable(${CLI_NAME} ${CLI_FILE} common_cli.cpp)
     target_link_libraries(${CLI_NAME} PRIVATE ${ABE_LSSS_LIB})
     target_include_directories(${CLI_NAME}
 			PRIVATE

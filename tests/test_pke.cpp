@@ -110,12 +110,12 @@ TEST(PK_ODPH, TestCCASecurityForScheme) {
 int main(int argc, char **argv) {
   int rc;
 
-  InitializeOpenABE();
+  abe_lsss::initialize();
 
   ::testing::InitGoogleTest(&argc, argv);
   rc = RUN_ALL_TESTS();
 
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return rc;
 }

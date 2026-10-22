@@ -224,9 +224,9 @@ TEST(hashToSymmetricKey, TestKDF2) {
     GT gt;
     gt.setRandom();
 
-    uint8_t* keyData = gt.hashToBytes(&keyLen);
+    unique_ptr<uint8_t[]> keyData(gt.hashToBytes(&keyLen));
     key.fillBuffer(0, keyLen);
-    if (memcpy(key.getInternalPtr(), keyData, keyLen) == NULL) {
+    if (memcpy(key.getInternalPtr(), keyData.get(), keyLen) == NULL) {
         cout << "memcpy failed" << endl;
     }
 
@@ -266,12 +266,12 @@ TEST(SymKey, SKGeneration) {
 int main(int argc, char **argv) {
   int rc;
 
-  InitializeOpenABE();
+  abe_lsss::initialize();
 
   ::testing::InitGoogleTest(&argc, argv);
   rc = RUN_ALL_TESTS();
 
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return rc;
 }

@@ -22,12 +22,7 @@ function(add_benchmark_target target_name)
 endfunction()
 ################################################################################
 
-set(BENCH_UTILS_SOURCE_FILE
-  ../schemes/zcontextcpwaters.cpp
-  ../schemes/zcontextkpgpsw.cpp
-  ../schemes/abecontext.cpp
-  ../utils/utils.cpp
-)
+set(BENCH_UTILS_SOURCE_FILE)
 
 if(BENCH)
 add_bench(bench_policy policy bench-policy.cpp)

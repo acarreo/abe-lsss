@@ -149,12 +149,12 @@ BENCHMARK(BM_recoverCoefficients)
 
 
 int main(int argc, char** argv) {
-	InitializeOpenABE();
+	abe_lsss::initialize();
 
   ::benchmark::Initialize(&argc, argv);
   ::benchmark::RunSpecifiedBenchmarks();
 
-	ShutdownOpenABE();
+	abe_lsss::shutdown();
 
   return 0;
 }

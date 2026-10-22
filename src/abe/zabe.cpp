@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <mutex>
+#include <atomic>
 #include <string>
 
 #include <abe_lsss.h>
@@ -48,7 +50,8 @@ using namespace std;
  ********************************************************************************/
 
 // flag for the library initialization state
-OpenABE_STATE gLibraryState = OpenABE_STATE_UNINITIALIZED;
+std::atomic<OpenABE_STATE> gLibraryState{OpenABE_STATE_UNINITIALIZED};
+static std::mutex gLibraryLifecycleMutex;
 
 
 /********************************************************************************
@@ -64,11 +67,13 @@ OpenABE_STATE gLibraryState = OpenABE_STATE_UNINITIALIZED;
 
 static OpenABE_ERROR
 OpenABE_initialize() {
+  std::lock_guard<std::mutex> lock(gLibraryLifecycleMutex);
   OpenABE_ERROR result = OpenABE_ERROR_LIBRARY_NOT_INITIALIZED;
 
   // If the library is in a pre-initialized state, we can initialize it and go.
   // Otherwise return an error.
-  if (gLibraryState == OpenABE_STATE_UNINITIALIZED) {
+  if (gLibraryState.load(std::memory_order_acquire) ==
+      OpenABE_STATE_UNINITIALIZED) {
 
     // Initialize the pairing library
     result = zMathInitLibrary();
@@ -78,10 +83,11 @@ OpenABE_initialize() {
 
     // Future library pre-processing, self-checks, etc. go here.
 
-    // Set the library state to READY
-    // initializedOpenssl = init_openssl;
-    gLibraryState = OpenABE_STATE_READY;
-    result = OpenABE_NOERROR;
+    if (result == OpenABE_NOERROR) {
+      gLibraryState.store(OpenABE_STATE_READY, std::memory_order_release);
+    } else {
+      gLibraryState.store(OpenABE_STATE_ERROR, std::memory_order_release);
+    }
   }
 
   return result;
@@ -95,18 +101,22 @@ OpenABE_initialize() {
 
 static OpenABE_ERROR
 OpenABE_shutdown() {
+  std::lock_guard<std::mutex> lock(gLibraryLifecycleMutex);
   OpenABE_ERROR result = OpenABE_NOERROR;
 
   // Shut down the pairing library
   result = zMathShutdownLibrary();
 
-  gLibraryState = OpenABE_STATE_UNINITIALIZED;
+  if (result == OpenABE_NOERROR) {
+    gLibraryState.store(OpenABE_STATE_UNINITIALIZED, std::memory_order_release);
+  }
 
   return result;
 }
 
 void AssertLibInit() {
-  if (gLibraryState == OpenABE_STATE_UNINITIALIZED) {
+  if (gLibraryState.load(std::memory_order_acquire) ==
+      OpenABE_STATE_UNINITIALIZED) {
     throw runtime_error(OpenABE_errorToString(OpenABE_ERROR_LIBRARY_NOT_INITIALIZED));
   }
 }
@@ -117,11 +127,11 @@ void AssertLibInit() {
  *
  */
 
-void InitializeOpenABE() {
+void abe_lsss::initialize() {
   // initialize RELIC
   OpenABE_ERROR rc = OpenABE_initialize();
   if (rc != OpenABE_NOERROR) {
-    throw runtime_error("InitializeOpenABE: Could not initialize the OpenABE");
+    throw runtime_error("abe_lsss::initialize: Could not initialize abe-lsss");
   }
 }
 
@@ -130,11 +140,19 @@ void InitializeOpenABE() {
  * exit.
  */
 
-void ShutdownOpenABE() {
+void abe_lsss::shutdown() {
   OpenABE_ERROR rc = OpenABE_shutdown();
   if (rc != OpenABE_NOERROR) {
-    throw runtime_error("ShutdownOpenABE: Could not shutdown the OpenABE");
+    throw runtime_error("abe_lsss::shutdown: Could not shut down abe-lsss");
   }
+}
+
+void InitializeOpenABE() {
+  abe_lsss::initialize();
+}
+
+void ShutdownOpenABE() {
+  abe_lsss::shutdown();
 }
 
 void OpenABEStateContext::initializeThread() {
@@ -269,8 +287,7 @@ const uint32_t OpenABE_getLibraryVersion() {
 }
 
 bool OpenABE_GetCompressionOption() {
-  G1 __g1__; __g1__.setGenerator();
-  return (g1_size_bin(__g1__.m_G1, 1) == G1::getDefaultSize());
+  return abe_lsss::compression_enabled();
 }
 
 void relic_print_params() {

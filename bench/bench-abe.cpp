@@ -454,7 +454,7 @@ static void registerVaryingInputBenchmarks(OpenABE_SCHEME scheme,
 
 
 int main(int argc, char** argv) {
-    InitializeOpenABE();
+    abe_lsss::initialize();
 
 #if 0
     BenchmarkInput input_CP = {
@@ -517,6 +517,6 @@ int main(int argc, char** argv) {
     ::benchmark::Initialize(&argc, argv);
     ::benchmark::RunSpecifiedBenchmarks();
 
-    ShutdownOpenABE();
+    abe_lsss::shutdown();
     return 0;
 }

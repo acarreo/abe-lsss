@@ -1,5 +1,7 @@
 #include "zcontextcpwaters.h"
 #include "zcontextkpgpsw.h"
+#include "abe_lsss/abe.h"
+#include "../utils/utils.h"
 
 /*!
  * Create a new OpenABEContextABE for a specific scheme type.
@@ -34,4 +36,17 @@ std::unique_ptr<OpenABEContextSchemeCPA> createContextABESchemeCPA(OpenABE_SCHEM
   }
 
   return std::unique_ptr<OpenABEContextSchemeCPA>(new OpenABEContextSchemeCPA(std::move(kemContext)));
+}
+
+std::unique_ptr<abe_lsss::CpaContext> abe_lsss::create_context(Scheme scheme) {
+  return createContextABESchemeCPA(scheme);
+}
+
+std::unique_ptr<abe_lsss::FunctionInput> abe_lsss::parse_policy(const std::string& policy) {
+  return createPolicyTree(policy);
+}
+
+std::unique_ptr<abe_lsss::FunctionInput> abe_lsss::parse_attributes(
+    const std::string& attributes) {
+  return createAttributeList(attributes);
 }

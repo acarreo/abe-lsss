@@ -1,30 +1,29 @@
 # abe-lsss C++ API
 
-This guide describes the API currently present in the source tree. It is not yet a stable, minimal installed SDK: the umbrella header retains OpenABE names, the scheme factory is declared in `utils/utils.h` rather than the installed headers, and scheme implementation sources are currently compiled into CLI/tests/bench separately from the shared library. These limits are tracked in the [Phase 0 audit](AUDIT.md).
+The supported namespaced entry points are declared in [`abe_lsss/abe.h`](../include/abe_lsss/abe.h) and [`abe_lsss/api.h`](../include/abe_lsss/api.h). OpenABE types remain visible as aliases while the API migration is in progress.
 
 ## Initialization and lifecycle
 
-The current global API names are inherited from OpenABE:
+Initialize RELIC before pairing-based operations and shut it down after they finish:
 
 ```cpp
-#include <abe_lsss.h>
+#include <abe_lsss/api.h>
 
-InitializeOpenABE();
+abe_lsss::initialize();
 // Use RELIC-backed abe-lsss functionality.
-ShutdownOpenABE();
+abe_lsss::shutdown();
 ```
 
-Initialization must happen before pairing operations. `OpenABEStateContext` also exposes per-thread setup/teardown; callers using RELIC from multiple threads must follow the installed RELIC lifecycle and should not assume the library is thread-safe.
+Lifecycle calls throw `std::runtime_error` on failure. The legacy `InitializeOpenABE` and `ShutdownOpenABE` functions remain available but are deprecated. `OpenABEStateContext` is a legacy interface whose per-thread lifecycle has not been validated; it is not a thread-safety guarantee.
 
-`set_compression_flag(1)` selects compressed group-element serialization (the default); `set_compression_flag(0)` selects uncompressed serialization. This is a global compatibility setting and must not be changed concurrently or between encoding and decoding a stored object.
+`abe_lsss::set_compression(true)` selects compressed group-element serialization (the default); `false` selects uncompressed serialization. This is a global compatibility setting and must not be changed concurrently or between encoding and decoding a stored object. The legacy `set_compression_flag` and `OpenABE_GetCompressionOption` interfaces are deprecated.
 
 ## In-tree CP-ABE and KP-ABE example
 
-The following example generates a key and ciphertext for each active CPA scheme, then checks that the intended user decrypts the plaintext. `createContextABESchemeCPA`, `getEncInput` and `getKeyInput` are currently declared in the internal `utils/utils.h`; they are shown here to document the current repository API, not as a promise of a stable installed interface.
+The following example generates a key and ciphertext for each active CPA scheme, then checks that the intended user decrypts the plaintext.
 
 ```cpp
-#include <abe_lsss.h>
-#include "utils/utils.h"
+#include <abe_lsss/abe.h>
 
 #include <iostream>
 #include <memory>
@@ -32,22 +31,26 @@ The following example generates a key and ciphertext for each active CPA scheme,
 
 static bool roundTrip(OpenABE_SCHEME scheme, const std::string& encryptionInput,
                       const std::string& keyInput) {
-  auto context = createContextABESchemeCPA(scheme);
+  auto context = abe_lsss::create_context(scheme);
   if (!context ||
       context->generateParams("mpk", "msk") != OpenABE_NOERROR) {
     return false;
   }
 
-  auto encInput = getEncInput(scheme, encryptionInput);
-  auto decKeyInput = getKeyInput(scheme, keyInput);
+  auto encInput = scheme == abe_lsss::cp_waters
+      ? abe_lsss::parse_policy(encryptionInput)
+      : abe_lsss::parse_attributes(encryptionInput);
+  auto decKeyInput = scheme == abe_lsss::cp_waters
+      ? abe_lsss::parse_attributes(keyInput)
+      : abe_lsss::parse_policy(keyInput);
   if (!encInput || !decKeyInput ||
       context->keygen(decKeyInput.get(), "alice", "mpk", "msk") != OpenABE_NOERROR) {
     return false;
   }
 
-  OpenABEByteString plaintext, recovered;
-  getRandomBytes(plaintext, 32);
-  OpenABECiphertext ciphertext;
+  abe_lsss::ByteString plaintext, recovered;
+  plaintext.assign(32, 0x42);
+  abe_lsss::Ciphertext ciphertext;
   if (context->encrypt("mpk", encInput.get(), plaintext, ciphertext) != OpenABE_NOERROR ||
       context->decrypt("mpk", "alice", recovered, ciphertext) != OpenABE_NOERROR) {
     return false;
@@ -56,14 +59,14 @@ static bool roundTrip(OpenABE_SCHEME scheme, const std::string& encryptionInput,
 }
 
 int main() {
-  InitializeOpenABE();
-  const bool cp = roundTrip(OpenABE_SCHEME_CP_WATERS,
+  abe_lsss::initialize();
+  const bool cp = roundTrip(abe_lsss::cp_waters,
                             "(Engineering and ProjectA)",
                             "Engineering|ProjectA");
-  const bool kp = roundTrip(OpenABE_SCHEME_KP_GPSW,
+  const bool kp = roundTrip(abe_lsss::kp_gpsw,
                             "Engineering|ProjectA",
                             "(Engineering and (ProjectA or ProjectB))");
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
   if (!cp || !kp) {
     std::cerr << "ABE round trip failed\n";
     return 1;
@@ -72,28 +75,21 @@ int main() {
 }
 ```
 
-With RELIC built in `.build/` and the library built there, compile from the repository root using the scheme sources explicitly:
+After installing abe-lsss to a prefix, a consumer can link through CMake:
 
-```bash
-c++ -std=c++20 -Iinclude -I. \
-  -I.build/relic-src/include -I.build/relic-build/include \
-  docs/examples/abe_quickstart.cpp \
-  schemes/abecontext.cpp schemes/zcontextcpwaters.cpp schemes/zcontextkpgpsw.cpp \
-  -L.build -Wl,-rpath,"$PWD/.build" \
-  -L.build/relic-build/lib -Wl,-rpath,"$PWD/.build/relic-build/lib" \
-  -labe_lsss -lrelic -lssl -lcrypto -lgmp -lrt \
-  -o .build/abe-quickstart
-./.build/abe-quickstart
+```cmake
+find_package(abe-lsss CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE abe-lsss::abe_lsss)
 ```
 
-This command is a source-tree example for the current Linux build layout. It is not a portable installed-package link command; a future packaging/API phase should add an exported CMake target and install the scheme factory/header.
+The installed `abe-lsss.pc` file is also available to pkg-config consumers.
 
 ## Main concepts
 
-- `OpenABEContextSchemeCPA` is the common context for the available CPA schemes.
-- `createContextABESchemeCPA` creates CP-Waters or KP-GPSW contexts.
-- `OpenABEFunctionInput` is the common input abstraction. `createPolicyTree` parses policy expressions; `createAttributeList` parses pipe-separated labels.
+- `abe_lsss::CpaContext` is the common context for the available CPA schemes.
+- `abe_lsss::create_context` creates CP-Waters or KP-GPSW contexts; unsupported schemes return an empty pointer.
+- `abe_lsss::FunctionInput` is the common input abstraction. `parse_policy` parses policy expressions; `parse_attributes` parses pipe-separated labels. A parse failure returns an empty pointer.
 - `keygen`, `encrypt` and `decrypt` return `OpenABE_ERROR` values. Check each result; do not treat a failed decryption as a valid plaintext.
-- `OpenABEByteString` is used for binary messages, keys and serialized blobs.
+- `abe_lsss::ByteString` is used for binary messages, keys and serialized blobs.
 
-The public API currently has no documented CCA ABE context, no multi-authority factory and no stable symbol/versioning guarantee. `InitializeOpenABE` and `ShutdownOpenABE` are legacy names; their replacement and compatibility aliases are reserved for a later API phase.
+The public API currently has no CCA ABE context or multi-authority factory. OpenABE type and function aliases remain for source compatibility.

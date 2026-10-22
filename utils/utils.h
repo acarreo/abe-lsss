@@ -10,7 +10,7 @@ std::unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABECiphertext& cipher
 std::unique_ptr<OpenABEFunctionInput> getFunctionInput(OpenABEKey *key);
 OpenABEFunctionInputType getFunctionInputType(OpenABEKey *key);
 
-OpenABEContextABE *createContextABE(OpenABE_SCHEME scheme_type);
+std::unique_ptr<OpenABEContextABE> createContextABE(OpenABE_SCHEME scheme_type);
 
 // CPA scheme context API
 std::unique_ptr<OpenABEContextSchemeCPA> createContextABESchemeCPA(OpenABE_SCHEME scheme_type);

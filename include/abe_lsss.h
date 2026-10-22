@@ -1,6 +1,7 @@
 #ifndef __ABE_LSSS_H__
 #define __ABE_LSSS_H__
 
+#include "abe_lsss/api.h"
 #include "abe/zabe.h"
 #include "abe/zcontainer.h"
 #include "abe/zinteger.h"
@@ -21,8 +22,8 @@
 /// Utility functions
 ///
 
-void InitializeOpenABE();
-void ShutdownOpenABE();
+[[deprecated("Use abe_lsss::initialize()")]] void InitializeOpenABE();
+[[deprecated("Use abe_lsss::shutdown()")]] void ShutdownOpenABE();
 void AssertLibInit();
 
 const char *OpenABE_errorToString(OpenABE_ERROR err);
@@ -113,6 +114,7 @@ inline void _hash_to_bytes_(uint8_t* digest, uint8_t *buf, uint32_t buf_len) {
 void relic_print_params();
 
 // Returns the compression option used for serialization: true if compression is enabled, false otherwise
+[[deprecated("Use abe_lsss::compression_enabled()")]]
 bool OpenABE_GetCompressionOption();
 
 #endif // __ABE_LSSS_H__

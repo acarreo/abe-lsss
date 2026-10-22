@@ -111,12 +111,12 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    InitializeOpenABE();
+    abe_lsss::initialize();
 
     // KP or CP
     runSetup(scheme, prefix, suffix, verbose_flag);
 
-    ShutdownOpenABE();
+    abe_lsss::shutdown();
 
     return 0;
 }

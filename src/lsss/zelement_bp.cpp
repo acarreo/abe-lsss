@@ -33,23 +33,38 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <list>
 #include <memory>
+#include <atomic>
 
 #include "lsss/zbytestring.h"
 #include "lsss/zobject.h"
 #include "lsss/zelement_bp.h"
+#include "abe_lsss/api.h"
 
 
-int compression_flag = 1;
+static std::atomic<int> compression_flag{1};
 
 void set_compression_flag(int value) {
   if (value == 0 || value == 1)
-    compression_flag = value;
+    compression_flag.store(value, std::memory_order_relaxed);
+}
+
+void abe_lsss::set_compression(bool enabled) noexcept {
+  compression_flag.store(enabled ? 1 : 0, std::memory_order_relaxed);
+}
+
+bool abe_lsss::compression_enabled() noexcept {
+  return compression_flag.load(std::memory_order_relaxed) != 0;
+}
+
+static int get_compression_flag() {
+  return compression_flag.load(std::memory_order_relaxed);
 }
 
 using namespace std;
@@ -472,7 +487,7 @@ void G1::setGenerator() {
 }
 
 int G1::getSize() const {
-  return g1_size_bin(this->m_G1, compression_flag);
+  return g1_size_bin(this->m_G1, get_compression_flag());
 }
 
 /**
@@ -497,7 +512,7 @@ bool G1::ismember() const {
 uint8_t* G1::hashToBytes(size_t *size) const {
   int len = this->getSize();
   uint8_t buffer[len];
-  g1_write_bin(buffer, len, this->m_G1, compression_flag);
+  g1_write_bin(buffer, len, this->m_G1, get_compression_flag());
 
   std::unique_ptr<uint8_t[]> hash(new uint8_t[RLC_MD_LEN]);
   md_map(hash.get(), buffer, len);
@@ -540,7 +555,7 @@ G1* G1::clone() const {
 uint8_t* G1::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  g1_write_bin(buffer, size, this->m_G1, compression_flag);
+  g1_write_bin(buffer, size, this->m_G1, get_compression_flag());
   *bufferSize = size;
   return buffer;
 }
@@ -550,12 +565,14 @@ void G1::serialize(OpenABEByteString &result) const {
   int len = 0;
 
   if (this->isInit) {
-    uint8_t *bytes = this->getBytes(&len);
-    tmp.appendArray(bytes, len);
+    std::unique_ptr<uint8_t, decltype(&std::free)> bytes(
+        this->getBytes(&len), &std::free);
+    tmp.appendArray(bytes.get(), len);
 
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_G1);
     result.smartPack(tmp);
+    tmp.zeroize();
   }
 }
 
@@ -640,7 +657,7 @@ void G2::setGenerator() {
 uint8_t* G2::hashToBytes(size_t *size) const {
   int len = this->getSize();
   uint8_t buffer[len];
-  g2_write_bin(buffer, len, this->m_G2, compression_flag);
+  g2_write_bin(buffer, len, this->m_G2, get_compression_flag());
 
   std::unique_ptr<uint8_t[]> hash(new uint8_t[RLC_MD_LEN]);
   md_map(hash.get(), buffer, len);
@@ -660,7 +677,7 @@ int G2::getDefaultSize() {
 }
 
 int G2::getSize() const {
-  return g2_size_bin(this->m_G2, compression_flag);
+  return g2_size_bin(this->m_G2, get_compression_flag());
 }
 
 size_t G2::getSizeInBytes() const {
@@ -706,7 +723,7 @@ G2* G2::clone() const {
 uint8_t* G2::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  g2_write_bin(buffer, size, this->m_G2, compression_flag);
+  g2_write_bin(buffer, size, this->m_G2, get_compression_flag());
   *bufferSize = size;
   return buffer;
 }
@@ -716,12 +733,14 @@ void G2::serialize(OpenABEByteString &result) const {
   int len = 0;
 
   if (this->isInit) {
-    uint8_t *bytes = this->getBytes(&len);
-    tmp.appendArray(bytes, len);
+    std::unique_ptr<uint8_t, decltype(&std::free)> bytes(
+        this->getBytes(&len), &std::free);
+    tmp.appendArray(bytes.get(), len);
 
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_G2);
     result.smartPack(tmp);
+    tmp.zeroize();
   }
 }
 
@@ -783,7 +802,7 @@ uint8_t* GT::hashToBytes(size_t *size) const {
 }
 
 int GT::getSize() const {
-  return gt_size_bin((static_cast<GT>(*this)).m_GT, compression_flag);
+  return gt_size_bin((static_cast<GT>(*this)).m_GT, get_compression_flag());
 }
 
 size_t GT::getSizeInBytes() const {
@@ -851,7 +870,7 @@ GT* GT::clone() const {
 uint8_t* GT::getBytes(int *bufferSize) const {
   int size = this->getSize();
   uint8_t *buffer = (uint8_t *)malloc(size);
-  gt_write_bin(buffer, size, this->m_GT, compression_flag);
+  gt_write_bin(buffer, size, this->m_GT, get_compression_flag());
   *bufferSize = size;
   return buffer;
 }
@@ -861,12 +880,14 @@ void GT::serialize(OpenABEByteString &result) const {
   int len = 0;
 
   if(this->isInit) {
-    uint8_t *bytes = this->getBytes(&len);
-    tmp.appendArray(bytes, len);
+    std::unique_ptr<uint8_t, decltype(&std::free)> bytes(
+        this->getBytes(&len), &std::free);
+    tmp.appendArray(bytes.get(), len);
 
     result.clear();
     result.insertFirstByte(OpenABE_ELEMENT_GT);
     result.smartPack(tmp);
+    tmp.zeroize();
   }
 }
 

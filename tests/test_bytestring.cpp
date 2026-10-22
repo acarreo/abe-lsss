@@ -38,16 +38,17 @@ TEST(OpenABEByteStringTest, ConvertionVector) {
 int main(int argc, char **argv) {
   int rc;
 
-  InitializeOpenABE();
+  abe_lsss::initialize();
 
   relic_print_params();
   std::cout << "--------------------------------------------------" << std::endl;
-  std::cout << "Compresion's flag for serialization: " << OpenABE_GetCompressionOption() << std::endl;
+  std::cout << "Compression for serialization: "
+            << abe_lsss::compression_enabled() << std::endl;
 
   ::testing::InitGoogleTest(&argc, argv);
   rc = RUN_ALL_TESTS();
 
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return rc;
 }

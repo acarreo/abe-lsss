@@ -1,0 +1,11 @@
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: abe-lsss
+Description: RELIC-based ABE and LSSS library
+Version: @PROJECT_VERSION@
+Requires: openssl
+Libs: -L${libdir} -labe_lsss -lrelic -lssl -lcrypto -lgmp
+Cflags: -I${includedir} -I${includedir}/relic

@@ -1,0 +1,29 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(OpenSSL REQUIRED)
+
+find_library(ABE_LSSS_GMP_LIBRARY NAMES gmp)
+if(NOT ABE_LSSS_GMP_LIBRARY)
+    message(FATAL_ERROR "abe-lsss requires the GMP library")
+endif()
+if(NOT TARGET GMP::GMP)
+    add_library(GMP::GMP UNKNOWN IMPORTED)
+    set_target_properties(GMP::GMP PROPERTIES
+        IMPORTED_LOCATION "${ABE_LSSS_GMP_LIBRARY}")
+endif()
+
+find_library(ABE_LSSS_RELIC_LIBRARY NAMES relic)
+find_path(ABE_LSSS_RELIC_INCLUDE_DIR NAMES relic.h PATH_SUFFIXES relic)
+if(NOT ABE_LSSS_RELIC_LIBRARY OR NOT ABE_LSSS_RELIC_INCLUDE_DIR)
+    message(FATAL_ERROR "abe-lsss requires RELIC headers and library")
+endif()
+if(NOT TARGET RELIC::relic)
+    add_library(RELIC::relic UNKNOWN IMPORTED)
+    set_target_properties(RELIC::relic PROPERTIES
+        IMPORTED_LOCATION "${ABE_LSSS_RELIC_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${ABE_LSSS_RELIC_INCLUDE_DIR}")
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/abe-lsss-targets.cmake")
+check_required_components(abe-lsss)

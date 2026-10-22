@@ -228,7 +228,7 @@ int main(int argc, char **argv)
     	return -1;
     }
 
-    InitializeOpenABE();
+    abe_lsss::initialize();
 
   int err_code = 0;
   if (scheme_type == OpenABE_SCHEME_PK_OPDH) {
@@ -244,7 +244,7 @@ int main(int argc, char **argv)
   }
 
 cleanup:
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return err_code;
 }

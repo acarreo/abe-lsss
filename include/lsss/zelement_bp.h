@@ -48,6 +48,7 @@ class OpenABEByteString;
 
 void ro_error(void);
 
+[[deprecated("Use abe_lsss::set_compression()")]]
 void set_compression_flag(int value);
 
 // retrieve the group field of the BPGroup class

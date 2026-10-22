@@ -222,7 +222,7 @@ int main(int argc, char **argv)
   // see if suffix has been added to the ciphertext filename
   addFileExtension(ciphertext_file, suffix);
 
-  InitializeOpenABE();
+  abe_lsss::initialize();
 
     int enc_ret = -1;
   if (scheme == OpenABE_SCHEME_PK_OPDH) {
@@ -241,7 +241,7 @@ int main(int argc, char **argv)
   }
 
 cleanup:
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return enc_ret;
 }

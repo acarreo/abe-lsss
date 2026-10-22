@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
 
     addFileExtension(keyOutfile, keySuffix);
 
-    InitializeOpenABE();
+    abe_lsss::initialize();
 
   if (scheme == OpenABE_SCHEME_PK_OPDH) {
     string key_id = funcInputStr;
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
 
 cleanup:
 
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return status;
 }

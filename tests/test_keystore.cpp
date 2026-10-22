@@ -184,11 +184,11 @@ INSTANTIATE_TEST_CASE_P(ABETest5, KeystoreManagerTest,
 int main(int argc, char **argv) {
   int rc;
 
-  InitializeOpenABE();
+  abe_lsss::initialize();
 
   ::testing::InitGoogleTest(&argc, argv);
   rc = RUN_ALL_TESTS();
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 
   return rc;
 }

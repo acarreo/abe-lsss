@@ -8,7 +8,7 @@ extern "C" {
 #include <relic.h>
 }
 
-#include "../../utils/common.h"
+#include "utils/common.h"
 #include "../lsss/zlsss.h"
 #include "zerror.h"
 #include "zexception.h"
