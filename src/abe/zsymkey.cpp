@@ -41,6 +41,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <memory>
 
 #include "abe/zsymkey.h"
 #include "abe/zkdf.h"
@@ -152,8 +153,8 @@ bool OpenABESymKey::hashToSymmetricKey(GT &input, uint32_t keyLen) {
   size_t h_len = 0;
   OpenABEByteString h_input;
 
-  uint8_t* h_in = input.hashToBytes(&h_len);
-  h_input.appendArray(h_in, h_len);
+  std::unique_ptr<uint8_t[]> h_in(input.hashToBytes(&h_len));
+  h_input.appendArray(h_in.get(), h_len);
 
   OpenABEByteString key = OpenABEKDF().ComputeKDF2(h_input, keyLen);
   this->setSymmetricKey(key);

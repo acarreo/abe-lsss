@@ -12,6 +12,8 @@ The repository is an evolving research/engineering project, not a security-certi
 
 - [API guide](docs/API.md) — C++ API, in-tree example, initialization and current integration limits.
 - [CLI guide](docs/CLI.md) — setup, key generation, encryption and decryption.
+- [Security model](docs/SECURITY_MODEL.md) — assumptions, intended properties and known limitations.
+- [Security reporting](SECURITY.md) — private vulnerability reporting guidance.
 - [Audit (Phase 0)](docs/AUDIT.md) — repository map, current limitations and priorities.
 - [OpenABE design document](https://github.com/zeutro/openabe/blob/master/docs/libopenabe-v1.0.0-design-doc.pdf) — upstream reference only; it is not a verified design specification for this fork.
 
@@ -36,9 +38,10 @@ Policies support monotone access trees and the parser has tests for date/integer
 
 ## What platforms are supported?
 
-- **Linux:** the only platform configured in the repository's GitHub Actions workflow (`ubuntu-latest`).
+- **Linux:** configured in the repository's GitHub Actions workflow and locally tested during this update.
+- **macOS:** a GitHub Actions build/test job is configured; check the latest workflow result before relying on a specific release.
 - **Docker:** build recipes are provided, but they are not exercised by that CI workflow.
-- **macOS and other platforms:** not currently verified by repository CI.
+- **Other platforms:** not currently verified by repository CI.
 
 ## Installation
 
@@ -80,20 +83,20 @@ sudo cmake --build build --target install
 
 `RELIC_CURVE` selects the curve for CMake's automatic RELIC build; the `compile/Makefile` exposes `CURVE` and `RELIC_TAG`. **Known limitation:** `compile/install-relic.sh` currently hardcodes tag `0.6.0`, overriding the Makefile's `RELIC_TAG` value. A non-default tag must not be assumed to have been installed by this host recipe until that is fixed.
 
-By default, group elements are serialized compressed. The legacy global `set_compression_flag` can be called before serializing/loading data:
+By default, group elements are serialized compressed. The namespaced API can set the global compression option before serializing/loading data:
 
 ```cpp
-#include <abe_lsss.h>
+#include <abe_lsss/api.h>
 
 int main() {
-  InitializeOpenABE();
-  set_compression_flag(0);  // 0: uncompressed, 1: compressed
+  abe_lsss::initialize();
+  abe_lsss::set_compression(false);
   // Use abe-lsss.
-  ShutdownOpenABE();
+  abe_lsss::shutdown();
 }
 ```
 
-This is a process-global setting, not a per-context option. Do not change it concurrently with serialization or use it to load data encoded with a different setting.
+The process-global option is not per-context. Do not change it concurrently with serialization or use it to load data encoded with a different setting. OpenABE-named initialization and compression functions remain available as deprecated compatibility aliases.
 
 ## Quick Start
 
