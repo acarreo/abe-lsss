@@ -1,0 +1,389 @@
+[
+  {
+    "kind": "access-control",
+    "name": "cp-and-simple",
+    "policy": "(Alice and Bob)",
+    "attributes": "Alice|Bob",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 2
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-or-simple",
+    "policy": "(Alice or Bob)",
+    "attributes": "Bob",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 1
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-nested-satisfied",
+    "policy": "Alice and (Bob or (Charlie and Dave))",
+    "attributes": "Alice|Charlie|Dave",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 3
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-nested-unsatisfied",
+    "policy": "Alice and (Bob or (Charlie and Dave))",
+    "attributes": "Alice|Charlie",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-duplicate-attr-or",
+    "policy": "(Alice or Alice)",
+    "attributes": "Alice",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 1
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-duplicate-attr-and",
+    "policy": "(Alice and Alice)",
+    "attributes": "Alice",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 2
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-missing-attribute",
+    "policy": "(Alice and Bob)",
+    "attributes": "Alice",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-long-attribute",
+    "policy": "a-very-long-attribute-name-past-sixteen",
+    "attributes": "a-very-long-attribute-name-past-sixteen",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 1
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-prefixed-attribute-satisfied",
+    "policy": "((Alice and Bob) or uid:567abc)",
+    "attributes": "uid:567abc",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 1
+  },
+  {
+    "kind": "access-control",
+    "name": "cp-prefixed-attribute-unsatisfied",
+    "policy": "((Alice and Bob) or uid:567abc)",
+    "attributes": "Alice",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "num-gt-satisfied",
+    "policy": "Day > 5",
+    "attributes": "Day=7",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 2
+  },
+  {
+    "kind": "access-control",
+    "name": "num-gt-unsatisfied",
+    "policy": "Day > 5",
+    "attributes": "Day=3",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "num-ge-satisfied",
+    "policy": "(Day >= 5)",
+    "attributes": "Day=5",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 2
+  },
+  {
+    "kind": "access-control",
+    "name": "num-ge-unsatisfied",
+    "policy": "(Day >= 12)",
+    "attributes": "Day=7",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "num-lt-satisfied",
+    "policy": "(Day < 25)",
+    "attributes": "Day=17",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 29
+  },
+  {
+    "kind": "access-control",
+    "name": "num-lt-unsatisfied",
+    "policy": "(Day < 5)",
+    "attributes": "Day=17",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "num-le-satisfied",
+    "policy": "(Day <= 7000)",
+    "attributes": "Day=7000",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 21
+  },
+  {
+    "kind": "access-control",
+    "name": "num-le-unsatisfied",
+    "policy": "(Day <= 5)",
+    "attributes": "Day=7000",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "num-eq-expint-satisfied",
+    "policy": "(Month == 7#4)",
+    "attributes": "Month=7#4",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 4
+  },
+  {
+    "kind": "access-control",
+    "name": "num-eq-expint-unsatisfied",
+    "policy": "(Month == 6#4)",
+    "attributes": "Month=7#4",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "num-in-range-exclusive-satisfied",
+    "policy": "(Level in (2-35))",
+    "attributes": "Level=20",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 29
+  },
+  {
+    "kind": "access-control",
+    "name": "num-in-range-exclusive-boundary-excluded",
+    "policy": "(Level in (2-35))",
+    "attributes": "Level=35",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "num-in-range-inclusive-boundary-included",
+    "policy": "Level in {2-35}",
+    "attributes": "Level=35",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 30
+  },
+  {
+    "kind": "access-control",
+    "name": "num-mixed-and-satisfied",
+    "policy": "(Month<12#4 and Bob)",
+    "attributes": "Month=7#4|Bob",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 2
+  },
+  {
+    "kind": "access-control",
+    "name": "num-mixed-and-unsatisfied-missing-attr",
+    "policy": "(Month<12#4 and Bob)",
+    "attributes": "Month=7#4",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "date-eq-satisfied",
+    "policy": "Date = May 5, 2016",
+    "attributes": "Date=May 5, 2016",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 32
+  },
+  {
+    "kind": "access-control",
+    "name": "date-eq-unsatisfied",
+    "policy": "Date = May 5, 2016",
+    "attributes": "Date=May 6, 2016",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "date-lt-satisfied",
+    "policy": "(Date < January 1, 2017 and Bob)",
+    "attributes": "Date=December 15, 2015|Bob",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 20
+  },
+  {
+    "kind": "access-control",
+    "name": "date-lt-unsatisfied",
+    "policy": "(Date < January 1, 2017 and Bob)",
+    "attributes": "Date=March 10, 2017|Bob",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "date-range-satisfied",
+    "policy": "((Date = December 10-16, 2016) and Charlie)",
+    "attributes": "Date=December 15, 2016|Charlie",
+    "expect_parses": true,
+    "expect_satisfies": true,
+    "match_count": 22
+  },
+  {
+    "kind": "access-control",
+    "name": "date-range-unsatisfied",
+    "policy": "((Date = December 10-16, 2016) and Charlie)",
+    "attributes": "Date=December 1, 2016|Charlie",
+    "expect_parses": true,
+    "expect_satisfies": false,
+    "match_count": 0
+  },
+  {
+    "kind": "access-control",
+    "name": "month-invalid-bits",
+    "policy": "Month < 16#4",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "month-zero-bits",
+    "policy": "Month < 4#0",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "negative-int-gt",
+    "policy": "Month > -1#4",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "negative-int-lt",
+    "policy": "Month < -3#4",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "date-before-epoch",
+    "policy": "Date = January 1, 1968",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "date-invalid-start-range",
+    "policy": "Date = January 0-10, 1970",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "date-invalid-end-range",
+    "policy": "Date = January 1-40, 1970",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "date-invalid-format",
+    "policy": "(One or Two) and (Date : January 1, 1970)",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "expint-in-input-policy",
+    "policy": "Alice or foo_expint04_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx0xx",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "date-range-valid-parse-only",
+    "policy": "Date = January 1-31, 2016",
+    "expect_parses": true
+  },
+  {
+    "kind": "access-control",
+    "name": "date-gt-valid-parse-only",
+    "policy": "Date > January 5, 2016",
+    "expect_parses": true
+  },
+  {
+    "kind": "access-control",
+    "name": "date-lt-valid-parse-only",
+    "policy": "Date < January 5, 2016",
+    "expect_parses": true
+  },
+  {
+    "kind": "access-control",
+    "name": "date-le-valid-parse-only",
+    "policy": "Date <= January 5, 2016",
+    "expect_parses": true
+  },
+  {
+    "kind": "access-control",
+    "name": "date-ge-valid-parse-only",
+    "policy": "Date >= January 5, 2016",
+    "expect_parses": true
+  },
+  {
+    "kind": "access-control",
+    "name": "int-range-equivalent-form",
+    "policy": "Level > 2 and Level < 35",
+    "expect_parses": true
+  },
+  {
+    "kind": "access-control",
+    "name": "expint-in-input-attribute",
+    "attributes": "foo_expint04_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx0xx|bar",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "comparison-op-in-attrlist",
+    "attributes": "Alice|Day >= 100|Bob",
+    "expect_parses": false
+  },
+  {
+    "kind": "access-control",
+    "name": "expint-overflow-in-attrlist",
+    "attributes": "Alice|Day = 1000#8|Bob",
+    "expect_parses": false
+  }
+]

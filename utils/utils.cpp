@@ -72,6 +72,25 @@ OpenABE_SCHEME OpenABE_convertStringToSchemeID(const string id) {
 }
 
 
+// Get encryption input based on scheme type
+unique_ptr<OpenABEFunctionInput> getEncInput(OpenABE_SCHEME type, const string& func_input) {
+  if (type == OpenABE_SCHEME_CP_WATERS)
+    return createPolicyTree(func_input);
+  else if (type == OpenABE_SCHEME_KP_GPSW)
+    return createAttributeList(func_input);
+  return nullptr;
+}
+
+// Get key input based on scheme type
+unique_ptr<OpenABEFunctionInput> getKeyInput(OpenABE_SCHEME type, const string& key_input) {
+  if (type == OpenABE_SCHEME_CP_WATERS)
+    return createAttributeList(key_input);
+  else if (type == OpenABE_SCHEME_KP_GPSW)
+    return createPolicyTree(key_input);
+  return nullptr;
+}
+
+
 /********************************************************************************
  * OpenABEKeystoreManager utility methods for ciphertexts and keys
  ********************************************************************************/
