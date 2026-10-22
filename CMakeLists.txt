@@ -145,17 +145,20 @@ endif()
 # Tests optionnels
 # ------------------------------------------------------------------------------
 option(TESTS "Build the tests" OFF)
+if(BUILD_TESTS)
+    set(TESTS ON)
+endif()
 if(TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
-option(CLI "Build the tests" ON)
+option(CLI "Build the CLI tools" ON)
 if(CLI)
     add_subdirectory(cli)
 endif()
 
-option(BENCH "Build the benchmarks" ON)
+option(BENCH "Build the benchmarks" OFF)
 if(BENCH)
     find_package(benchmark REQUIRED)
     add_subdirectory(bench)

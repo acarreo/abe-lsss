@@ -25,7 +25,7 @@ jobs:
       run: |
         mkdir -p build
         cd build
-        cmake .. -DBUILD_TESTS=ON
+        cmake .. -DTESTS=ON -DBENCH=OFF -DCLI=ON
 
     - name: Build abe-lsss library
       run: |
