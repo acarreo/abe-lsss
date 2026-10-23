@@ -14,6 +14,10 @@ add_compile_options(-Wall)
 
 set(RELIC_CURVE "bls12-381" CACHE STRING "Courbe RELIC à compiler (ex: bls12-381, bn254, etc)")
 set(RELIC_TAG "0.6.0" CACHE STRING "Version ou tag RELIC à compiler")
+set(RELIC_ARITH "" CACHE STRING "Surcharge ARITH de RELIC (ex: gmp, nécessaire sur macOS car l'assembleur x64 est ELF)")
+if(RELIC_ARITH)
+    set(RELIC_ARITH_FLAG "-DARITH=${RELIC_ARITH} ")
+endif()
 
 # ------------------------------------------------------------------------------
 # Dépendances système
@@ -56,7 +60,7 @@ if(NOT RLC_LIBRARY)
 
         CONFIGURE_COMMAND ${CMAKE_COMMAND} -E echo "Running RELIC preset..."
         BUILD_COMMAND
-            ${RELIC_SRC_DIR}/preset/x64-pbc-${RELIC_CURVE}.sh "-DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DSHLIB=ON -DSTBIN=OFF -DTESTS=OFF -DBENCH=OFF ${RELIC_SRC_DIR}"
+            ${RELIC_SRC_DIR}/preset/x64-pbc-${RELIC_CURVE}.sh "-DCMAKE_POLICY_VERSION_MINIMUM=3.5 ${RELIC_ARITH_FLAG}-DSHLIB=ON -DSTBIN=OFF -DTESTS=OFF -DBENCH=OFF ${RELIC_SRC_DIR}"
             && ${CMAKE_MAKE_PROGRAM} -C ${RELIC_BUILD_DIR} -j
 
         INSTALL_COMMAND ""
