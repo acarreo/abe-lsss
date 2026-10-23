@@ -4,11 +4,13 @@
 **Révision inspectée :** `ac0b5fd` (`main`)
 **Périmètre :** inspection statique de `abe-lsss`, comparaison de structure avec le dépôt local `openabe` et examen du patch d’intégration de `secure-file-transfer`. Aucun code cryptographique n’a été modifié. Cet audit n’est pas un audit cryptographique indépendant ni une validation formelle des preuves de sécurité.
 
+> **Repère temporel :** les constats ci-dessous décrivent l’état inspecté à `ac0b5fd`. Ils ne décrivent pas tous l’état actuel du dépôt. Le suivi des corrections des phases 2 et 3 est ajouté à la fin; les observations initiales sont conservées comme photographie historique.
+
 ## Synthèse
 
 `abe-lsss` est une adaptation C++ d’OpenABE qui conserve une grande partie de ses noms, de ses abstractions et de son code de bas niveau, tout en séparant le cœur ABE/LSSS, les schémas, le CLI et le build CMake. Les deux schémas ABE que la fabrique construit effectivement sont CP-ABE de Waters et KP-ABE de Goyal–Pandey–Sahai–Waters. La base comporte aussi des composants de chiffrement symétrique, de chiffrement à clé publique et de signature hérités, mais leur présence ne signifie pas que des variantes CCA-ABE ou multi-autorités soient disponibles.
 
-Points prioritaires à traiter :
+Points prioritaires relevés à la révision auditée :
 
 1. Les sources des deux schémas sont compilées séparément dans les exécutables CLI/tests/bench, mais ne figurent pas dans les sources de la bibliothèque `abe_lsss` définies au CMake racine. L’API installée peut donc ne pas fournir ces implémentations à un consommateur qui ne les recompile pas.
 2. La configuration locale `.build` a `TESTS=OFF`; `ctest` y trouve zéro test. La CI demande `TESTS=ON`, mais il n’y a qu’un workflow Linux.
@@ -43,7 +45,7 @@ Le répertoire `.build/` existant est un répertoire de travail généré, ignor
 | Schémas | La fabrique locale `createContextABE` n’instancie que `CP_WATERS` et `KP_GPSW`. Les composants hérités PKE, SKE et signature sont toujours présents dans `src/abe`, mais ne constituent pas des schémas ABE supplémentaires. |
 | CCA | Des valeurs `CP_WATERS_CCA` et `KP_GPSW_CCA` existent dans l’énumération. En revanche, `zcontextcca.h` et `zcontextcca.cpp` placent les classes et leur implémentation sous `#if 0`; les fonctions de création de contextes CCA visibles dans l’API sont commentées, et la fabrique ABE n’accepte que les identifiants CPA. |
 | Multi-autorité | Des types et paramètres hérités (`MA-ABE`, GPK, GID) restent dans les interfaces communes. Aucun schéma multi-autorité n’est enregistré dans la fabrique observée. |
-| API | Les fonctions `InitializeOpenABE()` / `ShutdownOpenABE()`, les types `OpenABE*`, les identifiants de schéma et les messages d’erreur OpenABE sont conservés. `include/abe_lsss.h` expose encore de nombreux détails internes. |
+| API | À la révision auditée, les fonctions `InitializeOpenABE()` / `ShutdownOpenABE()`, les types `OpenABE*`, les identifiants de schéma et les messages d’erreur OpenABE étaient conservés. Le suivi ci-dessous décrit la nouvelle façade et les alias de compatibilité. |
 | Sérialisation et compression | La sérialisation des éléments de `ZP`, `G1`, `G2` et `GT` est conservée. `set_compression_flag(0|1)` contrôle globalement le paramètre transmis à RELIC pour les représentations de groupes; le défaut est compressé. Ce réglage global n’est pas attaché à un contexte ni à un format/version de sérialisation documenté ici. |
 | Éléments absents ou non retrouvés | Le dépôt OpenABE local contient aussi des modules dédiés RNG, courbes EC additionnelles, X.509, fuzzers et outils/profileurs. Leurs équivalents ne sont pas présents dans les répertoires source de `abe-lsss` inspectés. Cela ne prouve pas une suppression intentionnelle de chaque fonctionnalité, mais le périmètre livré est plus réduit. |
 | Intégration consommateur | `secure-file-transfer/scripts/abe-lsss.patch` ajoute notamment un mode CP-Waters à déchiffrement partiel (`CP_WATERS_WPD`), `partialDecrypt` et `randomizeDecryptionKey`, ainsi qu’un identifiant IBS. Ces ajouts ne sont pas dans la fabrique/schéma actuel d’`abe-lsss`; ils requièrent donc une compatibilité explicite ou l’application de ce patch dans le consommateur. |
@@ -61,7 +63,7 @@ Les niveaux ci-dessous distinguent la construction que l’API expose de la preu
 
 Les policies LSSS sont construites comme des arbres monotones (AND/OR/seuils) pour le partage/récupération. Le parser et les tests contiennent aussi des expressions de dates et d’entiers/ranges. Il ne faut pas déduire la prise en charge de politiques non monotones de la seule énumération de types de portes (`NOT`, `NAND`, etc.) : leur traduction et leur prise en charge cryptographique n’ont pas été démontrées par les tests observés.
 
-## Problèmes et risques repérés
+## Problèmes et risques repérés à la révision auditée
 
 ### Build, intégration et maintenance
 
@@ -88,7 +90,7 @@ Les policies LSSS sont construites comme des arbres monotones (AND/OR/seuils) po
 
 Le dépôt distribue une licence AGPL-3.0 et les fichiers hérités conservent des avis de copyright/attribution Zeutro/OpenABE. Aucun conflit n’a été établi pendant cet audit. Toute redistribution ou évolution doit conserver ces mentions et être examinée au regard des obligations AGPL; cet audit ne constitue pas un avis juridique.
 
-## État du build, des tests et de la CI
+## État initial du build, des tests et de la CI (révision auditée)
 
 - **CMake :** version minimale déclarée 3.10, C++20, OpenSSL et GMP requis. Si RELIC n’est pas trouvé, CMake configure un `ExternalProject` RELIC 0.6.0 sur la courbe `RELIC_CURVE` (défaut `bls12-381`). CLI activé par défaut; benchmarks désactivés par défaut et requièrent Google Benchmark.
 - **Makefile RELIC :** `compile/Makefile` annonce `CURVE` et `RELIC_TAG`, mais l’override de `RELIC_TAG` est écrasé dans le script shell.
@@ -97,7 +99,7 @@ Le dépôt distribue une licence AGPL-3.0 et les fichiers hérités conservent d
 - **Tests exécutés :** `ctest --test-dir .build --output-on-failure` retourne avec succès mais rapporte **“No tests were found!!!”**. Ce résultat décrit cette configuration locale; il ne prouve ni l’échec ni la réussite des tests activés par la CI.
 - **CI :** le workflow installe RELIC, configure `-DTESTS=ON -DBENCH=OFF -DCLI=ON`, build, installe puis appelle CTest sur `ubuntu-latest`. Aucune preuve de build CI réussie n’a été consultée dans cet audit.
 
-## Couverture et zones non testées
+## Couverture et zones non testées (révision auditée)
 
 L’estimation de couverture du code est **indisponible** : aucun outil/rapport de couverture n’est configuré ou présent. Sept exécutables de tests sont déclarés par `tests/CMakeLists.txt` (demo, keystore, ABE, policy, SKE, symétrique, bytestring), mais aucun n’est activé dans le build local observé.
 
@@ -105,7 +107,7 @@ Les tests présents couvrent des exemples CPA CP/KP, le keystore, la sérialisat
 
 Zones non couvertes ou non démontrées : tests négatifs systématiques de déchiffrement/politiques et de collusion multi-utilisateur; vecteurs cryptographiques publiés; désérialisation malformée et fuzzing; limites de taille/profondeur des policies; concurrence; effacement observable des secrets; non-régression de sérialisation compressée/décompressée; compatibilité `secure-file-transfer`; couverture instrumentée et tests macOS.
 
-## Priorisation (impact × effort)
+## Priorisation initiale (impact × effort)
 
 | Priorité | Sujet | Impact | Effort estimé | Motif |
 |---|---|---:|---:|---|
@@ -128,4 +130,28 @@ Zones non couvertes ou non démontrées : tests négatifs systématiques de déc
 
 **Reste / risques :** confirmer les conclusions cryptographiques avec une revue spécialisée; réconcilier les références Waters du code; exécuter le build CI dans un environnement propre; valider le linkage de la bibliothèque auprès d’un client externe; préserver la compatibilité du patch `secure-file-transfer`.
 
-La Phase 1 (README et guides `docs/`) reste en attente de validation.
+Au moment de l’audit, la Phase 1 (README et guides `docs/`) restait en attente de validation; elle a depuis été réalisée.
+
+## Suivi après les phases 2 et 3 — 23 octobre 2026
+
+Ce suivi complète l’audit initial sans en réécrire les observations historiques. Il se fonde sur les commits `ff8a324` (API et packaging) et `f4ccdf0` (CI et documentation sécurité), ainsi que sur une validation locale de ces commits.
+
+| Sujet initial | État actuel observé |
+|---|---|
+| Sources ABE absentes de la bibliothèque partagée | Corrigé : CP-Waters, KP-GPSW et leur fabrique sont inclus dans `abe_lsss`. CLI, tests et benchmarks consomment maintenant la bibliothèque au lieu de compiler ces schémas séparément. |
+| API ABE non disponible à l’installation | Corrigé pour l’usage documenté : installation des en-têtes, export CMake (`find_package(abe-lsss)` / `abe-lsss::abe_lsss`) et fichier pkg-config. Des consommateurs CMake et pkg-config ont été compilés et exécutés depuis une installation temporaire. |
+| API héritée uniquement | Façade `abe_lsss` ajoutée pour le cycle de vie, la compression, la fabrique CP-ABE/KP-ABE et le parsing. Les fonctions d’initialisation/compression OpenABE restent présentes comme interfaces dépréciées; les classes et types internes ne sont pas tous renommés. |
+| Tests locaux non activés | CMake découvre maintenant huit exécutables de tests avec `TESTS=ON`. Le build local et CTest passent : 8/8 exécutables. |
+| CI Linux seule | Workflow élargi à Linux GCC, Linux Clang et macOS Clang; le job ASan/UBSan Linux exécute les tests, puis deux contrôles LeakSanitizer ciblés. Les jobs macOS/Clang sont configurés, mais leur réussite n’a pas été observée localement. |
+| Fuites mémoire dans la sérialisation | La propriété RAII des buffers `getBytes()` utilisés par la sérialisation et du buffer hashé pour la dérivation de clé a été corrigée. Les deux tests LeakSanitizer ciblés réussissent. |
+| Gestion d’état global | L’état du cycle de vie est atomique et les transitions initialize/shutdown sont protégées par mutex. Cela ne garantit pas qu’un shutdown concurrent à des opérations RELIC soit sûr et ne constitue pas une garantie générale de thread-safety. |
+| Sécurité non documentée | `SECURITY.md` et `docs/SECURITY_MODEL.md` décrivent désormais le signalement, les hypothèses et les limitations. |
+
+**Résultats et limites de validation :**
+
+- Build standard local et CTest : 8/8 exécutables passent.
+- Build ASan/UBSan et CTest : 8/8 exécutables passent avec la détection de fuites générale désactivée. Cette détection reste désactivée car d’autres tests produisent encore des rapports LeakSanitizer; les deux tests ciblés activent séparément LeakSanitizer et passent.
+- Installation temporaire : consommateurs CMake et pkg-config compilés et exécutés.
+- Workflow YAML validé syntaxiquement localement; aucun résultat CI distant ni build macOS n’a été consulté.
+
+**Reste / risques :** revue cryptographique indépendante, fuzzing de désérialisation, tests TSan, effacement sûr exhaustif, garantie de thread-safety RELIC, couverture et analyses statiques demeurent à traiter. `compile/install-relic.sh` conserve le problème de `RELIC_TAG`. L’intégration avec le patch `secure-file-transfer` n’a pas été exécutée; le patch n’a pas été modifié.
