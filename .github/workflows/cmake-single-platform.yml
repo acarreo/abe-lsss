@@ -25,7 +25,7 @@ jobs:
             compiler: clang
             c_compiler: clang
             cxx_compiler: clang++
-          - os: macos-latest
+          - os: macos-15-intel
             compiler: clang
             c_compiler: clang
             cxx_compiler: clang++
@@ -35,7 +35,7 @@ jobs:
 
     - name: Install Linux dependencies
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev
+      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev flex
 
     - name: Install macOS dependencies
       if: runner.os == 'macOS'
@@ -68,7 +68,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev
+      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev flex
     - name: Configure with sanitizers
       run: >-
         cmake -S . -B build
