@@ -39,7 +39,7 @@ jobs:
 
     - name: Install macOS dependencies
       if: runner.os == 'macOS'
-      run: brew install gmp openssl@3
+      run: brew install gmp openssl@3 flex
 
     - name: Configure
       run: |
@@ -48,6 +48,7 @@ jobs:
           cmake_args+=("-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)")
           cmake_args+=("-DCMAKE_PREFIX_PATH=$(brew --prefix gmp)")
           cmake_args+=("-DRELIC_ARITH=gmp")
+          cmake_args+=("-DCMAKE_CXX_FLAGS=-I$(brew --prefix flex)/include")
         fi
         cmake -S . -B build \
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
