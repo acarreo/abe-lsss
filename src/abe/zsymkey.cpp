@@ -330,7 +330,6 @@ OpenABESymKeyAuthEnc::decrypt(string& plaintext, OpenABEByteString& iv,
   //   return false;
   // }
 
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   uint8_t *pt = nullptr;
   OpenABEByteString pt_buf;
 
@@ -346,6 +345,7 @@ OpenABESymKeyAuthEnc::decrypt(string& plaintext, OpenABEByteString& iv,
   // cout << "Dec Tag:\n";
   // BIO_dump_fp(stdout, (const char *) tag_ptr, tag_len);
 
+  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   /* set cipher type and mode */
   EVP_DecryptInit_ex(ctx, this->cipher, NULL, NULL, NULL);
   /* set the IV length as 128-bits */

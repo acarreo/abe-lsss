@@ -377,12 +377,10 @@ bool resetFlags(OpenABETreeNode *root) {
  */
 
 OpenABETreeNode::~OpenABETreeNode() {
-  // Go through each subnode.
+  // Release the reference this node holds on each subnode.
   for (uint32_t i = 0; i < this->m_Subnodes.size(); i++) {
     if (this->m_Subnodes[i] != NULL) {
-        uint32_t count = this->m_Subnodes[i]->getRefCount();
-        for (uint32_t j = 0; j < count; j++)
-          this->m_Subnodes[i]->deRef();
+      this->m_Subnodes[i]->deRef();
     }
   }
 }

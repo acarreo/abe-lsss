@@ -67,18 +67,6 @@ jobs:
       run: cmake --build build --parallel 2
     - name: Test
       env:
-        ASAN_OPTIONS: detect_leaks=0
+        ASAN_OPTIONS: detect_leaks=1
         UBSAN_OPTIONS: print_stacktrace=1
       run: ctest --test-dir build --output-on-failure
-    - name: Leak-check group serialization
-      env:
-        ASAN_OPTIONS: detect_leaks=1
-      run: >-
-        build/tests/test_api
-        --gtest_filter=AbeLsssApi.GroupElementSerializationRoundTrips
-    - name: Leak-check ABE key derivation
-      env:
-        ASAN_OPTIONS: detect_leaks=1
-      run: >-
-        build/tests/test_ske
-        --gtest_filter=hashToSymmetricKey.TestKDF2
