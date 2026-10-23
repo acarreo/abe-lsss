@@ -39,7 +39,7 @@ Policies support monotone access trees and the parser has tests for date/integer
 ## What platforms are supported?
 
 - **Linux:** the workflow configures GCC and Clang builds; the Linux GCC configuration and test suite were also run locally for the API/security changes.
-- **macOS:** a GitHub Actions build/test job using Clang is configured. Its presence in the workflow is not evidence that a particular run succeeded.
+- **macOS:** not covered by CI. The bundled RELIC x64 assembly (ELF directives) and the system Flex headers currently prevent a macOS build; this is a known open item.
 - **Docker:** build recipes are provided, but they are not exercised by that CI workflow.
 - **Other platforms:** not currently verified by repository CI.
 
