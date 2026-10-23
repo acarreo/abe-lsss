@@ -42,6 +42,8 @@ if(NOT RLC_LIBRARY)
 
     file(MAKE_DIRECTORY ${RELIC_SRC_DIR})
     file(MAKE_DIRECTORY ${RELIC_BUILD_DIR})
+    # Les dossiers d'include doivent exister dès la configuration (cible importée exportée)
+    file(MAKE_DIRECTORY ${RELIC_SRC_DIR}/include ${RELIC_BUILD_DIR}/include)
 
     ExternalProject_Add(
         relic_project
