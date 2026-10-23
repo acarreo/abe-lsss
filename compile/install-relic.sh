@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RELIC_TAG="0.6.0"
+RELIC_TAG=${RELIC_TAG:-0.6.0}
 CURVE=${CURVE:-bls12-381}
 
 sudo apt-get update

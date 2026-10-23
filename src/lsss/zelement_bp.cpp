@@ -46,6 +46,7 @@
 #include "lsss/zobject.h"
 #include "lsss/zelement_bp.h"
 #include "abe_lsss/api.h"
+#include "abe/zerror.h"
 
 
 static std::atomic<int> compression_flag{1};
@@ -226,8 +227,8 @@ ZP operator/(const ZP &x, const ZP &y)
 {
   ZP c;
   if (zmbignum_is_zero(y.m_ZP)) {
-    cout << "Divide by zero error!" << endl;
-    exit(-1);
+    cerr << "Divide by zero error!" << endl;
+    throw OpenABE_ERROR_INVALID_INPUT;
   }
 
   ZP r;
@@ -445,7 +446,7 @@ G1::G1(uint8_t *buffer, int bufferSize) {
   // Check if the buffer size is valid: 1 byte for G1 unity or the default size
   if (bufferSize != 1 && bufferSize != G1::getDefaultSize()) {
     cerr << "Error : Invalid buffer size for G1 element." << endl;
-    exit(-1);
+    throw OpenABE_ERROR_INVALID_INPUT;
   }
   g1_init(this->m_G1);
   g1_read_bin(this->m_G1, buffer, bufferSize);
@@ -613,7 +614,7 @@ G2::G2(const g2_t &w) {
 G2::G2(uint8_t *buffer, int bufferSize) {
   if (bufferSize != 1 && bufferSize != G2::getDefaultSize()) {
     cerr << "Error : Invalid buffer size for G2 element." << endl;
-    exit(-1);
+    throw OpenABE_ERROR_INVALID_INPUT;
   }
   g2_init(this->m_G2);
   g2_read_bin(this->m_G2, buffer, bufferSize);

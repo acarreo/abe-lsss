@@ -154,4 +154,12 @@ Ce suivi complète l’audit initial sans en réécrire les observations histori
 - Installation temporaire : consommateurs CMake et pkg-config compilés et exécutés.
 - Workflow YAML validé syntaxiquement localement; aucun résultat CI distant ni build macOS n’a été consulté.
 
-**Reste / risques :** revue cryptographique indépendante, fuzzing de désérialisation, tests TSan, effacement sûr exhaustif, garantie de thread-safety RELIC, couverture et analyses statiques demeurent à traiter. `compile/install-relic.sh` conserve le problème de `RELIC_TAG`. L’intégration avec le patch `secure-file-transfer` n’a pas été exécutée; le patch n’a pas été modifié.
+**Reste / risques :** revue cryptographique indépendante, fuzzing continu de désérialisation (des tests de troncature/altération existent désormais), tests TSan, effacement sûr exhaustif, garantie de thread-safety RELIC, couverture et analyses statiques demeurent à traiter. L’intégration avec le patch `secure-file-transfer` n’a pas été exécutée; le patch n’a pas été modifié.
+
+## Suivi — 24 octobre 2026
+
+- **CI :** réparée sur Linux (GCC, Clang, ASan/UBSan); les builds activent `-D_GLIBCXX_ASSERTIONS`. macOS retiré (non fonctionnel).
+- **Correctifs trouvés par les nouveaux tests de robustesse :** `getInternalPtr()` sur buffer vide (comportement indéfini); `exit()` dans les constructeurs `G1`/`G2`, la division `ZP` et `OpenABEAttributeList` remplacés par des exceptions `OpenABE_ERROR`; déréférencement nul dans `decryptKEM` (CP-Waters et KP-GPSW) lorsque la politique d’un chiffré est altérée.
+- **Propriété documentée :** les contextes CPA n’authentifient pas les chiffrés (malléabilité), voir `docs/SECURITY_MODEL.md`.
+- **`RELIC_TAG` :** `compile/install-relic.sh` respecte désormais la variable d’environnement.
+- **Reste :** fuites mémoire (LeakSanitizer général toujours désactivé), revue cryptographique indépendante, intégration `secure-file-transfer`, support macOS.
