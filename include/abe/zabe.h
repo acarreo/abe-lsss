@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <string>
 
+#include <gmp.h>
+
 extern "C" {
 #include <relic.h>
 }

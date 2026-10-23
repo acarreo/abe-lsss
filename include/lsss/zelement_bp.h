@@ -37,6 +37,8 @@
 #include <list>
 #include <memory>
 
+#include <gmp.h>
+
 extern "C" {
   #include "zelement.h"
 }
