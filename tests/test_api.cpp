@@ -96,6 +96,104 @@ TEST(AbeLsssApi, GroupElementSerializationRoundTrips) {
   EXPECT_TRUE(gt == restoredGt);
 }
 
+namespace {
+
+// Malformed blobs must be handled through an error code or an exception and
+// must never crash or terminate the process. The CPA contexts do not
+// authenticate ciphertexts (the payload is masked by XOR), so a modified
+// ciphertext may decrypt to garbage; only truncation is required to be rejected.
+enum class Outcome { Rejected, Correct, Wrong };
+
+template <typename Fn>
+Outcome classify(Fn&& attempt, const abe_lsss::ByteString& expected) {
+  abe_lsss::ByteString recovered;
+  try {
+    if (attempt(recovered) != OpenABE_NOERROR) return Outcome::Rejected;
+  } catch (const std::exception&) {
+    return Outcome::Rejected;
+  } catch (const OpenABE_ERROR&) {
+    return Outcome::Rejected;
+  }
+  return recovered == expected ? Outcome::Correct : Outcome::Wrong;
+}
+
+}
+
+TEST(AbeLsssApi, MalformedCiphertextIsHandledWithoutCrashing) {
+  auto context = abe_lsss::create_context(abe_lsss::cp_waters);
+  ASSERT_EQ(context->generateParams("mal_mpk", "mal_msk"), OpenABE_NOERROR);
+  auto attrs = abe_lsss::parse_attributes("A|B");
+  auto policy = abe_lsss::parse_policy("(A and B)");
+  ASSERT_TRUE(attrs && policy);
+  ASSERT_EQ(context->keygen(attrs.get(), "mal_user", "mal_mpk", "mal_msk"),
+            OpenABE_NOERROR);
+
+  abe_lsss::ByteString plaintext, blob;
+  for (std::uint8_t byte = 0; byte < 32; ++byte) plaintext.push_back(byte);
+  abe_lsss::Ciphertext ciphertext;
+  ASSERT_EQ(context->encrypt("mal_mpk", policy.get(), plaintext, ciphertext),
+            OpenABE_NOERROR);
+  ciphertext.exportToBytes(blob);
+
+  auto decryptBlob = [&](abe_lsss::ByteString candidate) {
+    return classify(
+        [&](abe_lsss::ByteString& out) {
+          abe_lsss::Ciphertext ct;
+          ct.loadFromBytes(candidate);
+          return context->decrypt("mal_mpk", "mal_user", out, ct);
+        },
+        plaintext);
+  };
+
+  ASSERT_EQ(decryptBlob(blob), Outcome::Correct);
+
+  const size_t step = blob.size() > 400 ? blob.size() / 200 : 1;
+  for (size_t cut = 0; cut < blob.size(); cut += step) {
+    EXPECT_NE(decryptBlob(blob.getSubset(0, cut)), Outcome::Wrong) << "cut=" << cut;
+  }
+  for (size_t i = 0; i < blob.size(); i += step) {
+    abe_lsss::ByteString flipped = blob;
+    flipped[i] ^= 0x01;
+    decryptBlob(flipped);
+  }
+}
+
+TEST(AbeLsssApi, MalformedKeyBlobsDoNotCrashLoaders) {
+  auto context = abe_lsss::create_context(abe_lsss::cp_waters);
+  ASSERT_EQ(context->generateParams("key_mpk", "key_msk"), OpenABE_NOERROR);
+  auto attrs = abe_lsss::parse_attributes("A|B");
+  ASSERT_TRUE(attrs);
+  ASSERT_EQ(context->keygen(attrs.get(), "key_user", "key_mpk", "key_msk"),
+            OpenABE_NOERROR);
+
+  abe_lsss::ByteString mpk, sk;
+  ASSERT_EQ(context->exportKey("key_mpk", mpk), OpenABE_NOERROR);
+  ASSERT_EQ(context->exportKey("key_user", sk), OpenABE_NOERROR);
+
+  auto tryLoad = [&](bool isMpk, abe_lsss::ByteString blob) {
+    try {
+      return isMpk ? context->loadMasterPublicParams("bad_mpk", blob)
+                   : context->loadUserSecretParams("bad_sk", blob);
+    } catch (const std::exception&) {
+    } catch (const OpenABE_ERROR&) {
+    }
+    return OpenABE_ERROR_INVALID_INPUT;
+  };
+
+  for (bool isMpk : {true, false}) {
+    abe_lsss::ByteString good = isMpk ? mpk : sk;
+    const size_t step = good.size() > 400 ? good.size() / 200 : 1;
+    for (size_t cut = 0; cut < good.size(); cut += step) {
+      tryLoad(isMpk, good.getSubset(0, cut));
+    }
+    for (size_t i = 0; i < good.size(); i += step) {
+      abe_lsss::ByteString flipped = good;
+      flipped[i] ^= 0x80;
+      tryLoad(isMpk, flipped);
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   abe_lsss::initialize();
   ::testing::InitGoogleTest(&argc, argv);

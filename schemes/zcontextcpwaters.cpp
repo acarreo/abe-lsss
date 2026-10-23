@@ -318,11 +318,13 @@ OpenABEContextCPWaters::decryptKEM(const string &mpkID, const string &keyID,
     ASSERT_NOTNULL(decKey);
     // Obtain the attribute list from the decryption key
     OpenABEAttributeList *attrList = (OpenABEAttributeList *)decKey->getComponent("input");
+    ASSERT_NOTNULL(attrList);
 
     OpenABEByteString *policy_str = ciphertext.getByteString("policy");
     ASSERT_NOTNULL(policy_str);
 
     unique_ptr<OpenABEPolicy> policy = createPolicyTree(policy_str->toString());
+    ASSERT(policy != nullptr, OpenABE_ERROR_INVALID_POLICY_TREE);
 
     // Initialize an LSSS structure. Given an attribute list and policy
     // it will identify the necessary solution and return the appropriate

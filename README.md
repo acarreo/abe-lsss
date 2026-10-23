@@ -81,7 +81,7 @@ cmake --build build -- -j2
 sudo cmake --build build --target install
 ```
 
-If RELIC has already been installed in a non-default prefix, pass its prefix through `CMAKE_PREFIX_PATH` when configuring. Otherwise CMake builds RELIC using `RELIC_CURVE` and `RELIC_TAG`, then installs it alongside abe-lsss. The separate `compile/Makefile` exposes `CURVE` and `RELIC_TAG`; **known limitation:** `compile/install-relic.sh` currently hardcodes tag `0.6.0`, overriding that Makefile's `RELIC_TAG` value.
+If RELIC has already been installed in a non-default prefix, pass its prefix through `CMAKE_PREFIX_PATH` when configuring. Otherwise CMake builds RELIC using `RELIC_CURVE` and `RELIC_TAG`, then installs it alongside abe-lsss. The separate `compile/Makefile` exposes `CURVE` and `RELIC_TAG`; `compile/install-relic.sh` honours the `RELIC_TAG` environment variable (default `0.6.0`).
 
 ### Using the installed package
 

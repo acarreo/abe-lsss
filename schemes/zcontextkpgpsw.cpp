@@ -297,6 +297,7 @@ OpenABEContextKPGPSW::decryptKEM(const string &mpkID, const string &keyID,
     OpenABEByteString *policy_str = decKey->getByteString("input");
     ASSERT_NOTNULL(policy_str);
     unique_ptr<OpenABEPolicy> policy = createPolicyTree(policy_str->toString());
+    ASSERT(policy != nullptr, OpenABE_ERROR_INVALID_POLICY_TREE);
 
     // Obtain the attribute list from the decryption key
     OpenABEAttributeList *attrList =

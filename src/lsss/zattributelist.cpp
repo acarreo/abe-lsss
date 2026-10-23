@@ -44,6 +44,7 @@
 #include "lsss/zattributelist.h"
 #include "lsss/zdriver.h"
 #include "lsss/zpolicy.h"
+#include "abe/zerror.h"
 
 using namespace std;
 
@@ -70,8 +71,7 @@ OpenABEAttributeList::OpenABEAttributeList(uint32_t numArgs, std::vector<string>
     : OpenABEFunctionInput() {
   string c;
   if (numArgs != args.size())
-    exit(-1);
-    //throw OpenABE_ERROR_INVALID_INPUT;
+    throw OpenABE_ERROR_INVALID_INPUT;
 
   for (size_t i = 0; i < args.size(); i++) {
     if (args[i] != "")

@@ -13,6 +13,12 @@ multi-authority ABE, revocation, tracing, non-monotone policies, outsourced
 decryption, or searchable encryption. Enum values and inherited interfaces
 do not imply that these features are available.
 
+The CPA contexts do not authenticate ciphertexts: the payload is masked with a
+hash-derived key stream, so a modified ciphertext can decrypt to different data
+without an error (malleability). Applications that need integrity must
+authenticate the payload themselves, for example with an AEAD under a key
+protected by ABE.
+
 ## Assets and trust assumptions
 
 - Plaintext, ABE private keys, authority master secrets, and any payload
