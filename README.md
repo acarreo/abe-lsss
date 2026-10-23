@@ -10,7 +10,7 @@ The repository is an evolving research/engineering project, not a security-certi
 
 ## Documentation
 
-- [API guide](docs/API.md) — C++ API, in-tree example, initialization and current integration limits.
+- [API guide](docs/API.md) — namespaced C++ API, in-tree example and package integration.
 - [CLI guide](docs/CLI.md) — setup, key generation, encryption and decryption.
 - [Security model](docs/SECURITY_MODEL.md) — assumptions, intended properties and known limitations.
 - [Security reporting](SECURITY.md) — private vulnerability reporting guidance.
@@ -38,8 +38,8 @@ Policies support monotone access trees and the parser has tests for date/integer
 
 ## What platforms are supported?
 
-- **Linux:** configured in the repository's GitHub Actions workflow and locally tested during this update.
-- **macOS:** a GitHub Actions build/test job is configured; check the latest workflow result before relying on a specific release.
+- **Linux:** the workflow configures GCC and Clang builds; the Linux GCC configuration and test suite were also run locally for the API/security changes.
+- **macOS:** a GitHub Actions build/test job using Clang is configured. Its presence in the workflow is not evidence that a particular run succeeded.
 - **Docker:** build recipes are provided, but they are not exercised by that CI workflow.
 - **Other platforms:** not currently verified by repository CI.
 
@@ -75,13 +75,24 @@ make -C compile CURVE=bls12-381 RELIC_TAG=0.6.0
 
 # Configure and build abe-lsss. TESTS fetches GoogleTest when enabled.
 cmake -S . -B build -DRELIC_CURVE=bls12-381 -DCLI=ON -DTESTS=ON -DBENCH=OFF
-cmake --build build --parallel
+cmake --build build -- -j2
 
-# Current CMake install rules target /usr/local.
+# Install to the default prefix (/usr/local); use sudo if needed.
 sudo cmake --build build --target install
 ```
 
-`RELIC_CURVE` selects the curve for CMake's automatic RELIC build; the `compile/Makefile` exposes `CURVE` and `RELIC_TAG`. **Known limitation:** `compile/install-relic.sh` currently hardcodes tag `0.6.0`, overriding the Makefile's `RELIC_TAG` value. A non-default tag must not be assumed to have been installed by this host recipe until that is fixed.
+If RELIC has already been installed in a non-default prefix, pass its prefix through `CMAKE_PREFIX_PATH` when configuring. Otherwise CMake builds RELIC using `RELIC_CURVE` and `RELIC_TAG`, then installs it alongside abe-lsss. The separate `compile/Makefile` exposes `CURVE` and `RELIC_TAG`; **known limitation:** `compile/install-relic.sh` currently hardcodes tag `0.6.0`, overriding that Makefile's `RELIC_TAG` value.
+
+### Using the installed package
+
+The install includes the public headers, shared library, CMake package config and `abe-lsss.pc` pkg-config metadata. For a CMake consumer:
+
+```cmake
+find_package(abe-lsss CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE abe-lsss::abe_lsss)
+```
+
+When installed to a custom prefix, set `CMAKE_PREFIX_PATH` to that prefix. For a pkg-config consumer, use `pkg-config --cflags --libs abe-lsss`; add the custom prefix's `lib/pkgconfig` directory to `PKG_CONFIG_PATH` if needed. A minimal C++ example using the installed API is in [docs/API.md](docs/API.md).
 
 By default, group elements are serialized compressed. The namespaced API can set the global compression option before serializing/loading data:
 
@@ -139,7 +150,7 @@ cmp message.txt recovered-kp.txt
 
 In these commands `-p` prefixes the master parameter filenames. Key files default to the `.key` suffix; ciphertext output names receive `.cpabe` or `.kpabe`. The CLI does not implement the legacy `PK` mode despite accepting its scheme name in some usage strings. For all current flags and caveats, see the [CLI guide](docs/CLI.md).
 
-For an in-tree C++ example, see [docs/examples/abe_quickstart.cpp](docs/examples/abe_quickstart.cpp) and the [API guide](docs/API.md). The current factory/header packaging is not yet a stable standalone installed C++ API.
+For an in-tree C++ example, see [docs/examples/abe_quickstart.cpp](docs/examples/abe_quickstart.cpp) and the [API guide](docs/API.md). The modern entry points are namespaced under `abe_lsss`; OpenABE-named lifecycle and compression functions remain available as deprecated compatibility aliases.
 
 ## Benchmarking
 
@@ -147,7 +158,7 @@ The Google Benchmark harness in `bench/` measures setup, key generation, encrypt
 
 ```bash
 cmake -S . -B build-bench -DCLI=OFF -DTESTS=OFF -DBENCH=ON
-cmake --build build-bench --target bench_abe --parallel
+cmake --build build-bench --target bench_abe -- -j2
 build-bench/bench/bench_abe \
   --benchmark_filter='BM_(Setup|Keygen)/(CP-ABE|KP-ABE)|BM_(Encrypt|Decrypt)/(CP-ABE|KP-ABE)/10$' \
   --benchmark_min_time=0.05 --benchmark_repetitions=3 \
@@ -171,6 +182,7 @@ Sizes are raw serialized blobs returned by the library, not armored CLI file siz
  ┣ 📂bench      : benchmarks ABE et LSSS (Google Benchmark)
  ┣ 📂cli        : outils setup/keygen/encrypt/decrypt/policy
  ┣ 📂compile    : scripts de build et d'installation de RELIC
+ ┣ 📂cmake      : templates du package CMake et pkg-config
  ┣ 📂docker     : Dockerfiles et Makefile des images
  ┣ 📂docs       : guides API/CLI, audit et exemple C++
  ┣ 📂include    : en-têtes ABE et LSSS
@@ -179,6 +191,7 @@ Sizes are raw serialized blobs returned by the library, not armored CLI file siz
  ┣ 📂tests      : tests GoogleTest et vecteurs d'accès
  ┣ 📂utils      : utilitaires et types communs
  ┣ 📂.github    : workflow GitHub Actions
+ ┣ 📜SECURITY.md
  ┣ 📜CMakeLists.txt
  ┣ 📜LICENSE
  ┗ 📜README.md
@@ -186,7 +199,7 @@ Sizes are raw serialized blobs returned by the library, not armored CLI file siz
 
 ## Contributing
 
-Contributions and focused bug reports are welcome. Please include the affected scheme, RELIC curve/version, compiler, exact build/test commands and whether the issue reproduces with a clean build. Do not post secret keys or sensitive plaintext in an issue. A fuller contributor guide and CI checks are planned.
+Contributions and focused bug reports are welcome. Please include the affected scheme, RELIC curve/version, compiler, exact build/test commands and whether the issue reproduces with a clean build. Do not post secret keys or sensitive plaintext in an issue. A fuller contributor guide, coverage reporting and static-analysis/format checks remain planned.
 
 ## Citation
 
@@ -212,7 +225,7 @@ These references identify the intended constructions; the relationship between e
 
 ## Security
 
-This project has no repository-specific `SECURITY.md` or published private response address yet. Do not disclose vulnerability details in a public issue. If GitHub private vulnerability reporting is enabled for the repository, use it; otherwise first contact the maintainers to request a private channel without including exploit details. Report the affected revision, build configuration and impact. See the scope caveat at the beginning of this README and the [Phase 0 audit](docs/AUDIT.md).
+See [SECURITY.md](SECURITY.md) for private vulnerability reporting guidance and [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md) for the intended security properties and limitations. Do not disclose vulnerability details in a public issue.
 
 ## Contributions and credits
 
@@ -220,7 +233,7 @@ This project has no repository-specific `SECURITY.md` or published private respo
 
 - **Cryptography design:** Brent Waters, Matthew Green, Susan Hohenberger Waters and J. Ayo Akinyele.
 - **Software design and development:** J. Ayo Akinyele, Matthew Green, Alan M. Dunn and Michael Rushanan.
-- **Dependencies:** RELIC Toolkit; OpenSSL; GMP; GoogleTest and Google Benchmark for optional tests/benchmarks.
+- **Dependencies:** RELIC Toolkit; OpenSSL; GMP; GoogleTest for optional tests and Google Benchmark for optional benchmarks.
 
 ## Copyright and License
 
