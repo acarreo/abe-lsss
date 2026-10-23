@@ -82,7 +82,7 @@ ZObject::addRef()
 void
 ZObject::deRef()
 {
-  if (this->refCount-- <= 0) {
+  if (this->refCount > 0 && --this->refCount == 0) {
     delete this;
   }
 }

@@ -56,9 +56,7 @@ proof that attacker-controlled serialized data is authentic.
   in scope without a separate evaluation.
 - Secret zeroization is not guaranteed for all C++ objects, temporaries,
   allocator-managed memory, or serialized buffers.
-- The legacy full test suite still reports LeakSanitizer findings outside the
-  focused serialization and key-derivation ownership regressions covered by
-  CI. Full-suite leak detection is therefore not yet a passing gate.
+- The full test suite runs leak-free under LeakSanitizer in CI.
 - The global library lifecycle and serialization-compression setting are
   process-wide. Initialize before pairing operations, do not shut down while
   operations are active, and do not change compression during serialization

@@ -90,6 +90,7 @@ typedef Parser::token_type token_type;
          return token::IN;
     } else if(yylval->stringVal->find(EXPINT_KEYWORD) != std::string::npos) {
          std::cerr << *yylloc << ": '" << EXPINT_KEYWORD << "' is reserved and cannot be user-specified." << std::endl;
+         delete yylval->stringVal;
          return token::ERROR;
     } else {
          return token::LEAF;
