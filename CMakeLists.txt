@@ -42,6 +42,8 @@ if(NOT RLC_LIBRARY)
 
     file(MAKE_DIRECTORY ${RELIC_SRC_DIR})
     file(MAKE_DIRECTORY ${RELIC_BUILD_DIR})
+    # Les dossiers d'include doivent exister dès la configuration (cible importée exportée)
+    file(MAKE_DIRECTORY ${RELIC_SRC_DIR}/include ${RELIC_BUILD_DIR}/include)
 
     ExternalProject_Add(
         relic_project
@@ -54,7 +56,7 @@ if(NOT RLC_LIBRARY)
 
         CONFIGURE_COMMAND ${CMAKE_COMMAND} -E echo "Running RELIC preset..."
         BUILD_COMMAND
-            ${RELIC_SRC_DIR}/preset/x64-pbc-${RELIC_CURVE}.sh "-DSHLIB=ON -DSTBIN=OFF -DTESTS=OFF -DBENCH=OFF ${RELIC_SRC_DIR}"
+            ${RELIC_SRC_DIR}/preset/x64-pbc-${RELIC_CURVE}.sh "-DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DSHLIB=ON -DSTBIN=OFF -DTESTS=OFF -DBENCH=OFF ${RELIC_SRC_DIR}"
             && ${CMAKE_MAKE_PROGRAM} -C ${RELIC_BUILD_DIR} -j
 
         INSTALL_COMMAND ""

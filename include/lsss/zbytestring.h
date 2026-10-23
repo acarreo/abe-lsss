@@ -45,6 +45,8 @@
 #include "zconstants.h"
 #include "zobject.h"
 
+#include <gmp.h>
+
 extern "C" {
 #include <relic.h>
 }
@@ -113,7 +115,7 @@ public:
   }
 
   uint8_t *getInternalPtr() {
-    return &((*this)[0]);
+    return this->data();
   }
 
   void zeroize() {

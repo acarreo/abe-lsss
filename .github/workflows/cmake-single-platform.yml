@@ -25,36 +25,22 @@ jobs:
             compiler: clang
             c_compiler: clang
             cxx_compiler: clang++
-          - os: macos-13
-            compiler: clang
-            c_compiler: clang
-            cxx_compiler: clang++
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Install Linux dependencies
       if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev
-
-    - name: Install macOS dependencies
-      if: runner.os == 'macOS'
-      run: brew install gmp openssl@3
+      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev flex libfl-dev
 
     - name: Configure
       run: |
-        cmake_args=()
-        if [[ "$RUNNER_OS" == "macOS" ]]; then
-          cmake_args+=("-DOPENSSL_ROOT_DIR=$(brew --prefix openssl@3)")
-          cmake_args+=("-DCMAKE_PREFIX_PATH=$(brew --prefix gmp)")
-        fi
         cmake -S . -B build \
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
           -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }} \
           -DRELIC_CURVE=bls12-381 \
           -DRELIC_TAG=0.6.0 \
-          -DTESTS=ON -DBENCH=OFF -DCLI=ON \
-          "${cmake_args[@]}"
+          -DTESTS=ON -DBENCH=OFF -DCLI=ON
 
     - name: Build
       run: cmake --build build --parallel 2
@@ -68,7 +54,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev
+      run: sudo apt-get update && sudo apt-get install --yes libgmp-dev libssl-dev flex libfl-dev
     - name: Configure with sanitizers
       run: >-
         cmake -S . -B build
