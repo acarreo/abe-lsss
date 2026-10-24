@@ -417,7 +417,7 @@ OpenABELSSS::calculateCoefficient(OpenABETreeNode *treeNode, uint32_t index, uin
 
     if (treeNode->getSubnode(i)->getMark() == true) {
       if (i != index) {
-        result *= result * ((this->zero - this->iPlusOne) / (this->indexPlusOne - this->iPlusOne));
+        result *= ((this->zero - this->iPlusOne) / (this->indexPlusOne - this->iPlusOne));
       }
     }
   }

@@ -40,7 +40,7 @@
 typedef bn_t bignum_t;
 
 #define zmbignum_free(b)                bn_free(b)
-#define zmbignum_safe_free(b)           if (b != NULL) free(b)
+#define zmbignum_safe_free(b)           do { if ((b) != NULL) free(b); } while (0)
 
 #define zmbignum_fromHex(b, str, len)   bn_read_str(b, str, len, 16)
 #define zmbignum_fromBin(b, ustr, len)  bn_read_bin(b, ustr, len)
@@ -57,18 +57,18 @@ typedef bn_t bignum_t;
 #define zmbignum_copy(to, from)         bn_copy(to, from)
 #define zmbignum_rand(a, o)             bn_rand_mod(a, o)
 #define zmbignum_mod(x, o)              bn_mod(x, x, o)
-#define zmbignum_add(r, x, y, o)        {bn_add(r, x, y); bn_mod(r, r, o);}
+#define zmbignum_add(r, x, y, o)        do { bn_add(r, x, y); bn_mod(r, r, o); } while (0)
 #define zmbignum_sub(r, x, y)           bn_sub(r, x, y)
-#define zmbignum_sub_order(r, x, y, o)  {bn_sub(r, x, y); bn_mod(r, r, o);}
-#define zmbignum_mul(r, x, y, o)        {bn_mul(r, x, y); bn_mod(r, r, o);}
-#define zmbignum_div(r, x, y, o)        {bn_mod_inv(r, y, o); zmbignum_mul(r, r, x, o);}
+#define zmbignum_sub_order(r, x, y, o)  do { bn_sub(r, x, y); bn_mod(r, r, o); } while (0)
+#define zmbignum_mul(r, x, y, o)        do { bn_mul(r, x, y); bn_mod(r, r, o); } while (0)
+#define zmbignum_div(r, x, y, o)        do { bn_mod_inv(r, y, o); zmbignum_mul(r, r, x, o); } while (0)
 #define zmbignum_exp(r, x, y, o)        bn_mxp(r, x, y, o)
 #define zmbignum_lshift(r, a, n)        bn_lsh(r, a, n)
 #define zmbignum_rshift(r, a, n)        bn_rsh(r, a, n)
-#define zmbignum_negate(b, o)           {bn_neg(b, b); bn_mod(b, b, o);}
+#define zmbignum_negate(b, o)           do { bn_neg(b, b); bn_mod(b, b, o); } while (0)
 #define zmbignum_mod_inv(a, b, o)       bn_mod_inv(a, b, o)
 
-#define bn_inits(b)                     {bn_null(b); bn_new(b);}
+#define bn_inits(b)                     do { bn_null(b); bn_new(b); } while (0)
 #define bn_is_one(a)                    (((a->used == 1) && (a->dp[0] == 1)))
 
 #define BN_CMP_LT                       RLC_LT
@@ -87,9 +87,9 @@ void static inline zmbignum_init(bignum_t *b) {
 }
 
 /* EC helps functions */
-#define g1_init(p)                      g1_null(p); g1_new(p);
-#define g2_init(p)                      g2_null(p); g2_new(p);
-#define gt_init(p)                      gt_null(p); gt_new(p);
+#define g1_init(p)                      do { g1_null(p); g1_new(p); } while (0)
+#define g2_init(p)                      do { g2_null(p); g2_new(p); } while (0)
+#define gt_init(p)                      do { gt_null(p); gt_new(p); } while (0)
 
 
 

@@ -71,8 +71,8 @@ static int get_compression_flag() {
 using namespace std;
 
 void ro_error(void) {
-  cout << "Writing to read only object." << endl;
-  exit(0);
+  cerr << "Writing to read only object." << endl;
+  throw OpenABE_ERROR_INVALID_INPUT;
 }
 
 /********************************************************************************
@@ -617,13 +617,27 @@ void G1::serialize(OpenABEByteString &result) const {
 }
 
 void G1::deserialize(OpenABEByteString &input) {
-  OpenABEByteString g1_bytes;
-  size_t index = 0;
+  if (!this->isInit) return;
 
-  if (this->isInit && (input.at(index++) == OpenABE_ELEMENT_G1)) {
-    g1_bytes = input.smartUnpack(&index);
-    G1 tmp(g1_bytes.data(), g1_bytes.size());
+  try {
+    size_t index = 0;
+    if (input.empty() || input.at(index++) != OpenABE_ELEMENT_G1) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+    OpenABEByteString bytes = input.smartUnpack(&index);
+    if (index != input.size()) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+
+    G1 tmp(bytes.data(), bytes.size());
+    // reject points that are not on the curve or not in the right subgroup;
+    // RELIC's validity check excludes the identity, which is a valid element
+    if (!g1_is_infty(tmp.m_G1) && !tmp.ismember()) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
     *this = tmp;
+  } catch (const std::out_of_range &) {
+    throw OpenABE_ERROR_INVALID_INPUT;
   }
 }
 
@@ -785,13 +799,27 @@ void G2::serialize(OpenABEByteString &result) const {
 }
 
 void G2::deserialize(OpenABEByteString &input) {
-  OpenABEByteString g2_bytes;
-  size_t index = 0;
+  if (!this->isInit) return;
 
-  if (this->isInit && (input.at(index++) == OpenABE_ELEMENT_G2)) {
-    g2_bytes = input.smartUnpack(&index);
-    G2 tmp(g2_bytes.data(), g2_bytes.size());
+  try {
+    size_t index = 0;
+    if (input.empty() || input.at(index++) != OpenABE_ELEMENT_G2) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+    OpenABEByteString bytes = input.smartUnpack(&index);
+    if (index != input.size()) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+
+    G2 tmp(bytes.data(), bytes.size());
+    // reject points that are not on the curve or not in the right subgroup;
+    // RELIC's validity check excludes the identity, which is a valid element
+    if (!g2_is_infty(tmp.m_G2) && !tmp.ismember()) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
     *this = tmp;
+  } catch (const std::out_of_range &) {
+    throw OpenABE_ERROR_INVALID_INPUT;
   }
 }
 
@@ -932,12 +960,26 @@ void GT::serialize(OpenABEByteString &result) const {
 }
 
 void GT::deserialize(OpenABEByteString &input) {
-  OpenABEByteString gt_bytes;
-  size_t index = 0;
+  if (!this->isInit) return;
 
-  if(this->isInit && (input.at(index++) == OpenABE_ELEMENT_GT)) {
-    gt_bytes = input.smartUnpack(&index);
-    gt_read_bin(this->m_GT, gt_bytes.data(), gt_bytes.size());
+  try {
+    size_t index = 0;
+    if (input.empty() || input.at(index++) != OpenABE_ELEMENT_GT) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+    OpenABEByteString bytes = input.smartUnpack(&index);
+    if (index != input.size() || bytes.empty()) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+
+    GT tmp;
+    gt_read_bin(tmp.m_GT, bytes.data(), bytes.size());
+    if (!tmp.isIdentity() && !tmp.ismember()) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+    *this = tmp;
+  } catch (const std::out_of_range &) {
+    throw OpenABE_ERROR_INVALID_INPUT;
   }
 }
 

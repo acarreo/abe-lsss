@@ -48,7 +48,7 @@ extern "C" {
 
 class OpenABEByteString;
 
-void ro_error(void);
+[[noreturn]] void ro_error(void);
 
 [[deprecated("Use abe_lsss::set_compression()")]]
 void set_compression_flag(int value);
