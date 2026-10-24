@@ -6,6 +6,7 @@
 #include "abe/zcontainer.h"
 #include "abe/zinteger.h"
 #include "abe/zkdf.h"
+#include "abe/zrng.h"
 #include "abe/zkey.h"
 #include "abe/zkeystore.h"
 #include "abe/zpairing.h"
@@ -48,10 +49,6 @@ OpenABE_SCHEME OpenABE_convertStringToSchemeID(const std::string id);
 // // CCA scheme context API
 // std::unique_ptr<OpenABEContextSchemeCCA>
 // OpenABE_createContextABESchemeCCA(OpenABE_SCHEME scheme_type);
-
-// // CCA scheme context API with amortization support
-// std::unique_ptr<OpenABEContextSchemeCCAWithATZN>
-// OpenABE_createContextABESchemeCCAWithATZN(OpenABE_SCHEME scheme_type);
 
 // PKSIG scheme context API
 // std::unique_ptr<OpenABEContextSchemePKSIG> OpenABE_createContextPKSIGScheme();

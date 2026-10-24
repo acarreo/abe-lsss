@@ -1,4 +1,6 @@
-# Audit de `abe-lsss` — Phase 0
+# Audit de `abe-lsss`
+
+> Document historique : l’audit initial (phase 0, 22 octobre 2026) est suivi de comptes rendus de correction datés en fin de document. L’état courant du projet est décrit par la section « Suivi » la plus récente.
 
 **Date :** 22 octobre 2026
 **Révision inspectée :** `ac0b5fd` (`main`)
@@ -160,7 +162,15 @@ Ce suivi complète l’audit initial sans en réécrire les observations histori
 
 - **CI :** réparée sur Linux (GCC, Clang, ASan/UBSan); les builds activent `-D_GLIBCXX_ASSERTIONS`. macOS retiré (non fonctionnel).
 - **Correctifs trouvés par les nouveaux tests de robustesse :** `getInternalPtr()` sur buffer vide (comportement indéfini); `exit()` dans les constructeurs `G1`/`G2`, la division `ZP` et `OpenABEAttributeList` remplacés par des exceptions `OpenABE_ERROR`; déréférencement nul dans `decryptKEM` (CP-Waters et KP-GPSW) lorsque la politique d’un chiffré est altérée.
-- **Propriété documentée :** les contextes CPA n’authentifient pas les chiffrés (malléabilité), voir `docs/SECURITY_MODEL.md`.
+- **Modèle de sécurité :** les schémas CP/KP exposés sont des variantes CPA utilisées en mode hybride (l’ABE encapsule une clé symétrique, un AEAD protège les données), voir `docs/SECURITY_MODEL.md`.
 - **`RELIC_TAG` :** `compile/install-relic.sh` respecte désormais la variable d’environnement.
 - **Fuites mémoire :** `ZObject::deRef()` ne libérait jamais un objet à propriétaire unique (compteur initialisé à 1), donc tout arbre de politique fuyait; le destructeur de `OpenABETreeNode` relâche désormais une seule référence par sous-nœud. Corrigés aussi: chaîne du scanner perdue sur mot réservé, contexte OpenSSL perdu dans `OpenABESymKeyAuthEnc::decrypt` sur tag de longueur invalide. Les 8 exécutables passent avec LeakSanitizer actif, désormais activé pour toute la suite en CI.
 - **Reste :** revue cryptographique indépendante, intégration `secure-file-transfer`, support macOS.
+
+## Suivi — 24 octobre 2026 (suite)
+
+- **CCA :** la transformation générique reste désactivée (`#if 0`) et n’est pas intégrée pour l’instant. La classe `OpenABEContextSchemeCCAWithATZN` (variante « amortie » : encapsulation seule, retournant la clé symétrique et un HMAC du chiffré exporté) a été supprimée.
+- **Égalité de conteneurs :** `operator==` de `OpenABEContainer` déréférençait l’itérateur de fin de `std::set_difference` (comportement indéfini), ne comparait les clés que dans un sens et considérait toujours différents les composants d’octets (`OpenABEByteString::isEqual` était commenté). Il compare désormais les clés et les valeurs dans les deux sens, sans insérer de clé manquante. `OpenABECiphertext` compare en plus son en-tête. `OpenABEAttributeList::isEqual` avait le même défaut; `deserialize` était un stub vide, ce qui rendait vacueux le test `Attribute.SerializeAndDeserialize`. Les deux sont corrigés.
+- **Propriété des composants :** `OpenABEContainer::setComponent` (écrasement) et `deleteComponent` ne libéraient pas l’ancienne valeur.
+- **RNG :** ajout de l’interface `OpenABERNG` (`abe/zrng.h`) avec `OpenABESystemRNG` et `OpenABEShakeRNG`, générateur déterministe SHAKE256 en mode compteur, testé sur des vecteurs calculés indépendamment (`hashlib.shake_256`). Il n’est pas encore propagé dans les schémas.
+- **Tests :** nouveaux exécutables `test_rng` et `test_container`.

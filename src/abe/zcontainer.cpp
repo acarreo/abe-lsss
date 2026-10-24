@@ -84,7 +84,11 @@ OpenABEContainer::~OpenABEContainer() {
 void OpenABEContainer::setComponent(const string &name, const ZObject *component) {
   ZObject *copy = component->clone();
 
-  this->val[name] = copy;
+  // release the previous value, if any (the clone is taken first so that
+  // 'component' may alias the stored object)
+  ZObject *&slot = this->val[name];
+  delete slot;
+  slot = copy;
 }
 
 /*!
@@ -109,6 +113,7 @@ OpenABE_ERROR
 OpenABEContainer::deleteComponent(const string name) {
   map<string, ZObject *>::iterator iter1 = this->val.find(name);
   if (iter1 != this->val.end()) {
+    delete iter1->second;
     this->val.erase(iter1);
     return OpenABE_NOERROR;
   }
@@ -235,31 +240,21 @@ std::vector<std::string> OpenABEContainer::getKeys() {
 }
 
 bool operator==(const OpenABEContainer &c1, const OpenABEContainer &c2) {
-  // check that the 'keys' of the containers are equal
-  std::vector<std::string> keyList1 = const_cast<OpenABEContainer &>(c1).getKeys();
-  std::vector<std::string> keyList2 = const_cast<OpenABEContainer &>(c2).getKeys();
-  std::vector<std::string> keyList3(keyList1.size() + keyList2.size());
-  std::vector<std::string>::iterator iter =
-      std::set_difference(keyList1.begin(), keyList1.end(), keyList2.begin(),
-                          keyList2.end(), keyList3.begin());
-  size_t keydiff = iter->size();
-  if (keydiff > 0) {
+  // std::map iterates in key order: walk both maps in lockstep.
+  if (c1.val.size() != c2.val.size()) {
     return false;
   }
-
-  // check that 'values' of container are equal
-  for (std::vector<std::string>::iterator it = keyList1.begin();
-       it != keyList1.end(); ++it) {
-    ZObject *lhs = const_cast<OpenABEContainer &>(c1).getComponent(*it);
-    ZObject *rhs = const_cast<OpenABEContainer &>(c2).getComponent(*it);
-    if (lhs->isEqual(rhs)) {
-      continue;
-    } else {
-      keydiff++;
+  auto it1 = c1.val.begin();
+  auto it2 = c2.val.begin();
+  for (; it1 != c1.val.end(); ++it1, ++it2) {
+    if (it1->first != it2->first) {
+      return false;
+    }
+    const ZObject *lhs = it1->second;
+    ZObject *rhs = it2->second;
+    if (lhs == nullptr || rhs == nullptr || !lhs->isEqual(rhs)) {
+      return false;
     }
   }
-
-  if (keydiff > 0)
-    return false;
   return true;
 }

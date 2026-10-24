@@ -140,51 +140,6 @@ public:
                       OpenABECiphertext &ciphertext1, OpenABECiphertext &ciphertext2);
 };
 
-///
-/// @class  OpenABEContextSchemeCCAWithATZN
-///
-/// @brief  ABE scheme context for CCA security (for amortized ABE).
-///
-
-class OpenABEContextSchemeCCAWithATZN : public ZObject {
-protected:
-  std::unique_ptr<OpenABEContextCCA>	m_KEM_;
-
-public:
-  OpenABEContextSchemeCCAWithATZN(std::unique_ptr<OpenABEContextCCA> kem_);
-  ~OpenABEContextSchemeCCAWithATZN();
-
-  OpenABEKeystore *getKeystore() const { return this->m_KEM_->getKeystore(); }
-  OpenABE_SCHEME  getSchemeType() const { return this->m_KEM_->getSchemeType(); }
-
-  OpenABE_ERROR   exportKey(const std::string &keyID, OpenABEByteString &keyBlob);
-  OpenABE_ERROR   loadMasterPublicParams(const std::string &mpkID, OpenABEByteString &mpkBlob);
-  OpenABE_ERROR   loadMasterSecretParams(const std::string &mskID, OpenABEByteString &mskBlob);
-  OpenABE_ERROR   loadUserSecretParams(const std::string &skID, OpenABEByteString &skBlob);
-  OpenABE_ERROR   deleteKey(const std::string keyID);
-  bool            checkSecretKey(const std::string keyID);
-
-//  OpenABE_ERROR   generateParams(OpenABESecurityLevel securityLevel,
-//                             const std::string &mpkID,
-//                             const std::string &mskID);
-  OpenABE_ERROR   generateParams(const std::string &mpkID, const std::string &mskID);
-  // Methods iff KEM is MA-ABE
-  OpenABE_ERROR   generateGlobalParams(const std::string &gpkID);
-  OpenABE_ERROR   generateAuthorityParams(const std::string &gpkID,
-                                          const std::string &auth_mpkID,
-                                          const std::string &auth_mskID);
-
-  OpenABE_ERROR   keygen(OpenABEFunctionInput *keyInput, const std::string &keyID,
-                         const std::string &mpkID, const std::string &mskID,
-                         const std::string &gpkID="", const std::string &GID="");
-  std::unique_ptr<OpenABESymKeyHandle> encrypt(const std::string& mpkID,
-                                               const OpenABEFunctionInput *encryptInput,
-                                               OpenABECiphertext &ciphertext);
-  std::unique_ptr<OpenABESymKeyHandle> decrypt(const std::string &mpkID,
-                                               const std::string &keyID,
-                                               OpenABECiphertext &ciphertext);
-};
-
 #endif
 
 #endif /* ifdef __ZCONTEXTCCA_H__ */

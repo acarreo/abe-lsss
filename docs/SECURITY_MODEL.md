@@ -3,21 +3,21 @@
 ## Scope
 
 The active ABE factory exposes the Waters ciphertext-policy (CP-ABE) and
-GPSW key-policy (KP-ABE) constructions through CPA interfaces. The library
+GPSW key-policy (KP-ABE) constructions as CPA-secure schemes. The library
 uses RELIC for pairing operations and OpenSSL/GMP for supporting operations.
 This document describes intended use and current limits; it is not a proof of
 security or an independent audit of the implementation.
 
-CCA ABE contexts are disabled, and the active factory does not implement
-multi-authority ABE, revocation, tracing, non-monotone policies, outsourced
-decryption, or searchable encryption. Enum values and inherited interfaces
-do not imply that these features are available.
+As usual for pairing-based ABE, the scheme encapsulates a symmetric key, and
+bulk data is protected under that key with a symmetric primitive (an AEAD such
+as AES-GCM is available in the library). The CPA-secure ABE layer is therefore
+the component that gates access; payload integrity is the job of the AEAD.
 
-The CPA contexts do not authenticate ciphertexts: the payload is masked with a
-hash-derived key stream, so a modified ciphertext can decrypt to different data
-without an error (malleability). Applications that need integrity must
-authenticate the payload themselves, for example with an AEAD under a key
-protected by ABE.
+Chosen-ciphertext (CCA) variants are not enabled: the generic transform is
+kept in the source but disabled, and the factory does not implement
+multi-authority ABE, revocation, tracing, non-monotone policies, outsourced
+decryption, or searchable encryption. Enum values and inherited interfaces do
+not imply that these features are available.
 
 ## Assets and trust assumptions
 
@@ -38,14 +38,20 @@ protected by ABE.
 The implemented constructions are intended to provide ABE confidentiality
 against an adversary whose attributes or access structure do not satisfy the
 encryption condition, including resistance to collusion as defined by the
-underlying constructions. The exposed interface is CPA-secure only; this
-repository does not claim chosen-ciphertext security, authenticated
-ciphertexts, or formal equivalence between the current code and a paper's
-proof. The code and parameter choices have not been independently verified.
+underlying constructions. The exposed schemes are CPA-secure; this repository
+does not claim chosen-ciphertext security or formal equivalence between the
+current code and a paper's proof. The code and parameter choices have not been
+independently verified.
 
-Applications should authenticate data and handle tampering at an appropriate
-layer. Do not treat successful parsing or an ABE decryption return code as
-proof that attacker-controlled serialized data is authentic.
+## Randomness
+
+Key generation and encryption draw from the RELIC random source (the system
+generator in the default build). `OpenABERNG` (`abe/zrng.h`) defines a minimal
+random-byte interface with two implementations: `OpenABESystemRNG`, and
+`OpenABEShakeRNG`, a deterministic SHAKE256-based expander whose output depends
+only on its seed and personalization string. The deterministic generator is
+not wired into the schemes; it is meant for constructions that must re-derive
+randomness from a secret seed and must not be used for key generation.
 
 ## Out of scope and known limitations
 

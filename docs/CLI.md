@@ -59,7 +59,7 @@ The parser accepts monotone AND/OR policies and supports tested date/integer exp
 - The CLI wraps serialized keys and parameters in labeled text blocks and base64-encodes the content; ciphertexts are similarly armored.
 - Protect and securely provision the master secret file. Do not place it in source control or send it with ciphertexts.
 - Use a fresh output name or directory for each run to avoid accidentally overwriting keys or ciphertexts.
-- Treat the tools as experimental. There is no authenticated CCA ABE mode in the current CLI.
+- Treat the tools as experimental. The CLI exposes the CPA-secure CP/KP schemes only; the CCA variants are not enabled.
 - The currently disabled `PK` command branches print a maintenance message; the active quick-start scope is CP/KP ABE.
 
 For the C++ interface and its current packaging limitations, see the [API guide](API.md).

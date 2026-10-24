@@ -78,6 +78,9 @@ public:
 
   void exportToBytesWithoutHeader(OpenABEByteString& output);
   void loadFromBytesWithoutHeader(OpenABEByteString& input);
+
+  // Equality of the header (version, scheme, uid) and of all components.
+  friend bool operator==(const OpenABECiphertext&, const OpenABECiphertext&);
 };
 
 #endif	// __ZCIPHERTEXT_H__
