@@ -326,6 +326,14 @@ TEST(LSSS, TestCorrectnessOfOrPolicyTree) {
   ASSERT_TRUE(runLSSSTest("((Bob and Charlie) or Alice)", attrList, verbose));
 }
 
+TEST(LSSS, TestCorrectnessWithThreeWayGates) {
+  string attrList = "|Alice|Bob|Charlie|David";
+  ASSERT_TRUE(runLSSSTest("(Alice and Bob and Charlie)", attrList));
+  ASSERT_FALSE(runLSSSTest("(Alice and Bob and Eve)", attrList));
+  ASSERT_TRUE(runLSSSTest("(Alice and Bob and Charlie and David)", attrList));
+  ASSERT_TRUE(runLSSSTest("(Eve or Frank or Charlie)", attrList));
+}
+
 TEST(LSSS, TestCorrectnessWithDupAttributes) {
   TEST_DESCRIPTION("Testing correctness when duplicate attributes are present");
   string attrList = "|Alice|Bob|Charlie|David";
