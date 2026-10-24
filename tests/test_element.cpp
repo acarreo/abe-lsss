@@ -195,6 +195,85 @@ TEST(GroupArithmetic, G1AndG2SubtractionIsAMinusB) {
   EXPECT_FALSE(c - d == G2() - d);
 }
 
+template <typename T>
+OpenABEByteString blobOf(const T &e) {
+  OpenABEByteString blob;
+  e.serialize(blob);
+  return blob;
+}
+
+TEST(GroupSerialization, RoundTripsRandomAndIdentityElements) {
+  G1 a, ia;
+  G2 b, ib;
+  GT c, ic;
+  a.setRandom();
+  b.setRandom();
+  c.setRandom();
+
+  G1 a2; OpenABEByteString blob = blobOf(a); a2.deserialize(blob);
+  G2 b2; blob = blobOf(b); b2.deserialize(blob);
+  GT c2; blob = blobOf(c); c2.deserialize(blob);
+  EXPECT_TRUE(a == a2);
+  EXPECT_TRUE(b == b2);
+  EXPECT_TRUE(c == c2);
+
+  G1 ia2; a2.setRandom(); blob = blobOf(ia); a2.deserialize(blob);
+  EXPECT_TRUE(a2 == ia);
+  G2 ib2; b2.setRandom(); blob = blobOf(ib); b2.deserialize(blob);
+  EXPECT_TRUE(b2 == ib);
+  GT ic2; c2.setRandom(); blob = blobOf(ic); c2.deserialize(blob);
+  EXPECT_TRUE(c2 == ic);
+}
+
+TEST(GroupSerialization, RejectsTamperedAndMalformedElements) {
+  G1 a; a.setRandom();
+  G1 keep; keep.setRandom();
+  G1 expected = keep;
+
+  OpenABEByteString good = blobOf(a), bad;
+  for (size_t pos : {good.size() - 1, good.size() / 2, size_t(6)}) {
+    bad = good;
+    bad[pos] ^= 0x01;
+    EXPECT_THROW(keep.deserialize(bad), OpenABE_ERROR) << pos;
+  }
+
+  OpenABEByteString empty;
+  EXPECT_THROW(keep.deserialize(empty), OpenABE_ERROR);
+  bad = good.getSubset(0, good.size() - 1);
+  EXPECT_THROW(keep.deserialize(bad), OpenABE_ERROR);
+  bad = good; bad.push_back(0);
+  EXPECT_THROW(keep.deserialize(bad), OpenABE_ERROR);
+  bad = good; bad[0] = OpenABE_ELEMENT_G2;
+  EXPECT_THROW(keep.deserialize(bad), OpenABE_ERROR);
+
+  // a rejected blob leaves the target untouched
+  EXPECT_TRUE(keep == expected);
+
+  G2 b; b.setRandom();
+  G2 keep2 = b;
+  good = blobOf(b);
+  bad = good; bad[good.size() - 1] ^= 0x01;
+  EXPECT_THROW(keep2.deserialize(bad), OpenABE_ERROR);
+  EXPECT_THROW(keep2.deserialize(empty), OpenABE_ERROR);
+  EXPECT_TRUE(keep2 == b);
+
+  GT c; c.setRandom();
+  GT keep3 = c;
+  good = blobOf(c);
+  bad = good; bad[good.size() - 1] ^= 0x01;
+  EXPECT_THROW(keep3.deserialize(bad), OpenABE_ERROR);
+  EXPECT_THROW(keep3.deserialize(empty), OpenABE_ERROR);
+  EXPECT_TRUE(keep3 == c);
+
+  // the library still works after rejecting invalid elements
+  G1 fresh; fresh.setRandom();
+  EXPECT_TRUE(fresh.ismember());
+}
+
+TEST(ReadOnlyObject, ErrorThrowsInsteadOfExiting) {
+  EXPECT_THROW(ro_error(), OpenABE_ERROR);
+}
+
 int main(int argc, char **argv) {
   abe_lsss::initialize();
   ::testing::InitGoogleTest(&argc, argv);
