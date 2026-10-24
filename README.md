@@ -6,7 +6,7 @@
 
 `abe-lsss` is a C++ attribute-based encryption library derived from [Zeutro's OpenABE](https://github.com/zeutro/openabe). It combines the Waters ciphertext-policy and GPSW key-policy ABE constructions with an LSSS policy engine, using [RELIC](https://github.com/relic-toolkit/relic) for pairing-based arithmetic.
 
-The repository is an evolving research/engineering project, not a security-certified product. The implementations currently exposed by the scheme factory are CPA ABE schemes. Do not infer CCA security, multi-authority support, or a completed independent cryptographic audit from this README.
+The repository is an evolving research/engineering project and has not been independently audited. The schemes exposed by the factory are the CPA-secure CP-ABE and KP-ABE constructions, used in the usual hybrid way: ABE encapsulates a symmetric key and an AEAD protects the data. CCA variants and multi-authority ABE are not enabled.
 
 ## Documentation
 
@@ -14,7 +14,7 @@ The repository is an evolving research/engineering project, not a security-certi
 - [CLI guide](docs/CLI.md) — setup, key generation, encryption and decryption.
 - [Security model](docs/SECURITY_MODEL.md) — assumptions, intended properties and known limitations.
 - [Security reporting](SECURITY.md) — private vulnerability reporting guidance.
-- [Audit (Phase 0)](docs/AUDIT.md) — repository map, current limitations and priorities.
+- [Project audit](docs/AUDIT.md) — repository map, status, follow-ups and priorities.
 - [OpenABE design document](https://github.com/zeutro/openabe/blob/master/docs/libopenabe-v1.0.0-design-doc.pdf) — upstream reference only; it is not a verified design specification for this fork.
 
 ## What is Attribute-Based Encryption (ABE)?
@@ -32,7 +32,7 @@ ABE encrypts to attributes and access policies rather than to one named public k
 | CP-ABE (Waters) | Ciphertext | CPA | Monotone AND/OR policy trees represented through LSSS; policy size affects ciphertext size. |
 | KP-ABE (GPSW) | User key | CPA | Monotone AND/OR policy trees represented through LSSS; attribute-set size affects ciphertext size. |
 
-The underlying ABE constructions are designed to resist collusion between users, but this fork has not received an independent cryptographic review. The active factory returns CPA contexts. Generic CCA code is disabled in the current source and CCA enum values alone do not enable CCA operation. No multi-authority, revocation, tracing, non-monotone policy, outsourced decryption, or searchable ABE scheme is currently provided.
+The underlying ABE constructions are designed to resist collusion between users, but this fork has not received an independent cryptographic review. The CCA transform inherited from OpenABE is disabled in the current source; the CCA enum values alone do not enable it. No multi-authority, revocation, tracing, non-monotone policy, outsourced decryption, or searchable ABE scheme is currently provided.
 
 Policies support monotone access trees and the parser has tests for date/integer expressions and ranges. The policy syntax is not a proof of support for arbitrary non-monotone circuits. Attribute labels are supplied as strings; practical policy size and group-element sizes constrain usage.
 

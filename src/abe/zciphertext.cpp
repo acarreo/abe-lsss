@@ -204,3 +204,12 @@ void OpenABECiphertext::getHeader(OpenABEByteString &header) {
   header.push_back(this->algorithmID);
   header += this->uid;
 }
+
+bool operator==(const OpenABECiphertext &c1, const OpenABECiphertext &c2) {
+  if (c1.libraryVersion != c2.libraryVersion ||
+      c1.algorithmID != c2.algorithmID || !(c1.uid == c2.uid)) {
+    return false;
+  }
+  return static_cast<const OpenABEContainer &>(c1) ==
+         static_cast<const OpenABEContainer &>(c2);
+}

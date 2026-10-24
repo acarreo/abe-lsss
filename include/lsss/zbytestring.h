@@ -269,10 +269,10 @@ public:
     }
   }
 
-  // bool isEqual(ZObject* z) const {
-  //   OpenABEByteString *z1 = dynamic_cast<OpenABEByteString*>(z);
-  //   return (z1 != NULL) && (*z1 == *this);
-  // }
+  bool isEqual(ZObject* z) const {
+    const OpenABEByteString *z1 = dynamic_cast<const OpenABEByteString*>(z);
+    return (z1 != NULL) && (*z1 == *this);
+  }
 
   void pack8bits(uint8_t byte) {
     this->push_back(byte);

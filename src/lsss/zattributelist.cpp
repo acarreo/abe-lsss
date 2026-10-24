@@ -40,6 +40,7 @@
 #include <fstream>
 #include <string>
 #include <regex>
+#include <set>
 
 #include "lsss/zattributelist.h"
 #include "lsss/zdriver.h"
@@ -217,19 +218,33 @@ void OpenABEAttributeList::serialize(OpenABEByteString &result) const {
   result = this->toCompactString();
 }
 
-void OpenABEAttributeList::deserialize(const OpenABEByteString &input) {}
+void OpenABEAttributeList::deserialize(const OpenABEByteString &input) {
+  this->m_Attributes.clear();
+  this->m_OriginalAttributes.clear();
+  this->m_prefixSet.clear();
+
+  // format produced by toCompactString(): |attr1|attr2|...|
+  const string blob(input.begin(), input.end());
+  size_t start = 0;
+  while (start <= blob.size()) {
+    size_t end = blob.find(ATTR_SEP, start);
+    if (end == string::npos) end = blob.size();
+    if (end > start) {
+      this->addAttribute(blob.substr(start, end - start));
+    }
+    start = end + 1;
+  }
+}
 
 bool OpenABEAttributeList::isEqual(ZObject *z) const {
-  OpenABEAttributeList *z1 = dynamic_cast<OpenABEAttributeList *>(z);
-  if (z1 != NULL) {
-    vector<string> list(z1->m_Attributes.size() + this->m_Attributes.size());
-    // order does not matter. verify the same attributes are present
-    vector<string>::iterator iter = std::set_difference(
-        z1->m_Attributes.begin(), z1->m_Attributes.end(),
-        this->m_Attributes.begin(), this->m_Attributes.end(), list.begin());
-    return iter->size() == 0; // > 0 means false
+  const OpenABEAttributeList *z1 = dynamic_cast<const OpenABEAttributeList *>(z);
+  if (z1 == NULL) {
+    return false;
   }
-  return false;
+  // order and duplicates do not matter: compare as sets
+  set<string> lhs(this->m_Attributes.begin(), this->m_Attributes.end());
+  set<string> rhs(z1->m_Attributes.begin(), z1->m_Attributes.end());
+  return lhs == rhs;
 }
 
 std::unique_ptr<OpenABEAttributeList> createAttributeList(const std::string &s) {

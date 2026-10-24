@@ -202,23 +202,6 @@ void OpenABEStateContext::shutdownThread() {
 // }
 
 /*!
- * Create a new OpenABEContextSchemeCCAWithATZN for a specific scheme type (for CCA security).
- *
- * @param[in]   the scheme type
- * @return      A pointer to the OpenABE context structure
- */
-
-// unique_ptr<OpenABEContextSchemeCCAWithATZN>
-// OpenABE_createContextABESchemeCCAWithATZN(OpenABE_SCHEME scheme_type) {
-//   unique_ptr<OpenABEContextCCA> kemContextCCA =
-//       OpenABE_createABEContextForKEM(scheme_type);
-//   // wrap the CCA KEM context in a CCA scheme context with amortization
-//   return unique_ptr<OpenABEContextSchemeCCAWithATZN>(
-//       new OpenABEContextSchemeCCAWithATZN(std::move(kemContextCCA)));
-// }
-
-
-/*!
  * Create a new OpenABEContextPKE for a specific scheme type.
  *
  * @param[in]   a RNG object
