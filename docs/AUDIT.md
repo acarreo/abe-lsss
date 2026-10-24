@@ -174,3 +174,15 @@ Ce suivi complète l’audit initial sans en réécrire les observations histori
 - **Propriété des composants :** `OpenABEContainer::setComponent` (écrasement) et `deleteComponent` ne libéraient pas l’ancienne valeur.
 - **RNG :** ajout de l’interface `OpenABERNG` (`abe/zrng.h`) avec `OpenABESystemRNG` et `OpenABEShakeRNG`, générateur déterministe SHAKE256 en mode compteur, testé sur des vecteurs calculés indépendamment (`hashlib.shake_256`). Il n’est pas encore propagé dans les schémas.
 - **Tests :** nouveaux exécutables `test_rng` et `test_container`.
+
+## Suivi — 25 octobre 2026
+
+Relecture de `zelement.h`, `zelement_bp.{h,cpp}` et `zbytestring.h`, avec reproduction préalable de chaque défaut.
+
+- **`ZP` sans ordre :** `x + y`, `x - y`, `x * y`, `-x` et `power(x, n)` réduisaient modulo un ordre nul quand aucun des opérandes n'en portait (erreur RELIC, résultat non réduit ou nul, et `isOrderSet` faussement à `true`). Un `ZP` sans ordre est maintenant un entier : l'opération se fait dans Z, et le résultat hérite de l'ordre de l'opérande qui en a un. `/`, `power(x, ZP)` et `multInverse()` sans ordre lèvent `OpenABE_ERROR_INVALID_INPUT`; la division par un multiple de l'ordre est aussi refusée.
+- **`ZP::setRandom(ZP&)` :** la condition inversée est supprimée (la surcharge délègue à `setRandom(bignum_t)`). Un modulo nul est refusé (sinon boucle infinie dans `bn_rand_mod`).
+- **`ZP::deserialize` :** la longueur annoncée n'était pas comparée à la taille du tampon (lecture hors limites sur une entrée forgée), la valeur zéro ne se désérialisait pas, et une valeur égale à l'ordre n'était pas réduite. Les entrées mal formées lèvent maintenant `OpenABE_ERROR_INVALID_INPUT`.
+- **`G1::operator-` / `G2::operator-` :** retournaient `-x` au lieu de `this - x`.
+- **`OpenABEByteString` :** `operator+(std::string)` insérait des octets nuls (la taille du résultat était incorrecte), `operator^=` avec un opérande vide faisait un modulo par zéro, `deserialize` ignorait silencieusement une entrée vide, de mauvais type ou de mauvaise longueur et laissait l'ancien contenu; `toString()` est désormais `const`.
+- **Non traité (décisions de conception) :** la désérialisation de `G1`, `G2` et `GT` n'appelle pas `ismember()` (un élément altéré est accepté silencieusement); `ro_error()` appelle `exit(0)`; les macros de `zelement.h` (`g1_init`, `zmbignum_safe_free`) ne sont pas protégées contre un usage dans un `if` sans accolades.
+

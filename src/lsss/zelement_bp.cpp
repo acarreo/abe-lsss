@@ -185,77 +185,122 @@ ZP &ZP::operator=(const ZP &w) {
   return *this;
 }
 
+// A ZP without an order is a plain integer. The result of a binary operation
+// is reduced modulo the order of whichever operand carries one; when neither
+// does, the operation is done over the integers and the result has no order.
+static void inheritOrder(ZP &zr, const ZP &x, const ZP &y) {
+  if (x.isOrderSet) zr.setOrder(x.order);
+  else if (y.isOrderSet) zr.setOrder(y.order);
+}
+
 ZP operator+(const ZP &x, const ZP &y) {
   ZP zr;
-  if (x.isOrderSet) zr.setOrder(x.order);
-  else zr.setOrder(y.order);
+  inheritOrder(zr, x, y);
 
-  zmbignum_add(zr.m_ZP, x.m_ZP, y.m_ZP, zr.order);
+  if (zr.isOrderSet) {
+    zmbignum_add(zr.m_ZP, x.m_ZP, y.m_ZP, zr.order);
+  } else {
+    bn_add(zr.m_ZP, x.m_ZP, y.m_ZP);
+  }
   return zr;
 }
 
 ZP operator-(const ZP &x, const ZP &y) {
   ZP zr;
-  if (x.isOrderSet) zr.setOrder(x.order);
-  else zr.setOrder(y.order);
+  inheritOrder(zr, x, y);
 
-  zmbignum_sub_order(zr.m_ZP, x.m_ZP, y.m_ZP, zr.order);
+  if (zr.isOrderSet) {
+    zmbignum_sub_order(zr.m_ZP, x.m_ZP, y.m_ZP, zr.order);
+  } else {
+    bn_sub(zr.m_ZP, x.m_ZP, y.m_ZP);
+  }
   return zr;
 }
 
 ZP operator-(const ZP &x) {
   ZP zr = x;
-  zmbignum_negate(zr.m_ZP, zr.order);
+  if (zr.isOrderSet) {
+    zmbignum_negate(zr.m_ZP, zr.order);
+  } else {
+    bn_neg(zr.m_ZP, zr.m_ZP);
+  }
   return zr;
 }
 
 ZP operator*(const ZP &x, const ZP &y) {
   ZP zr;
-  if (x.isOrderSet) zr.setOrder(x.order);
-  else zr.setOrder(y.order);
+  inheritOrder(zr, x, y);
 
-  zmbignum_mul(zr.m_ZP, x.m_ZP, y.m_ZP, zr.order);
+  if (zr.isOrderSet) {
+    zmbignum_mul(zr.m_ZP, x.m_ZP, y.m_ZP, zr.order);
+  } else {
+    bn_mul(zr.m_ZP, x.m_ZP, y.m_ZP);
+  }
   return zr;
 }
 
 void ZP::multInverse() {
-  if (this->isInit && this->isOrderSet)
-    zmbignum_mod_inv(this->m_ZP, this->m_ZP, this->order);
+  if (!this->isInit || !this->isOrderSet) {
+    throw OpenABE_ERROR_INVALID_INPUT;
+  }
+  zmbignum_mod_inv(this->m_ZP, this->m_ZP, this->order);
 }
 
 ZP operator/(const ZP &x, const ZP &y)
 {
-  ZP c;
-  if (zmbignum_is_zero(y.m_ZP)) {
+  ZP r;
+  inheritOrder(r, x, y);
+
+  // Division is only defined in Z_q; integers have no general quotient.
+  if (!r.isOrderSet) {
+    cerr << "Division requires an operand with an order!" << endl;
+    throw OpenABE_ERROR_INVALID_INPUT;
+  }
+
+  ZP divisor(y);
+  zmbignum_mod(divisor.m_ZP, r.order);
+  if (zmbignum_is_zero(divisor.m_ZP)) {
     cerr << "Divide by zero error!" << endl;
     throw OpenABE_ERROR_INVALID_INPUT;
   }
 
-  ZP r;
-  if (x.isOrderSet) r.setOrder(x.order);
-  else r.setOrder(y.order);
-
-  zmbignum_div(r.m_ZP, x.m_ZP, y.m_ZP, r.order);
+  zmbignum_div(r.m_ZP, x.m_ZP, divisor.m_ZP, r.order);
   return r;
 }
 
 ZP power(const ZP &x, unsigned int r)
 {
   ZP zr;
-  zr.setOrder(x.order);
+  if (x.isOrderSet) {
+    zr.setOrder(x.order);
+    bignum_t p;
+    zmbignum_init(&p);
+    zmbignum_setuint(p, r);
+    zmbignum_exp(zr.m_ZP, x.m_ZP, p, zr.order);
+    zmbignum_free(p);
+    return zr;
+  }
 
-  bignum_t p;
-  zmbignum_init(&p);
-  zmbignum_setuint(p, r);
-  zmbignum_exp(zr.m_ZP, x.m_ZP, p, zr.order);
-  zmbignum_free(p);
+  // plain integer power by square-and-multiply
+  ZP base(x);
+  zmbignum_setuint(zr.m_ZP, 1);
+  while (r != 0) {
+    if (r & 1) bn_mul(zr.m_ZP, zr.m_ZP, base.m_ZP);
+    r >>= 1;
+    if (r != 0) bn_sqr(base.m_ZP, base.m_ZP);
+  }
   return zr;
 }
 
 ZP power(const ZP &x, const ZP &r) {
   ZP zr;
-  if (x.isOrderSet) zr.setOrder(x.order);
-  else zr.setOrder(r.order);
+  inheritOrder(zr, x, r);
+
+  // An integer power with an arbitrary-size exponent is not computable.
+  if (!zr.isOrderSet) {
+    cerr << "Exponentiation requires an operand with an order!" << endl;
+    throw OpenABE_ERROR_INVALID_INPUT;
+  }
 
   zmbignum_exp(zr.m_ZP, x.m_ZP, r.m_ZP, zr.order);
   return zr;
@@ -274,21 +319,18 @@ void ZP::setOrder(const bignum_t o) {
 }
 
 void ZP::setRandom(bignum_t o) {
+  if (zmbignum_is_zero(o)) {
+    throw OpenABE_ERROR_INVALID_INPUT;
+  }
   if (!this->isOrderSet) {
     this->isOrderSet = true;
     zmbignum_copy(this->order, o);
   }
-  zmbignum_rand(this->m_ZP, this->order);
+  zmbignum_rand(this->m_ZP, o);
 }
 
 void ZP::setRandom(ZP &order) {
-  if (!order.isOrderSet) {
-    if (!this->isOrderSet) {
-      this->isOrderSet = true;
-      zmbignum_copy(this->order, order.m_ZP);
-    }
-    zmbignum_rand(this->m_ZP, order.m_ZP);
-  }
+  this->setRandom(order.m_ZP);
 }
 
 void ZP::setPrime(uint16_t n_bits) {
@@ -364,21 +406,25 @@ void ZP::serialize(OpenABEByteString &result) const
 
 void ZP::deserialize(OpenABEByteString &input)
 {
-  size_t inputSize = input.size(), hdrLen = 3;
+  const size_t hdrLen = 3;
 
-  // first byte is the group type
-  if (input.at(0) == OpenABE_ELEMENT_ZP && inputSize > hdrLen)
-  {
-    uint16_t len = 0;
-    // read 2 bytes from right to left
-    len |= input.at(2);        // Moves to 0x00FF
-    len |= (input.at(1) << 8); // Moves to 0xFF00
-
-    uint8_t *bstr = (input.getInternalPtr() + hdrLen);
-    zmbignum_fromBin(this->m_ZP, bstr, len);
-    if (isOrderSet && zmbignum_cmp(this->m_ZP, this->order) == BN_CMP_GT)
-      zmbignum_mod(this->m_ZP, this->order);
+  // header: group type byte followed by a 16-bit big-endian length
+  if (input.size() < hdrLen || input.at(0) != OpenABE_ELEMENT_ZP) {
+    throw OpenABE_ERROR_INVALID_INPUT;
   }
+
+  const size_t len = (static_cast<size_t>(input.at(1)) << 8) | input.at(2);
+  if (input.size() - hdrLen != len) {
+    throw OpenABE_ERROR_INVALID_INPUT;
+  }
+
+  if (len == 0) {
+    zmbignum_setzero(this->m_ZP);
+  } else {
+    zmbignum_fromBin(this->m_ZP, input.getInternalPtr() + hdrLen, len);
+  }
+  if (isOrderSet && zmbignum_cmp(this->m_ZP, this->order) != BN_CMP_LT)
+    zmbignum_mod(this->m_ZP, this->order);
 }
 
 
@@ -390,14 +436,12 @@ bool ZP::isEqual(ZObject *z) const
 
 OpenABEByteString ZP::getByteString() const
 {
-  size_t length = zmbignum_countbytes(this->m_ZP);
-
-  uint8_t data[length + 1];
-  memset(data, 0, length);
-  zmbignum_toBin(this->m_ZP, data, length);
-
   OpenABEByteString z;
-  z.appendArray(data, length);
+  size_t length = zmbignum_countbytes(this->m_ZP);
+  if (length > 0) {
+    z.resize(length);
+    zmbignum_toBin(this->m_ZP, z.getInternalPtr(), length);
+  }
   return z;
 }
 
@@ -410,14 +454,9 @@ string ZP::getBytesAsString()
 
 void ZP::getLengthAndByteString(OpenABEByteString &z) const
 {
-  size_t length = zmbignum_countbytes(this->m_ZP);
-
-  uint8_t data[length];
-  memset(data, 0, length);
-  zmbignum_toBin(this->m_ZP, data, length);
-
-  z.pack16bits((uint16_t)length);
-  z.appendArray(data, length);
+  OpenABEByteString bytes = this->getByteString();
+  z.pack16bits((uint16_t)bytes.size());
+  z += bytes;
 }
 
 /********************************************************************************
@@ -530,7 +569,7 @@ G1 G1::operator*(const ZP k) const {
 
 G1 G1::operator-(const G1 &x) const {
   G1 tmp;
-  g1_neg(tmp.m_G1, x.m_G1);
+  g1_sub(tmp.m_G1, this->m_G1, x.m_G1);
   return tmp;
 }
 
@@ -698,7 +737,7 @@ G2 G2::operator*(const ZP k) const {
 
 G2 G2::operator-(const G2 &x) const {
   G2 tmp;
-  g2_neg(tmp.m_G2, x.m_G2);
+  g2_sub(tmp.m_G2, this->m_G2, x.m_G2);
   return tmp;
 }
 
@@ -803,7 +842,7 @@ uint8_t* GT::hashToBytes(size_t *size) const {
 }
 
 int GT::getSize() const {
-  return gt_size_bin((static_cast<GT>(*this)).m_GT, get_compression_flag());
+  return gt_size_bin(const_cast<GT *>(this)->m_GT, get_compression_flag());
 }
 
 size_t GT::getSizeInBytes() const {

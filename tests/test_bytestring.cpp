@@ -123,6 +123,63 @@ TEST(OpenABEByteStringTest, SymKeyDecryptNeverAcceptsTamperedCiphertext) {
 
 
 
+TEST(OpenABEByteStringTest, ConcatenationWithStdString) {
+  OpenABEByteString x;
+  x.fromString("hi");
+  OpenABEByteString y = x + std::string("abc");
+  EXPECT_EQ(y.size(), 5u);
+  EXPECT_EQ(y.toString(), "hiabc");
+}
+
+TEST(OpenABEByteStringTest, XorWithEmptyOperandIsANoOp) {
+  OpenABEByteString x, empty;
+  x.fromString("abc");
+  x ^= empty;
+  EXPECT_EQ(x.toString(), "abc");
+}
+
+TEST(OpenABEByteStringTest, SerializeRoundTripsIncludingEmpty) {
+  for (const char *text : {"", "a", "payload with spaces"}) {
+    OpenABEByteString in, blob, out;
+    in.fromString(text);
+    in.serialize(blob);
+
+    out.fromString("stale content");
+    out.deserialize(blob);
+    EXPECT_TRUE(in == out) << text;
+  }
+}
+
+TEST(OpenABEByteStringTest, DeserializeRejectsMalformedInput) {
+  OpenABEByteString in, blob, out;
+  in.fromString("payload");
+  in.serialize(blob);
+  out.fromString("keep");
+
+  OpenABEByteString empty;
+  EXPECT_THROW(out.deserialize(empty), OpenABE_ERROR);
+
+  OpenABEByteString truncated = blob.getSubset(0, blob.size() - 1);
+  EXPECT_THROW(out.deserialize(truncated), OpenABE_ERROR);
+
+  OpenABEByteString trailing = blob;
+  trailing.push_back(0);
+  EXPECT_THROW(out.deserialize(trailing), OpenABE_ERROR);
+
+  OpenABEByteString wrongType = blob;
+  wrongType[0] ^= 0xFF;
+  EXPECT_THROW(out.deserialize(wrongType), OpenABE_ERROR);
+
+  EXPECT_EQ(out.toString(), "keep");
+}
+
+TEST(OpenABEByteStringTest, ToStringWorksOnConstObjects) {
+  OpenABEByteString x;
+  x.fromString("const");
+  const OpenABEByteString &cx = x;
+  EXPECT_EQ(cx.toString(), "const");
+}
+
 int main(int argc, char **argv) {
   int rc;
 

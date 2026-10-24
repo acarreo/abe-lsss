@@ -44,6 +44,7 @@
 
 #include "zconstants.h"
 #include "zobject.h"
+#include "abe/zerror.h"
 
 #include <gmp.h>
 
@@ -93,9 +94,8 @@ public:
 
   OpenABEByteString operator+(std::string concat) {
     OpenABEByteString result;
-    uint32_t size = concat.size();
     result.insert(result.end(), this->begin(), this->end());
-    result.insert(result.end(), ((uint8_t*) concat.c_str())[0], ((uint8_t*)concat.c_str())[size]);
+    result.insert(result.end(), concat.begin(), concat.end());
     return result;
   }
 
@@ -108,6 +108,7 @@ public:
   OpenABEByteString& operator^=(OpenABEByteString &rhs) {
     uint8_t *lhs_ptr = this->getInternalPtr();
     uint8_t *rhs_ptr = rhs.getInternalPtr();
+    if (rhs.empty()) return *this;
     for(size_t i = 0; i < this->size(); i++) {
       lhs_ptr[i] = this->at(i) ^ rhs_ptr[i % rhs.size()];
     }
@@ -218,9 +219,9 @@ public:
     this->insert(this->end(), concat.begin(), concat.end());
   }
 
-  const std::string toString() {
+  std::string toString() const {
     std::stringstream ss;
-    for (std::vector<uint8_t>::iterator it = this->begin() ; it != this->end(); ++it) {
+    for (std::vector<uint8_t>::const_iterator it = this->begin() ; it != this->end(); ++it) {
       const unsigned char str = *it;
       ss << str;
     }
@@ -255,18 +256,21 @@ public:
   }
 
   void deserialize(OpenABEByteString &input) {
-    uint32_t len = 0;
-    size_t hdrLen = 5;
-    if (input.size() > hdrLen) {
-      for (size_t i = 1; i <= sizeof(uint32_t); i++) {
-        len <<= 8;
-        len += input.at(i);
-      }
-
-      if (input.size() == (len + hdrLen)) {
-        *this = input.getSubset(hdrLen, len);
-      }
+    const size_t hdrLen = 5;
+    if (input.size() < hdrLen || input.at(0) != BYTESTRING) {
+      throw OpenABE_ERROR_INVALID_INPUT;
     }
+
+    uint32_t len = 0;
+    for (size_t i = 1; i <= sizeof(uint32_t); i++) {
+      len <<= 8;
+      len += input.at(i);
+    }
+
+    if (input.size() - hdrLen != len) {
+      throw OpenABE_ERROR_INVALID_INPUT;
+    }
+    *this = input.getSubset(hdrLen, len);
   }
 
   bool isEqual(ZObject* z) const {
