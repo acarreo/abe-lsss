@@ -138,6 +138,18 @@ TEST(OpenABEByteStringTest, XorWithEmptyOperandIsANoOp) {
   EXPECT_EQ(x.toString(), "abc");
 }
 
+TEST(OpenABEByteStringTest, XorRepeatsShortOperandAcrossLongerInput) {
+  OpenABEByteString input, mask;
+  input.fromString("abcdefg");
+  mask.fromString("xy");
+
+  input ^= mask;
+
+  OpenABEByteString expected;
+  expected.assign({0x19, 0x1b, 0x1b, 0x1d, 0x1d, 0x1f, 0x1f});
+  EXPECT_EQ(input, expected);
+}
+
 TEST(OpenABEByteStringTest, SerializeRoundTripsIncludingEmpty) {
   for (const char *text : {"", "a", "payload with spaces"}) {
     OpenABEByteString in, blob, out;

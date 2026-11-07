@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -9,7 +10,7 @@
 namespace {
 
 bool roundTrip(abe_lsss::Scheme scheme, const std::string& encryptionInput,
-               const std::string& keyInput) {
+               const std::string& keyInput, std::size_t plaintextSize = 32) {
   auto context = abe_lsss::create_context(scheme);
   if (!context ||
       context->generateParams("api_mpk", "api_msk") != OpenABE_NOERROR) {
@@ -29,8 +30,8 @@ bool roundTrip(abe_lsss::Scheme scheme, const std::string& encryptionInput,
   }
 
   abe_lsss::ByteString plaintext, recovered;
-  for (std::uint8_t byte = 0; byte < 32; ++byte) {
-    plaintext.push_back(byte);
+  for (std::size_t i = 0; i < plaintextSize; ++i) {
+    plaintext.push_back(static_cast<std::uint8_t>(i));
   }
   abe_lsss::Ciphertext ciphertext;
   return context->encrypt("api_mpk", encInput.get(), plaintext, ciphertext) ==
@@ -68,6 +69,15 @@ TEST(AbeLsssApi, WatersCpAbeRoundTrip) {
 TEST(AbeLsssApi, GpswKpAbeRoundTrip) {
   EXPECT_TRUE(roundTrip(abe_lsss::kp_gpsw, "Engineering|ProjectA",
                         "(Engineering and (ProjectA or ProjectB))"));
+}
+
+TEST(AbeLsssApi, LongMessageRoundTripsForBothSchemes) {
+  constexpr std::size_t messageSize = 10 * 1024;
+  EXPECT_TRUE(roundTrip(abe_lsss::cp_waters, "(Engineering and ProjectA)",
+                        "Engineering|ProjectA", messageSize));
+  EXPECT_TRUE(roundTrip(abe_lsss::kp_gpsw, "Engineering|ProjectA",
+                        "(Engineering and (ProjectA or ProjectB))",
+                        messageSize));
 }
 
 TEST(AbeLsssApi, GroupElementSerializationRoundTrips) {

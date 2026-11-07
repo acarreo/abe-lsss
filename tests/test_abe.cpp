@@ -183,6 +183,24 @@ TEST(ABELSSS, SharesAndRecoversNestedPolicy) {
     EXPECT_FALSE(runLSSSTest("(Alice and (Bob or Charlie))", "Alice"));
 }
 
+TEST(ABEHashExpansion, ExpandedMaskIsDeterministicAndNonRepeating) {
+    OpenABEPairing pairing;
+    OpenABEByteString key;
+    key.assign(32, 0x42);
+
+    const uint32_t expandedLength = 257 * RLC_MD_LEN;
+    OpenABEByteString expanded = pairing.hashFromBytes(key, expandedLength, 0x01);
+    OpenABEByteString expandedAgain =
+        pairing.hashFromBytes(key, expandedLength, 0x01);
+    ASSERT_EQ(expanded.size(), expandedLength);
+    EXPECT_EQ(expanded, expandedAgain);
+
+    OpenABEByteString firstBlock = expanded.getSubset(0, RLC_MD_LEN);
+    OpenABEByteString blockAfterCounterWrap =
+        expanded.getSubset(256 * RLC_MD_LEN, RLC_MD_LEN);
+    EXPECT_FALSE(firstBlock == blockAfterCounterWrap);
+}
+
 /* Unit tests for CPA scheme contexts */
 TEST_P(CPASecurityForSchemeTest, testWorkingExamples) {
     Input input = GetParam();

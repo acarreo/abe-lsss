@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <limits>
 #include <string>
 
 using namespace std;
@@ -314,6 +315,11 @@ OpenABEContextSchemeCPA::encrypt(const string &mpkID, const OpenABEFunctionInput
   unique_ptr<OpenABEByteString> ct = nullptr;
 
   try {
+    if (plaintext.size() > numeric_limits<uint32_t>::max()) {
+      OpenABE_LOG_AND_THROW("Plaintext exceeds the supported 32-bit length",
+                            OpenABE_ERROR_INVALID_LENGTH);
+    }
+
     // generate Key Encapsulation for access structure under MPK
     result = this->m_KEM_->encryptKEM(mpkID, encryptInput,
                                       DEFAULT_SYM_KEY_BYTES, K, ciphertext);
@@ -364,6 +370,10 @@ OpenABEContextSchemeCPA::decrypt(const string &mpkID, const string &keyID,
     OpenABEByteString *encMessage = ciphertext.getByteString("_ED"); // encryptedData
     if (encMessage == nullptr) {
       throw OpenABE_ERROR_INVALID_INPUT;
+    }
+    if (encMessage->size() > numeric_limits<uint32_t>::max()) {
+      OpenABE_LOG_AND_THROW("Ciphertext payload exceeds the supported 32-bit length",
+                            OpenABE_ERROR_INVALID_LENGTH);
     }
 
     // generate a hash of encMessage->size() size and xor it with encMessage

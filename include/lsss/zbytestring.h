@@ -109,8 +109,15 @@ public:
     uint8_t *lhs_ptr = this->getInternalPtr();
     uint8_t *rhs_ptr = rhs.getInternalPtr();
     if (rhs.empty()) return *this;
-    for(size_t i = 0; i < this->size(); i++) {
-      lhs_ptr[i] = this->at(i) ^ rhs_ptr[i % rhs.size()];
+
+    size_t offset = 0;
+    while (offset < this->size()) {
+      const size_t remaining = this->size() - offset;
+      const size_t chunk_size = rhs.size() < remaining ? rhs.size() : remaining;
+      for (size_t i = 0; i < chunk_size; ++i) {
+        lhs_ptr[offset + i] ^= rhs_ptr[i];
+      }
+      offset += chunk_size;
     }
     return *this;
   }
