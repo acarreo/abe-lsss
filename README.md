@@ -6,7 +6,7 @@
 
 `abe-lsss` is a C++ attribute-based encryption library derived from [Zeutro's OpenABE](https://github.com/zeutro/openabe). It combines the Waters ciphertext-policy and GPSW key-policy ABE constructions with an LSSS policy engine, using [RELIC](https://github.com/relic-toolkit/relic) for pairing-based arithmetic.
 
-The factory exposes the CPA-secure CP-ABE and KP-ABE constructions. Its `encrypt` API uses a Key Encapsulation Mechanism (KEM) to encrypt variable-length messages, including symmetric keys. For payload integrity, encrypt a symmetric key with ABE and use it with an AEAD to encrypt the data. CCA variants and multi-authority ABE are not enabled.
+The factory exposes the CPA-secure CP-ABE and KP-ABE constructions. The CPA context uses a Key Encapsulation Mechanism (KEM) to encrypt variable-length messages, including symmetric keys. A separate hybrid context combines the ABE KEM with AES-GCM for authenticated payload encryption. CCA variants and multi-authority ABE are not enabled.
 
 ## Documentation
 

@@ -112,5 +112,67 @@ public:
                     OpenABEByteString& plaintext, OpenABECiphertext& ciphertext);
 };
 
+class OpenABEHybridEncryptStream {
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+  explicit OpenABEHybridEncryptStream(std::unique_ptr<Impl> impl);
+  friend class OpenABEContextSchemeHybrid;
+
+public:
+  ~OpenABEHybridEncryptStream();
+  // Each update replaces its output; input and output must be distinct.
+  OpenABE_ERROR update(const OpenABEByteString &plaintext,
+                       OpenABEByteString &ciphertext);
+  OpenABE_ERROR finalize(OpenABEByteString &tag);
+};
+
+class OpenABEHybridDecryptStream {
+  struct Impl;
+  std::unique_ptr<Impl> impl_;
+  explicit OpenABEHybridDecryptStream(std::unique_ptr<Impl> impl);
+  friend class OpenABEContextSchemeHybrid;
+
+public:
+  ~OpenABEHybridDecryptStream();
+  // Each update replaces its output; input and output must be distinct.
+  // Output is unauthenticated until finalize succeeds and must be quarantined.
+  OpenABE_ERROR update(const OpenABEByteString &ciphertext,
+                       OpenABEByteString &plaintext);
+  OpenABE_ERROR finalize(const OpenABEByteString &tag);
+};
+
+class OpenABEContextSchemeHybrid : private OpenABEContextSchemeCPA {
+public:
+  explicit OpenABEContextSchemeHybrid(std::unique_ptr<OpenABEContextABE> kem);
+
+  using OpenABEContextSchemeCPA::checkSecretKey;
+  using OpenABEContextSchemeCPA::deleteKey;
+  using OpenABEContextSchemeCPA::exportKey;
+  using OpenABEContextSchemeCPA::generateParams;
+  using OpenABEContextSchemeCPA::getHashKey;
+  using OpenABEContextSchemeCPA::getSchemeType;
+  using OpenABEContextSchemeCPA::keygen;
+  using OpenABEContextSchemeCPA::loadMasterPublicParams;
+  using OpenABEContextSchemeCPA::loadMasterSecretParams;
+  using OpenABEContextSchemeCPA::loadUserSecretParams;
+
+  OpenABE_ERROR encrypt(const std::string &mpkID,
+                        const OpenABEFunctionInput *encryptInput,
+                        OpenABEByteString &plaintext,
+                        OpenABECiphertext &ciphertext);
+  OpenABE_ERROR decrypt(const std::string &mpkID, const std::string &keyID,
+                        OpenABEByteString &plaintext,
+                        OpenABECiphertext &ciphertext);
+  OpenABE_ERROR encryptInit(const std::string &mpkID,
+                            const OpenABEFunctionInput *encryptInput,
+                            OpenABECiphertext &kemCiphertext,
+                            OpenABEByteString &iv,
+                            std::unique_ptr<OpenABEHybridEncryptStream> &stream);
+  OpenABE_ERROR decryptInit(const std::string &mpkID, const std::string &keyID,
+                            OpenABECiphertext &kemCiphertext,
+                            const OpenABEByteString &iv,
+                            std::unique_ptr<OpenABEHybridDecryptStream> &stream);
+};
+
 
 #endif /* ifdef __ZCONTEXTABE_H__ */

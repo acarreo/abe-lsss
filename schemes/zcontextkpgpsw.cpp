@@ -301,7 +301,7 @@ OpenABEContextKPGPSW::decryptKEM(const string &mpkID, const string &keyID,
 
     // Obtain the attribute list from the decryption key
     OpenABEAttributeList *attrList =
-        (OpenABEAttributeList *)ciphertext.getComponent("attributes");
+        dynamic_cast<OpenABEAttributeList *>(ciphertext.getComponent("attributes"));
     ASSERT_NOTNULL(attrList);
 
     // Initialize an LSSS structure. Given an attribute list and policy
@@ -333,6 +333,9 @@ OpenABEContextKPGPSW::decryptKEM(const string &mpkID, const string &keyID,
       di = decKey->getG2(OpenABEMakeElementLabel("d", attr_deckey));
       // prod1 => prod{i \in S} D_i ^ coeff_i
       Di = decKey->getG1(OpenABEMakeElementLabel("D", attr_deckey));
+      ASSERT_NOTNULL(Ci);
+      ASSERT_NOTNULL(di);
+      ASSERT_NOTNULL(Di);
       prod1 += (*Di * coeff);
       // prodT => prod{i \in S} e(d_i, C_i)
       g1s.push_back(*Ci *coeff);

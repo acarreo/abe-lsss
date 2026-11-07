@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -59,6 +60,10 @@ TEST(AbeLsssApi, CreatesOnlySupportedSchemes) {
   EXPECT_NE(abe_lsss::create_context(abe_lsss::cp_waters), nullptr);
   EXPECT_NE(abe_lsss::create_context(abe_lsss::kp_gpsw), nullptr);
   EXPECT_EQ(abe_lsss::create_context(static_cast<abe_lsss::Scheme>(250)), nullptr);
+  EXPECT_NE(abe_lsss::create_hybrid_context(abe_lsss::cp_waters), nullptr);
+  EXPECT_NE(abe_lsss::create_hybrid_context(abe_lsss::kp_gpsw), nullptr);
+  EXPECT_EQ(abe_lsss::create_hybrid_context(static_cast<abe_lsss::Scheme>(250)),
+            nullptr);
 }
 
 TEST(AbeLsssApi, WatersCpAbeRoundTrip) {
@@ -103,6 +108,340 @@ TEST(AbeLsssApi, AesGcmAliasesRoundTrip) {
   ASSERT_EQ(decryptor.decryptUpdate(streamCiphertext, output), OpenABE_NOERROR);
   ASSERT_EQ(decryptor.decryptFinalize(output), OpenABE_NOERROR);
   EXPECT_EQ(output, input);
+}
+
+TEST(AbeLsssApi, HybridRoundTripsAndRejectsTampering) {
+  for (auto scheme : {abe_lsss::cp_waters, abe_lsss::kp_gpsw}) {
+    SCOPED_TRACE(scheme);
+    auto context = abe_lsss::create_hybrid_context(scheme);
+    ASSERT_TRUE(context);
+    ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
+    auto policy = abe_lsss::parse_policy("(Engineering and ProjectA)");
+    auto attributes = abe_lsss::parse_attributes("Engineering|ProjectA");
+    auto missingAttributes = abe_lsss::parse_attributes("Engineering");
+    ASSERT_TRUE(policy && attributes && missingAttributes);
+    auto* keyInput = scheme == abe_lsss::cp_waters ? attributes.get() : policy.get();
+    auto* encInput = scheme == abe_lsss::cp_waters ? policy.get() : attributes.get();
+    ASSERT_EQ(context->keygen(keyInput, "alice", "mpk", "msk"), OpenABE_NOERROR);
+    abe_lsss::ByteString mpkBlob, userBlob;
+    ASSERT_EQ(context->exportKey("mpk", mpkBlob), OpenABE_NOERROR);
+    ASSERT_EQ(context->exportKey("alice", userBlob), OpenABE_NOERROR);
+    auto recipient = abe_lsss::create_hybrid_context(scheme);
+    ASSERT_TRUE(recipient);
+    ASSERT_EQ(recipient->loadMasterPublicParams("mpk", mpkBlob), OpenABE_NOERROR);
+    ASSERT_EQ(recipient->loadUserSecretParams("alice", userBlob), OpenABE_NOERROR);
+    if (scheme == abe_lsss::cp_waters) {
+      ASSERT_EQ(context->keygen(missingAttributes.get(), "bob", "mpk", "msk"),
+                OpenABE_NOERROR);
+    } else {
+      auto missingPolicy = abe_lsss::parse_policy("(Engineering and Missing)");
+      ASSERT_TRUE(missingPolicy);
+      ASSERT_EQ(context->keygen(missingPolicy.get(), "bob", "mpk", "msk"),
+                OpenABE_NOERROR);
+    }
+
+    abe_lsss::Ciphertext ciphertext;
+    for (std::size_t size : {std::size_t{0}, std::size_t{1}, std::size_t{32},
+                             std::size_t{10000}}) {
+      SCOPED_TRACE(size);
+      abe_lsss::ByteString plaintext, recovered;
+      for (std::size_t i = 0; i < size; ++i) {
+        plaintext.push_back(static_cast<std::uint8_t>(i));
+      }
+      ASSERT_EQ(context->encrypt("mpk", encInput, plaintext, ciphertext),
+                OpenABE_NOERROR);
+      abe_lsss::ByteString serialized;
+      ciphertext.exportToBytes(serialized);
+      abe_lsss::Ciphertext loaded;
+      loaded.loadFromBytes(serialized);
+      ASSERT_EQ(context->decrypt("mpk", "alice", recovered, loaded), OpenABE_NOERROR);
+      EXPECT_EQ(recovered, plaintext);
+      recovered.clear();
+      ASSERT_EQ(recipient->decrypt("mpk", "alice", recovered, loaded), OpenABE_NOERROR);
+      EXPECT_EQ(recovered, plaintext);
+
+      recovered.fromString("previous");
+      EXPECT_NE(context->decrypt("mpk", "bob", recovered, loaded), OpenABE_NOERROR);
+      EXPECT_TRUE(recovered.empty());
+
+      for (const char* name : {"_GCM_IV", "_GCM_TAG", "_GCM_CT"}) {
+        auto* component = loaded.getByteString(name);
+        ASSERT_NE(component, nullptr);
+        if (component->empty()) {
+          continue;
+        }
+        component->at(0) ^= 1;
+        recovered.fromString("previous");
+        EXPECT_EQ(context->decrypt("mpk", "alice", recovered, loaded),
+                  OpenABE_ERROR_DECRYPTION_FAILED);
+        EXPECT_TRUE(recovered.empty());
+        component->at(0) ^= 1;
+      }
+      loaded.getUID().at(0) ^= 1;
+      recovered.fromString("previous");
+      EXPECT_EQ(context->decrypt("mpk", "alice", recovered, loaded),
+                OpenABE_ERROR_DECRYPTION_FAILED);
+      EXPECT_TRUE(recovered.empty());
+      loaded.getUID().at(0) ^= 1;
+      loaded.setSchemeType(scheme == abe_lsss::cp_waters
+                               ? abe_lsss::kp_gpsw : abe_lsss::cp_waters);
+      EXPECT_EQ(context->decrypt("mpk", "alice", recovered, loaded),
+                OpenABE_ERROR_INVALID_CIPHERTEXT_HEADER);
+      EXPECT_TRUE(recovered.empty());
+
+      loaded.loadFromBytes(serialized);
+      if (scheme == abe_lsss::cp_waters) {
+        G1 replacement;
+        replacement.setGenerator();
+        loaded.setComponent("Cprime", &replacement);
+      } else {
+        G2 replacement;
+        replacement.setGenerator();
+        loaded.setComponent("Cpr2", &replacement);
+      }
+      recovered.fromString("previous");
+      EXPECT_EQ(context->decrypt("mpk", "alice", recovered, loaded),
+                OpenABE_ERROR_DECRYPTION_FAILED);
+      EXPECT_TRUE(recovered.empty());
+    }
+  }
+}
+
+TEST(AbeLsssApi, HybridRejectsMalformedKpKemComponents) {
+  auto context = abe_lsss::create_hybrid_context(abe_lsss::kp_gpsw);
+  ASSERT_TRUE(context);
+  ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
+  auto policy = abe_lsss::parse_policy("(A and B)");
+  auto attributes = abe_lsss::parse_attributes("A|B");
+  ASSERT_TRUE(policy && attributes);
+  ASSERT_EQ(context->keygen(policy.get(), "alice", "mpk", "msk"), OpenABE_NOERROR);
+  abe_lsss::ByteString input, output;
+  input.fromString("message");
+  abe_lsss::Ciphertext ciphertext;
+  ASSERT_EQ(context->encrypt("mpk", attributes.get(), input, ciphertext), OpenABE_NOERROR);
+  abe_lsss::ByteString wrongType;
+  wrongType.fromString("not an attribute list");
+  ciphertext.setComponent("attributes", &wrongType);
+  output.fromString("previous");
+  EXPECT_NE(context->decrypt("mpk", "alice", output, ciphertext), OpenABE_NOERROR);
+  EXPECT_TRUE(output.empty());
+
+  ASSERT_EQ(context->encrypt("mpk", attributes.get(), input, ciphertext), OpenABE_NOERROR);
+  for (const auto& name : ciphertext.getKeys()) {
+    if (name.rfind("C_", 0) == 0) {
+      ciphertext.setComponent(name, &wrongType);
+    }
+  }
+  output.fromString("previous");
+  EXPECT_NE(context->decrypt("mpk", "alice", output, ciphertext), OpenABE_NOERROR);
+  EXPECT_TRUE(output.empty());
+}
+
+TEST(AbeLsssApi, HybridStreamingRoundTripAndOneShotCompatibility) {
+  for (auto scheme : {abe_lsss::cp_waters, abe_lsss::kp_gpsw}) {
+    SCOPED_TRACE(scheme);
+    auto context = abe_lsss::create_hybrid_context(scheme);
+    ASSERT_TRUE(context);
+    ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
+    auto policy = abe_lsss::parse_policy("(A and B)");
+    auto attributes = abe_lsss::parse_attributes("A|B");
+    ASSERT_TRUE(policy && attributes);
+    auto* keyInput = scheme == abe_lsss::cp_waters ? attributes.get() : policy.get();
+    auto* encInput = scheme == abe_lsss::cp_waters ? policy.get() : attributes.get();
+    ASSERT_EQ(context->keygen(keyInput, "alice", "mpk", "msk"), OpenABE_NOERROR);
+
+    abe_lsss::Ciphertext kem;
+    abe_lsss::ByteString iv, tag, message, encrypted, block, recovered;
+    for (std::size_t i = 0; i < 131101; ++i) {
+      message.push_back(static_cast<std::uint8_t>(i));
+    }
+    std::unique_ptr<abe_lsss::HybridEncryptStream> enc;
+    ASSERT_EQ(context->encryptInit("mpk", encInput, kem, iv, enc), OpenABE_NOERROR);
+    ASSERT_TRUE(enc);
+    EXPECT_EQ(context->encryptInit("mpk", encInput, kem, iv, enc),
+              OpenABE_ERROR_IN_USE_ALREADY);
+    abe_lsss::ByteString empty;
+    ASSERT_EQ(enc->update(empty, block), OpenABE_NOERROR);
+    EXPECT_TRUE(block.empty());
+    for (std::size_t offset = 0; offset < message.size(); offset += 9973) {
+      auto chunk = message.getSubset(offset, std::min<std::size_t>(9973, message.size() - offset));
+      ASSERT_EQ(enc->update(chunk, block), OpenABE_NOERROR);
+      encrypted += block;
+    }
+    ASSERT_EQ(enc->finalize(tag), OpenABE_NOERROR);
+    EXPECT_EQ(enc->update(empty, block), OpenABE_ERROR_INVALID_CONTEXT);
+    EXPECT_EQ(enc->finalize(block), OpenABE_ERROR_INVALID_CONTEXT);
+
+    abe_lsss::ByteString blob;
+    kem.exportToBytes(blob);
+    abe_lsss::Ciphertext loaded;
+    loaded.loadFromBytes(blob);
+    std::unique_ptr<abe_lsss::HybridDecryptStream> dec;
+    ASSERT_EQ(context->decryptInit("mpk", "alice", loaded, iv, dec), OpenABE_NOERROR);
+    EXPECT_EQ(context->decryptInit("mpk", "alice", loaded, iv, dec),
+              OpenABE_ERROR_IN_USE_ALREADY);
+    for (std::size_t offset = 0; offset < encrypted.size(); offset += 5003) {
+      auto chunk = encrypted.getSubset(offset, std::min<std::size_t>(5003, encrypted.size() - offset));
+      ASSERT_EQ(dec->update(chunk, block), OpenABE_NOERROR);
+      recovered += block;
+    }
+    ASSERT_EQ(dec->finalize(tag), OpenABE_NOERROR);
+    EXPECT_EQ(recovered, message);
+    EXPECT_EQ(dec->update(empty, block), OpenABE_ERROR_INVALID_CONTEXT);
+    EXPECT_EQ(dec->finalize(tag), OpenABE_ERROR_INVALID_CONTEXT);
+
+    loaded.setComponent("_GCM_IV", &iv);
+    loaded.setComponent("_GCM_CT", &encrypted);
+    loaded.setComponent("_GCM_TAG", &tag);
+    ASSERT_EQ(context->decrypt("mpk", "alice", recovered, loaded), OpenABE_NOERROR);
+    EXPECT_EQ(recovered, message);
+
+    abe_lsss::Ciphertext oneShot;
+    ASSERT_EQ(context->encrypt("mpk", encInput, message, oneShot), OpenABE_NOERROR);
+    auto* oneIv = oneShot.getByteString("_GCM_IV");
+    auto* onePayload = oneShot.getByteString("_GCM_CT");
+    auto* oneTag = oneShot.getByteString("_GCM_TAG");
+    ASSERT_TRUE(oneIv && onePayload && oneTag);
+    dec.reset();
+    ASSERT_EQ(context->decryptInit("mpk", "alice", oneShot, *oneIv, dec), OpenABE_NOERROR);
+    ASSERT_EQ(dec->update(*onePayload, recovered), OpenABE_NOERROR);
+    ASSERT_EQ(dec->finalize(*oneTag), OpenABE_NOERROR);
+    EXPECT_EQ(recovered, message);
+  }
+}
+
+TEST(AbeLsssApi, HybridStreamingAuthenticationAndEmptyMessages) {
+  auto context = abe_lsss::create_hybrid_context(abe_lsss::cp_waters);
+  ASSERT_TRUE(context);
+  ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
+  auto policy = abe_lsss::parse_policy("(A and B)");
+  auto attributes = abe_lsss::parse_attributes("A|B");
+  ASSERT_TRUE(policy && attributes);
+  ASSERT_EQ(context->keygen(attributes.get(), "alice", "mpk", "msk"), OpenABE_NOERROR);
+  abe_lsss::Ciphertext kem;
+  abe_lsss::ByteString iv, tag, plaintext, ciphertext, block;
+  std::unique_ptr<abe_lsss::HybridEncryptStream> enc;
+  ASSERT_EQ(context->encryptInit("mpk", policy.get(), kem, iv, enc), OpenABE_NOERROR);
+  ASSERT_EQ(enc->finalize(tag), OpenABE_NOERROR);
+  std::unique_ptr<abe_lsss::HybridDecryptStream> dec;
+  ASSERT_EQ(context->decryptInit("mpk", "alice", kem, iv, dec), OpenABE_NOERROR);
+  ASSERT_EQ(dec->finalize(tag), OpenABE_NOERROR);
+
+  enc.reset();
+  plaintext.fromString("secret payload");
+  ASSERT_EQ(context->encryptInit("mpk", policy.get(), kem, iv, enc), OpenABE_NOERROR);
+  EXPECT_EQ(enc->update(plaintext, plaintext), OpenABE_ERROR_INVALID_INPUT);
+  ASSERT_EQ(enc->update(plaintext, ciphertext), OpenABE_NOERROR);
+  ASSERT_EQ(enc->finalize(tag), OpenABE_NOERROR);
+  for (int alteration = 0; alteration < 5; ++alteration) {
+    SCOPED_TRACE(alteration);
+    dec.reset();
+    const auto lastByte = ciphertext.back();
+    if (alteration == 0) ciphertext[0] ^= 1;
+    if (alteration == 1) iv[0] ^= 1;
+    if (alteration == 2) tag[0] ^= 1;
+    if (alteration == 3) kem.getUID()[0] ^= 1;
+    if (alteration == 4) ciphertext.pop_back();
+    ASSERT_EQ(context->decryptInit("mpk", "alice", kem, iv, dec), OpenABE_NOERROR);
+    ASSERT_EQ(dec->update(ciphertext, block), OpenABE_NOERROR);
+    EXPECT_EQ(dec->finalize(tag), OpenABE_ERROR_DECRYPTION_FAILED);
+    EXPECT_EQ(dec->finalize(tag), OpenABE_ERROR_INVALID_CONTEXT);
+    if (alteration == 0) ciphertext[0] ^= 1;
+    if (alteration == 1) iv[0] ^= 1;
+    if (alteration == 2) tag[0] ^= 1;
+    if (alteration == 3) kem.getUID()[0] ^= 1;
+    if (alteration == 4) ciphertext.push_back(lastByte);
+  }
+  dec.reset();
+  ASSERT_EQ(context->decryptInit("mpk", "alice", kem, iv, dec), OpenABE_NOERROR);
+  tag.pop_back();
+  EXPECT_EQ(dec->finalize(tag), OpenABE_ERROR_INVALID_TAG_LENGTH);
+  EXPECT_EQ(dec->finalize(tag), OpenABE_ERROR_INVALID_CONTEXT);
+  dec.reset();
+  auto shortIv = iv;
+  shortIv.pop_back();
+  EXPECT_EQ(context->decryptInit("mpk", "alice", kem, shortIv, dec),
+            OpenABE_ERROR_INVALID_CIPHERTEXT);
+  EXPECT_FALSE(dec);
+  EXPECT_NE(context->decryptInit("mpk", "missing", kem, iv, dec), OpenABE_NOERROR);
+  EXPECT_FALSE(dec);
+
+  tag.push_back(0);
+  enc.reset();
+  ASSERT_EQ(context->encryptInit("mpk", policy.get(), kem, iv, enc), OpenABE_NOERROR);
+  ASSERT_EQ(enc->update(plaintext, ciphertext), OpenABE_NOERROR);
+  ASSERT_EQ(enc->finalize(tag), OpenABE_NOERROR);
+  ASSERT_EQ(context->decryptInit("mpk", "alice", kem, iv, dec), OpenABE_NOERROR);
+  context.reset();
+  ASSERT_EQ(dec->update(ciphertext, block), OpenABE_NOERROR);
+  EXPECT_EQ(dec->finalize(tag), OpenABE_NOERROR);
+  EXPECT_EQ(block, plaintext);
+}
+
+TEST(AbeLsssApi, DISABLED_HybridStreamingOneGiB) {
+  auto context = abe_lsss::create_hybrid_context(abe_lsss::cp_waters);
+  ASSERT_TRUE(context);
+  ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
+  auto policy = abe_lsss::parse_policy("(A and B)");
+  auto attributes = abe_lsss::parse_attributes("A|B");
+  ASSERT_TRUE(policy && attributes);
+  ASSERT_EQ(context->keygen(attributes.get(), "alice", "mpk", "msk"), OpenABE_NOERROR);
+
+  abe_lsss::Ciphertext kem;
+  abe_lsss::ByteString input, iv, tag, encrypted, recovered;
+  input.resize(1024 * 1024);
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    input[i] = static_cast<std::uint8_t>(i);
+  }
+  std::unique_ptr<abe_lsss::HybridEncryptStream> enc;
+  std::unique_ptr<abe_lsss::HybridDecryptStream> dec;
+  ASSERT_EQ(context->encryptInit("mpk", policy.get(), kem, iv, enc), OpenABE_NOERROR);
+  ASSERT_EQ(context->decryptInit("mpk", "alice", kem, iv, dec), OpenABE_NOERROR);
+  bool allMatch = true;
+  for (int i = 0; i < 1024; ++i) {
+    ASSERT_EQ(enc->update(input, encrypted), OpenABE_NOERROR);
+    ASSERT_EQ(dec->update(encrypted, recovered), OpenABE_NOERROR);
+    allMatch = allMatch && (recovered == input);
+  }
+  ASSERT_EQ(enc->finalize(tag), OpenABE_NOERROR);
+  ASSERT_EQ(dec->finalize(tag), OpenABE_NOERROR);
+  EXPECT_TRUE(allMatch);
+}
+
+TEST(AbeLsssApi, HybridRejectsMissingAndInvalidComponents) {
+  auto context = abe_lsss::create_hybrid_context(abe_lsss::cp_waters);
+  ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
+  auto policy = abe_lsss::parse_policy("(A and B)");
+  auto attributes = abe_lsss::parse_attributes("A|B");
+  ASSERT_TRUE(policy && attributes);
+  ASSERT_EQ(context->keygen(attributes.get(), "alice", "mpk", "msk"),
+            OpenABE_NOERROR);
+  abe_lsss::ByteString input, output;
+  input.fromString("message");
+  abe_lsss::Ciphertext ciphertext;
+  ASSERT_EQ(context->encrypt("mpk", policy.get(), input, ciphertext), OpenABE_NOERROR);
+  auto* tag = ciphertext.getByteString("_GCM_TAG");
+  ASSERT_NE(tag, nullptr);
+  tag->pop_back();
+  output.fromString("previous");
+  EXPECT_EQ(context->decrypt("mpk", "alice", output, ciphertext),
+            OpenABE_ERROR_INVALID_CIPHERTEXT);
+  EXPECT_TRUE(output.empty());
+  ASSERT_EQ(ciphertext.deleteComponent("_GCM_IV"), OpenABE_NOERROR);
+  EXPECT_NE(context->decrypt("mpk", "alice", output, ciphertext), OpenABE_NOERROR);
+  EXPECT_TRUE(output.empty());
+  abe_lsss::ByteString malformedBlob;
+  EXPECT_NO_THROW(ciphertext.exportToBytes(malformedBlob));
+
+  ASSERT_EQ(context->encrypt("mpk", policy.get(), input, ciphertext), OpenABE_NOERROR);
+  abe_lsss::ByteString firstIv = *ciphertext.getByteString("_GCM_IV");
+  ASSERT_EQ(context->encrypt("mpk", policy.get(), input, ciphertext), OpenABE_NOERROR);
+  EXPECT_NE(firstIv, *ciphertext.getByteString("_GCM_IV"));
+  auto* iv = ciphertext.getByteString("_GCM_IV");
+  iv->pop_back();
+  EXPECT_EQ(context->decrypt("mpk", "alice", output, ciphertext),
+            OpenABE_ERROR_INVALID_CIPHERTEXT);
+  EXPECT_TRUE(output.empty());
 }
 
 TEST(AbeLsssApi, GroupElementSerializationRoundTrips) {

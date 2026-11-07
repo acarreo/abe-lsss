@@ -21,6 +21,17 @@ integrity should use an AEAD instead. The mask expansion uses a 32-bit output
 length, so the API does not guarantee a particular practical maximum message
 size.
 
+The separate hybrid context uses the CPA ABE KEM's derived key with AES-256-GCM
+for one-shot and streaming payloads. Its associated data is the ABE ciphertext header
+(library version, scheme ID and UID); the GCM tag is checked before returning
+plaintext. The header does not include the policy, attributes or other KEM
+components, and the hybrid construction does not claim CCA security or direct
+authentication of those components.
+
+Streaming decryption produces unauthenticated blocks until the final GCM tag
+is verified. The caller must quarantine the blocks and discard them on any
+failure; processing or publishing them earlier is unsafe.
+
 Chosen-ciphertext (CCA) variants are not enabled: the generic transform is
 kept in the source but disabled, and the factory does not implement
 multi-authority ABE, revocation, tracing, non-monotone policies, outsourced
