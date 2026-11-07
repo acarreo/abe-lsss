@@ -91,6 +91,13 @@ TEST(Container, ComparisonDoesNotInsertMissingKeys) {
   EXPECT_EQ(b.numComponents(), 0u);
 }
 
+TEST(Container, MissingComponentLookupDoesNotInsertKey) {
+  OpenABEContainer container;
+  EXPECT_THROW(container.getComponent("missing"), OpenABE_ERROR);
+  EXPECT_EQ(container.numComponents(), 0u);
+  EXPECT_TRUE(container.getKeys().empty());
+}
+
 TEST(Ciphertext, HeaderIsPartOfEquality) {
   OpenABEByteString uid1 = bytes("0123456789abcdef0123456789abcdef");
   OpenABEByteString uid2 = bytes("fedcba9876543210fedcba9876543210");
