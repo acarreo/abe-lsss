@@ -178,6 +178,11 @@ protected:
 class CCASecurityForKEMTest : public CPASecurityForSchemeTest {};
 class CCASecurityForSchemeTest : public CPASecurityForSchemeTest {};
 
+TEST(ABELSSS, SharesAndRecoversNestedPolicy) {
+    EXPECT_TRUE(runLSSSTest("(Alice and (Bob or Charlie))", "Alice|Charlie"));
+    EXPECT_FALSE(runLSSSTest("(Alice and (Bob or Charlie))", "Alice"));
+}
+
 /* Unit tests for CPA scheme contexts */
 TEST_P(CPASecurityForSchemeTest, testWorkingExamples) {
     Input input = GetParam();

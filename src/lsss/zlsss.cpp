@@ -264,7 +264,9 @@ OpenABELSSS::iterativeShareSecret(OpenABETreeNode *treeNode, ZP &elt)
       // "totalSubnodes" such that any "threshold"--out-of-"totalSubnodes"
       // shares permit secret recovery.
       totalSubnodes = visitedNode->getNumSubnodes();
-      assert((threshold = visitedNode->getThresholdValue()) != 0);
+      threshold = visitedNode->getThresholdValue();
+      ASSERT(threshold != 0 && threshold <= totalSubnodes,
+             OpenABE_ERROR_INVALID_POLICY_TREE);
 
       // Generate a polynomial consisting of "threshold" coefficients
       for (uint32_t i = 0; i < threshold; i++) {
