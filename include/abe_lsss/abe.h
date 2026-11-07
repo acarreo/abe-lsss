@@ -23,6 +23,9 @@ using ByteString = ::OpenABEByteString;
 using Ciphertext = ::OpenABECiphertext;
 using FunctionInput = ::OpenABEFunctionInput;
 using CpaContext = ::OpenABEContextSchemeCPA;
+using SymmetricKey = ::OpenABESymKey;
+using AesGcm = ::OpenABESymKeyAuthEnc;
+using AesGcmStream = ::OpenABESymKeyAuthEncStream;
 
 inline constexpr Scheme cp_waters = OpenABE_SCHEME_CP_WATERS;
 inline constexpr Scheme kp_gpsw = OpenABE_SCHEME_KP_GPSW;

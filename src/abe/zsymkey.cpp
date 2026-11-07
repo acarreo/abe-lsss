@@ -526,14 +526,16 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::encryptFinalize(OpenABEByteString& cip
 
   if (this->init_enc_set && this->updateEncCount > 0) {
     /* finalize: computes authentication tag*/
-    uint8_t *ct_ptr = ciphertext.getInternalPtr();
-    /* make sure 'ct' size is the same as our internal size counter */
-    ASSERT(ciphertext.size() == this->total_ct_len, OpenABE_ERROR_INVALID_INPUT);
-    /* now we can finalize encryption */
-    EVP_EncryptFinal_ex(this->ctx, ct_ptr, (int *)&this->total_ct_len);
+    uint8_t finalBytes[AES_BLOCK_SIZE + 1] = {};
+    int finalLength = 0;
+    int retValue = EVP_EncryptFinal_ex(this->ctx, finalBytes, &finalLength);
+    ASSERT(retValue > 0, OpenABE_ERROR_ENCRYPTION_ERROR);
     // For AES-GCM, the 'len' should be '0' because there is no extra bytes used
     // for padding.
-    ASSERT(this->total_ct_len == 0, OpenABE_ERROR_UNEXPECTED_EXTRA_BYTES);
+    ASSERT(finalLength == 0, OpenABE_ERROR_UNEXPECTED_EXTRA_BYTES);
+    if (finalLength > 0) {
+      ciphertext.appendArray(finalBytes, finalLength);
+    }
 
     /* retrieve the tag */
     int tag_len = AES_BLOCK_SIZE;
@@ -630,9 +632,12 @@ OpenABE_ERROR OpenABESymKeyAuthEncStream::decryptFinalize(OpenABEByteString& pla
   try {
     if (this->init_dec_set && this->updateDecCount > 0) {
       /* finalize decryption */
-      int pt_len = plaintext.size();
-      int retValue =
-          EVP_DecryptFinal_ex(this->ctx, plaintext.getInternalPtr(), &pt_len);
+      uint8_t finalBytes[AES_BLOCK_SIZE + 1] = {};
+      int finalLength = 0;
+      int retValue = EVP_DecryptFinal_ex(this->ctx, finalBytes, &finalLength);
+      if (retValue > 0 && finalLength > 0) {
+        plaintext.appendArray(finalBytes, finalLength);
+      }
       /* clear memory before the check */
       EVP_CIPHER_CTX_free(this->ctx);
       this->ctx = NULL;

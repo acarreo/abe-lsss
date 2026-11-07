@@ -1,0 +1,8 @@
+add_executable(abe_aead_kickstart abe_aead_kickstart.cpp)
+target_link_libraries(abe_aead_kickstart PRIVATE abe_lsss)
+
+add_executable(abe_large_message abe_large_message.cpp)
+target_link_libraries(abe_large_message PRIVATE abe_lsss)
+
+add_executable(abe_aead_large_message abe_aead_large_message.cpp)
+target_link_libraries(abe_aead_large_message PRIVATE abe_lsss)

@@ -84,6 +84,44 @@ target_link_libraries(my_app PRIVATE abe-lsss::abe_lsss)
 
 The installed `abe-lsss.pc` file is also available to pkg-config consumers.
 
+## CP-ABE and AES-GCM kickstart
+
+[`abe_aead_kickstart.cpp`](examples/abe_aead_kickstart.cpp) demonstrates how
+to encrypt a random AES-256 key with CP-ABE, use it to protect a message with
+AES-GCM, then recover the key and verify the message. The serialized ABE
+ciphertext is authenticated as associated data. The example uses an in-memory
+message; decrypted data must not be used before the GCM tag is verified.
+
+```bash
+cmake -S . -B build -DEXAMPLES=ON
+cmake --build build --target abe_aead_kickstart -j2
+build/docs/examples/abe_aead_kickstart
+```
+
+## Large-message examples
+
+Build the two CP-ABE examples with `-DEXAMPLES=ON`:
+
+```bash
+cmake -S . -B build -DCLI=OFF -DTESTS=OFF -DBENCH=OFF -DEXAMPLES=ON
+cmake --build build --target abe_large_message abe_aead_large_message -j2
+mkdir -p /tmp/abe-lsss-large-message
+cd /tmp/abe-lsss-large-message
+/path/to/abe-lsss/build/docs/examples/abe_large_message
+/path/to/abe-lsss/build/docs/examples/abe_aead_large_message
+```
+
+Each example generates a deterministic 1 GiB `file-1GB.dat` input by default
+and verifies the recovered output. Pass a size in MiB for a smaller test run,
+for example `abe_aead_large_message 1`. `abe_large_message` passes the whole
+file through the ABE byte-string API. `abe_aead_large_message` ABE-encrypts a
+random 32-byte AES key, then encrypts and decrypts the file with the library's
+streaming AES-GCM implementation. It writes the wrapped key to
+`file-1GB.aesgcm.key`, the authenticated ciphertext to `file-1GB.aesgcm`, and
+the recovered file to `file-1GB.aead-recovered.dat`.
+The direct ABE example keeps the message in memory; the AEAD example processes
+it in blocks.
+
 ## Main concepts
 
 - `abe_lsss::CpaContext` is the common context for the available CPA schemes.
@@ -91,5 +129,7 @@ The installed `abe-lsss.pc` file is also available to pkg-config consumers.
 - `abe_lsss::FunctionInput` is the common input abstraction. `parse_policy` parses policy expressions; `parse_attributes` parses pipe-separated labels. A parse failure returns an empty pointer.
 - `keygen`, `encrypt` and `decrypt` return `OpenABE_ERROR` values. Check each result; do not treat a failed decryption as a valid plaintext.
 - `abe_lsss::ByteString` is used for binary messages, keys and serialized blobs.
+- `abe_lsss::SymmetricKey`, `abe_lsss::AesGcm` and `abe_lsss::AesGcmStream`
+  alias the symmetric key and AES-GCM classes, including streaming operations.
 
 The public API currently has no CCA ABE context or multi-authority factory. OpenABE type and function aliases remain for source compatibility.

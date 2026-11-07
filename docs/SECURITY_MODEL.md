@@ -13,6 +13,14 @@ bulk data is protected under that key with a symmetric primitive (an AEAD such
 as AES-GCM is available in the library). The CPA-secure ABE layer is therefore
 the component that gates access; payload integrity is the job of the AEAD.
 
+The common CPA `encrypt` API also expands the encapsulated key with
+domain-separated SHAKE256 and XORs the resulting mask with the supplied byte
+string. This supports byte strings beyond a symmetric key, but it does not
+authenticate the payload and is not a one-time pad. Applications that need
+integrity should use an AEAD instead. The mask expansion uses a 32-bit output
+length, so the API does not guarantee a particular practical maximum message
+size.
+
 Chosen-ciphertext (CCA) variants are not enabled: the generic transform is
 kept in the source but disabled, and the factory does not implement
 multi-authority ABE, revocation, tracing, non-monotone policies, outsourced

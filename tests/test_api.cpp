@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <string>
@@ -9,7 +10,7 @@
 namespace {
 
 bool roundTrip(abe_lsss::Scheme scheme, const std::string& encryptionInput,
-               const std::string& keyInput) {
+               const std::string& keyInput, std::size_t plaintextSize = 32) {
   auto context = abe_lsss::create_context(scheme);
   if (!context ||
       context->generateParams("api_mpk", "api_msk") != OpenABE_NOERROR) {
@@ -29,8 +30,8 @@ bool roundTrip(abe_lsss::Scheme scheme, const std::string& encryptionInput,
   }
 
   abe_lsss::ByteString plaintext, recovered;
-  for (std::uint8_t byte = 0; byte < 32; ++byte) {
-    plaintext.push_back(byte);
+  for (std::size_t i = 0; i < plaintextSize; ++i) {
+    plaintext.push_back(static_cast<std::uint8_t>(i));
   }
   abe_lsss::Ciphertext ciphertext;
   return context->encrypt("api_mpk", encInput.get(), plaintext, ciphertext) ==
@@ -68,6 +69,40 @@ TEST(AbeLsssApi, WatersCpAbeRoundTrip) {
 TEST(AbeLsssApi, GpswKpAbeRoundTrip) {
   EXPECT_TRUE(roundTrip(abe_lsss::kp_gpsw, "Engineering|ProjectA",
                         "(Engineering and (ProjectA or ProjectB))"));
+}
+
+TEST(AbeLsssApi, LongMessageRoundTripsForBothSchemes) {
+  constexpr std::size_t messageSize = 10 * 1024;
+  EXPECT_TRUE(roundTrip(abe_lsss::cp_waters, "(Engineering and ProjectA)",
+                        "Engineering|ProjectA", messageSize));
+  EXPECT_TRUE(roundTrip(abe_lsss::kp_gpsw, "Engineering|ProjectA",
+                        "(Engineering and (ProjectA or ProjectB))",
+                        messageSize));
+}
+
+TEST(AbeLsssApi, AesGcmAliasesRoundTrip) {
+  auto key = std::make_shared<abe_lsss::SymmetricKey>();
+  ASSERT_TRUE(key->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES));
+  abe_lsss::ByteString iv, ciphertext, tag;
+  const std::string plaintext = "AES-GCM aliases";
+
+  abe_lsss::AesGcm cipher(DEFAULT_AES_SEC_LEVEL, key->getKeyBytes());
+  ASSERT_EQ(cipher.encrypt(plaintext, iv, ciphertext, tag), OpenABE_NOERROR);
+  std::string recovered;
+  ASSERT_TRUE(cipher.decrypt(recovered, iv, ciphertext, tag));
+  EXPECT_EQ(recovered, plaintext);
+
+  abe_lsss::ByteString input, streamIv, streamCiphertext, streamTag, output;
+  input.fromString(plaintext);
+  abe_lsss::AesGcmStream encryptor(DEFAULT_AES_SEC_LEVEL, key);
+  ASSERT_EQ(encryptor.encryptInit(streamIv), OpenABE_NOERROR);
+  ASSERT_EQ(encryptor.encryptUpdate(input, streamCiphertext), OpenABE_NOERROR);
+  ASSERT_EQ(encryptor.encryptFinalize(streamCiphertext, streamTag), OpenABE_NOERROR);
+  abe_lsss::AesGcmStream decryptor(DEFAULT_AES_SEC_LEVEL, key);
+  ASSERT_EQ(decryptor.decryptInit(streamIv, streamTag), OpenABE_NOERROR);
+  ASSERT_EQ(decryptor.decryptUpdate(streamCiphertext, output), OpenABE_NOERROR);
+  ASSERT_EQ(decryptor.decryptFinalize(output), OpenABE_NOERROR);
+  EXPECT_EQ(output, input);
 }
 
 TEST(AbeLsssApi, GroupElementSerializationRoundTrips) {

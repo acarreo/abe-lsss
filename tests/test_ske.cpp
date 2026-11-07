@@ -83,6 +83,39 @@ TEST(SK, TestStreamAuthEncForSKScheme) {
     ASSERT_FALSE(authEncStream->decryptFinalize(plaintext) == OpenABE_NOERROR);
 }
 
+TEST(SK, TestFileStyleStreamingWithSeparateBlocks) {
+    auto key = std::make_shared<OpenABESymKey>();
+    ASSERT_TRUE(key->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES));
+
+    OpenABEByteString plaintext1, plaintext2, iv, tag;
+    getRandomBytes(plaintext1, TEST_MSGBLOCK_LEN);
+    getRandomBytes(plaintext2, TEST_MSGBLOCK_LEN);
+
+    OpenABESymKeyAuthEncStream encryptor(DEFAULT_AES_SEC_LEVEL, key);
+    ASSERT_EQ(encryptor.encryptInit(iv), OpenABE_NOERROR);
+    encryptor.initAddAuthData(nullptr, 0);
+    ASSERT_EQ(encryptor.setAddAuthData(), OpenABE_NOERROR);
+
+    OpenABEByteString ciphertext1, ciphertext2, finalCiphertext;
+    ASSERT_EQ(encryptor.encryptUpdate(plaintext1, ciphertext1), OpenABE_NOERROR);
+    ASSERT_EQ(encryptor.encryptUpdate(plaintext2, ciphertext2), OpenABE_NOERROR);
+    ASSERT_EQ(encryptor.encryptFinalize(finalCiphertext, tag), OpenABE_NOERROR);
+    EXPECT_TRUE(finalCiphertext.empty());
+
+    OpenABESymKeyAuthEncStream decryptor(DEFAULT_AES_SEC_LEVEL, key);
+    ASSERT_EQ(decryptor.decryptInit(iv, tag), OpenABE_NOERROR);
+    decryptor.initAddAuthData(nullptr, 0);
+    ASSERT_EQ(decryptor.setAddAuthData(), OpenABE_NOERROR);
+
+    OpenABEByteString recovered1, recovered2, finalPlaintext;
+    ASSERT_EQ(decryptor.decryptUpdate(ciphertext1, recovered1), OpenABE_NOERROR);
+    ASSERT_EQ(decryptor.decryptUpdate(ciphertext2, recovered2), OpenABE_NOERROR);
+    ASSERT_EQ(decryptor.decryptFinalize(finalPlaintext), OpenABE_NOERROR);
+    EXPECT_TRUE(finalPlaintext.empty());
+    EXPECT_EQ(recovered1, plaintext1);
+    EXPECT_EQ(recovered2, plaintext2);
+}
+
 TEST(SK, TestSymKeyHandlerForGCMMode) {
     TEST_DESCRIPTION("Testing Symmetric Key Handler with GCM mode using randomly generated keys");
 

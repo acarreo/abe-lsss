@@ -38,7 +38,10 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
+#include <memory>
 #include <string>
+
+#include <openssl/evp.h>
 
 #include "abe/zpairing.h"
 #include <abe_lsss.h>
@@ -228,38 +231,32 @@ OpenABEPairing::hashToBytes(uint8_t *buf, uint32_t buf_len)
   return b;
 }
 
-// implements a variable-sized hash function
-// block_len = len / md_len ... rounding up
-// H(00 || hash_byte || m) || H(01 || hash_byte || m) || ... || H(n || hash_byte || m)
-// ... where 'n' is block_len and 'm' is message
+// Expand a domain-separated key into an arbitrary-length SHAKE256 mask.
 OpenABEByteString
 OpenABEPairing::hashFromBytes(OpenABEByteString &buf, uint32_t target_len, uint8_t hash_prefix)
 {
-  // compute number of hash blocks needed
-  int block_len = ceil(((double)target_len) / (uint32_t)RLC_MD_LEN);
-  // set the hash_len
-  int hash_len = block_len * RLC_MD_LEN;
-  uint8_t hash[hash_len+1];
-  memset(hash, 0, hash_len+1);
-
-  OpenABEByteString buf2 = buf;
-  uint8_t count = 0;
-
-  buf2.insertFirstByte(hash_prefix);
-  buf2.insertFirstByte(count);
-  uint8_t *ptr = buf2.getInternalPtr();
-  uint8_t *hash_ptr = hash;
-
-  for(int i = 0; i < block_len; i++) {
-    // H(count || hash_prefix || buf)
-    _hash_to_bytes_(hash_ptr, buf2.getInternalPtr(), buf2.size());
-    count++;
-    ptr[0] = count;      // change block number
-    hash_ptr += RLC_MD_LEN; // move ptr by RLC_MD_LEN size
+  OpenABEByteString output;
+  if (target_len == 0) {
+    return output;
   }
 
-  OpenABEByteString b;
-  b.appendArray(hash, target_len);
-  return b;
-}
+  struct MdCtxDeleter {
+    void operator()(EVP_MD_CTX *ctx) const { EVP_MD_CTX_free(ctx); }
+  };
+  unique_ptr<EVP_MD_CTX, MdCtxDeleter> ctx(EVP_MD_CTX_new());
+  static constexpr uint8_t domain[] = "abe-lsss/abe-mask/v1";
+  if (!ctx ||
+      EVP_DigestInit_ex(ctx.get(), EVP_shake256(), nullptr) != 1 ||
+      EVP_DigestUpdate(ctx.get(), domain, sizeof(domain) - 1) != 1 ||
+      EVP_DigestUpdate(ctx.get(), &hash_prefix, sizeof(hash_prefix)) != 1 ||
+      EVP_DigestUpdate(ctx.get(), buf.data(), buf.size()) != 1) {
+    throw OpenABE_ERROR_UNKNOWN;
+  }
 
+  output.resize(target_len);
+  if (EVP_DigestFinalXOF(ctx.get(), output.data(), output.size()) != 1) {
+    output.zeroize();
+    throw OpenABE_ERROR_UNKNOWN;
+  }
+  return output;
+}
