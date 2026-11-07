@@ -6,7 +6,7 @@
 
 `abe-lsss` is a C++ attribute-based encryption library derived from [Zeutro's OpenABE](https://github.com/zeutro/openabe). It combines the Waters ciphertext-policy and GPSW key-policy ABE constructions with an LSSS policy engine, using [RELIC](https://github.com/relic-toolkit/relic) for pairing-based arithmetic.
 
-The repository is an evolving research/engineering project and has not been independently audited. The schemes exposed by the factory are the CPA-secure CP-ABE and KP-ABE constructions, used in the usual hybrid way: ABE encapsulates a symmetric key and an AEAD protects the data. CCA variants and multi-authority ABE are not enabled.
+The factory exposes the CPA-secure CP-ABE and KP-ABE constructions. Its `encrypt` API uses a Key Encapsulation Mechanism (KEM) to encrypt variable-length messages, including symmetric keys. For payload integrity, encrypt a symmetric key with ABE and use it with an AEAD to encrypt the data. CCA variants and multi-authority ABE are not enabled.
 
 ## Documentation
 
@@ -154,7 +154,7 @@ For an in-tree C++ example, see [docs/examples/abe_quickstart.cpp](docs/examples
 
 ## Benchmarking
 
-The Google Benchmark harness in `bench/` measures setup, key generation, encryption and decryption, reports policy/attribute counts, and records serialized master-public-key, user-key and ciphertext sizes. It uses 32-byte messages for the ABE workload. Install Google Benchmark first; `bench/google-benchmark.sh` shows one upstream build/install route.
+The Google Benchmark harness in `bench/` measures setup, key generation, encryption and decryption, reports policy/attribute counts, and records serialized master-public-key, user-key and ciphertext sizes. It uses 32-byte messages for the ABE workload. `bench_payload` compares direct ABE message encryption with ABE-wrapped AES-256 keys and streaming AES-GCM, for 32 B, 1 MiB, 16 MiB and 1 GiB payloads. Install Google Benchmark first; `bench/google-benchmark.sh` shows one upstream build/install route.
 
 ```bash
 cmake -S . -B build-bench -DCLI=OFF -DTESTS=OFF -DBENCH=ON
@@ -166,12 +166,31 @@ build-bench/bench/bench_abe \
   --benchmark_out=bench-results.json --benchmark_out_format=json
 ```
 
+Run the payload comparison in an optimized build:
+
+```bash
+cmake -S . -B build-bench -DCMAKE_BUILD_TYPE=Release \
+  -DCLI=OFF -DTESTS=OFF -DBENCH=ON
+cmake --build build-bench --target bench_payload -- -j2
+build-bench/bench/bench_payload \
+  --benchmark_repetitions=3 \
+  --benchmark_out=payload-bench.json --benchmark_out_format=json
+```
+
+The benchmark runs one iteration per size and repetition and reports encryption
+and decryption separately. Setup, key generation and payload generation are
+excluded from the timed section; ABE encapsulation/decapsulation of the data
+key and AES-GCM processing are included for the hybrid approach. The 1 GiB
+direct-ABE cases require substantial memory. The recovered payload is compared
+with the original after the timed section, and AES-GCM tag verification remains
+part of decryption. These benchmarks operate on in-memory payloads, not files.
+
 The following is a single local run on 22 October 2026, using RELIC `bls12-381`, mixed monotone policies with 10 leaves/10 attributes, 32-byte messages, three repetitions and 50 ms minimum per repetition. The host reported 20 CPUs at 4.8 GHz with CPU frequency scaling enabled. Values are the mean CPU/wall time in milliseconds; treat them as a reproducibility example, not a cross-machine performance claim.
 
-| Curve | Scheme | Policy leaves | Attributes | Setup (ms) | Keygen (ms) | Encrypt (ms) | Decrypt (ms) | MPK (B) | User key (B) | Ciphertext (B) |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| BLS12-381 | CP-ABE | 10 | 10 | 1.29 | 2.66 | 5.25 | 2.79 | 688 | 973 | 2,023 |
-| BLS12-381 | KP-ABE | 10 | 10 | 1.04 | 4.86 | 2.64 | 2.17 | 629 | 1,926 | 900 |
+| Scheme | Setup (ms) | Keygen (ms) | Encrypt (ms) | Decrypt (ms) | MPK (B) | User key (B) | Ciphertext (B) |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| CP-ABE | 1.29 | 2.66 | 5.25 | 2.79 | 688 | 973 | 2,023 |
+| KP-ABE | 1.04 | 4.86 | 2.64 | 2.17 | 629 | 1,926 | 900 |
 
 Sizes are raw serialized blobs returned by the library, not armored CLI file sizes. Benchmark values vary by compiler, machine, RELIC configuration and load; rerun with the command above before comparing revisions. The harness does not yet separate public-parameter setup costs from all runtime initialization costs.
 

@@ -27,9 +27,11 @@ set(BENCH_UTILS_SOURCE_FILE)
 if(BENCH)
 add_bench(bench_policy policy bench-policy.cpp)
 add_bench(bench_abe abe bench-abe.cpp)
+add_bench(bench_payload payload bench-payload.cpp)
 
 add_benchmark_target(bench_policy)
 add_benchmark_target(bench_abe)
+add_benchmark_target(bench_payload)
 
 add_custom_target(benchmarks
   DEPENDS
