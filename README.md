@@ -150,7 +150,7 @@ cmp message.txt recovered-kp.txt
 
 In these commands `-p` prefixes the master parameter filenames. Key files default to the `.key` suffix; ciphertext output names receive `.cpabe` or `.kpabe`. The CLI does not implement the legacy `PK` mode despite accepting its scheme name in some usage strings. For all current flags and caveats, see the [CLI guide](docs/CLI.md).
 
-For an in-tree C++ example, see [docs/examples/abe_quickstart.cpp](docs/examples/abe_quickstart.cpp) and the [API guide](docs/API.md). The modern entry points are namespaced under `abe_lsss`; OpenABE-named lifecycle and compression functions remain available as deprecated compatibility aliases.
+For in-tree C++ examples, see [abe_quickstart.cpp](docs/examples/abe_quickstart.cpp), [abe_aead_kickstart.cpp](docs/examples/abe_aead_kickstart.cpp) and the [API guide](docs/API.md). The modern entry points are namespaced under `abe_lsss`; OpenABE-named lifecycle and compression functions remain available as deprecated compatibility aliases.
 
 ## Benchmarking
 

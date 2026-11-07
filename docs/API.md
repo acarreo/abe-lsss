@@ -84,6 +84,20 @@ target_link_libraries(my_app PRIVATE abe-lsss::abe_lsss)
 
 The installed `abe-lsss.pc` file is also available to pkg-config consumers.
 
+## CP-ABE and AES-GCM kickstart
+
+[`abe_aead_kickstart.cpp`](examples/abe_aead_kickstart.cpp) demonstrates how
+to encrypt a random AES-256 key with CP-ABE, use it to protect a message with
+AES-GCM, then recover the key and verify the message. The serialized ABE
+ciphertext is authenticated as associated data. The example uses an in-memory
+message; decrypted data must not be used before the GCM tag is verified.
+
+```bash
+cmake -S . -B build -DEXAMPLES=ON
+cmake --build build --target abe_aead_kickstart -j2
+build/docs/examples/abe_aead_kickstart
+```
+
 ## Large-message examples
 
 Build the two CP-ABE examples with `-DEXAMPLES=ON`:
