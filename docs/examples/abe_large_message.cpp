@@ -8,7 +8,7 @@ void runExample(std::uint64_t messageSize) {
   const std::filesystem::path messagePath = "file-1GB.dat";
   const std::filesystem::path recoveredPath = "file-1GB.abe-recovered.dat";
   large_message_example::createMessageFile(messagePath, messageSize);
-  auto context = large_message_example::createCpContext();
+  auto context = large_message_example::createCPContext();
 
   abe_lsss::ByteString plaintext =
       large_message_example::readMessageFile(messagePath, messageSize);

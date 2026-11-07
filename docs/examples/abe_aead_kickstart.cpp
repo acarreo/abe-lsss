@@ -43,7 +43,7 @@ static bool roundTrip() {
   wrappedKey.exportToBytes(aad);
   abe_lsss::ByteString plaintext, ciphertext, iv, tag;
   plaintext.fromString("Hello from ABE and AES-GCM!");
-  abe_lsss::AesGcmStream encryptor(DEFAULT_AES_SEC_LEVEL, aesKey);
+  abe_lsss::AES_GCM_Stream encryptor(DEFAULT_AES_SEC_LEVEL, aesKey);
   if (!check(encryptor.encryptInit(iv), "AES-GCM initialization")) {
     return false;
   }
@@ -69,7 +69,7 @@ static bool roundTrip() {
 
   // Do not use the recovered plaintext until the GCM tag has been verified.
   abe_lsss::ByteString recovered;
-  abe_lsss::AesGcmStream decryptor(DEFAULT_AES_SEC_LEVEL, recoveredKey);
+  abe_lsss::AES_GCM_Stream decryptor(DEFAULT_AES_SEC_LEVEL, recoveredKey);
   if (!check(decryptor.decryptInit(iv, tag), "AES-GCM initialization")) {
     return false;
   }

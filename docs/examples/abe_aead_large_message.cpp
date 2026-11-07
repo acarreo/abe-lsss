@@ -47,11 +47,11 @@ void encryptFile(const std::filesystem::path& inputPath,
   std::array<char, kIvSize + kTagSize> placeholder{};
   output.write(placeholder.data(), placeholder.size());
 
-  abe_lsss::AesGcmStream stream(DEFAULT_AES_SEC_LEVEL, key);
+  abe_lsss::AES_GCM_Stream stream(DEFAULT_AES_SEC_LEVEL, key);
   abe_lsss::ByteString iv;
   large_message_example::requireSuccess(stream.encryptInit(iv),
                                         "Starting AES-GCM encryption");
-  large_message_example::addAad(stream, aad);
+  large_message_example::addAAD(stream, aad);
 
   std::array<uint8_t, large_message_example::kIoBufferSize> inputBuffer{};
   while (input) {
@@ -122,10 +122,10 @@ void decryptFile(const std::filesystem::path& inputPath,
     throw std::runtime_error("Cannot create " + temporaryPath.string());
   }
 
-  abe_lsss::AesGcmStream stream(DEFAULT_AES_SEC_LEVEL, key);
+  abe_lsss::AES_GCM_Stream stream(DEFAULT_AES_SEC_LEVEL, key);
   large_message_example::requireSuccess(stream.decryptInit(iv, tag),
                                         "Starting AES-GCM decryption");
-  large_message_example::addAad(stream, aad);
+  large_message_example::addAAD(stream, aad);
 
   std::array<uint8_t, large_message_example::kIoBufferSize> inputBuffer{};
   while (input) {
@@ -173,7 +173,7 @@ void runExample(std::uint64_t messageSize) {
   const std::filesystem::path recoveredPath = "file-1GB.aead-recovered.dat";
   large_message_example::createMessageFile(messagePath, messageSize);
 
-  auto context = large_message_example::createCpContext();
+  auto context = large_message_example::createCPContext();
   auto policy = abe_lsss::parse_policy(large_message_example::kPolicy);
   if (!policy) {
     throw std::runtime_error("Could not parse the CP-ABE policy");

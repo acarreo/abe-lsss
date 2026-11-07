@@ -44,7 +44,7 @@ bool roundTrip(abe_lsss::Scheme scheme, const std::string& encryptionInput,
 
 }
 
-TEST(AbeLsssApi, CompressionOptionCanBeChanged) {
+TEST(ABE_LSSS_API, CompressionOptionCanBeChanged) {
   EXPECT_TRUE(abe_lsss::compression_enabled());
   abe_lsss::set_compression(false);
   EXPECT_FALSE(abe_lsss::compression_enabled());
@@ -52,11 +52,11 @@ TEST(AbeLsssApi, CompressionOptionCanBeChanged) {
   EXPECT_TRUE(abe_lsss::compression_enabled());
 }
 
-TEST(AbeLsssApi, InitializationRejectsDuplicateCalls) {
+TEST(ABE_LSSS_API, InitializationRejectsDuplicateCalls) {
   EXPECT_THROW(abe_lsss::initialize(), std::runtime_error);
 }
 
-TEST(AbeLsssApi, CreatesOnlySupportedSchemes) {
+TEST(ABE_LSSS_API, CreatesOnlySupportedSchemes) {
   EXPECT_NE(abe_lsss::create_context(abe_lsss::cp_waters), nullptr);
   EXPECT_NE(abe_lsss::create_context(abe_lsss::kp_gpsw), nullptr);
   EXPECT_EQ(abe_lsss::create_context(static_cast<abe_lsss::Scheme>(250)), nullptr);
@@ -66,17 +66,17 @@ TEST(AbeLsssApi, CreatesOnlySupportedSchemes) {
             nullptr);
 }
 
-TEST(AbeLsssApi, WatersCpAbeRoundTrip) {
+TEST(ABE_LSSS_API, Waters_CP_ABE_RoundTrip) {
   EXPECT_TRUE(roundTrip(abe_lsss::cp_waters, "(Engineering and ProjectA)",
                         "Engineering|ProjectA"));
 }
 
-TEST(AbeLsssApi, GpswKpAbeRoundTrip) {
+TEST(ABE_LSSS_API, GPSW_KP_ABE_RoundTrip) {
   EXPECT_TRUE(roundTrip(abe_lsss::kp_gpsw, "Engineering|ProjectA",
                         "(Engineering and (ProjectA or ProjectB))"));
 }
 
-TEST(AbeLsssApi, LongMessageRoundTripsForBothSchemes) {
+TEST(ABE_LSSS_API, LongMessageRoundTripsForBothSchemes) {
   constexpr std::size_t messageSize = 10 * 1024;
   EXPECT_TRUE(roundTrip(abe_lsss::cp_waters, "(Engineering and ProjectA)",
                         "Engineering|ProjectA", messageSize));
@@ -85,13 +85,13 @@ TEST(AbeLsssApi, LongMessageRoundTripsForBothSchemes) {
                         messageSize));
 }
 
-TEST(AbeLsssApi, AesGcmAliasesRoundTrip) {
+TEST(ABE_LSSS_API, AES_GCM_AliasesRoundTrip) {
   auto key = std::make_shared<abe_lsss::SymmetricKey>();
   ASSERT_TRUE(key->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES));
   abe_lsss::ByteString iv, ciphertext, tag;
   const std::string plaintext = "AES-GCM aliases";
 
-  abe_lsss::AesGcm cipher(DEFAULT_AES_SEC_LEVEL, key->getKeyBytes());
+  abe_lsss::AES_GCM cipher(DEFAULT_AES_SEC_LEVEL, key->getKeyBytes());
   ASSERT_EQ(cipher.encrypt(plaintext, iv, ciphertext, tag), OpenABE_NOERROR);
   std::string recovered;
   ASSERT_TRUE(cipher.decrypt(recovered, iv, ciphertext, tag));
@@ -99,18 +99,18 @@ TEST(AbeLsssApi, AesGcmAliasesRoundTrip) {
 
   abe_lsss::ByteString input, streamIv, streamCiphertext, streamTag, output;
   input.fromString(plaintext);
-  abe_lsss::AesGcmStream encryptor(DEFAULT_AES_SEC_LEVEL, key);
+  abe_lsss::AES_GCM_Stream encryptor(DEFAULT_AES_SEC_LEVEL, key);
   ASSERT_EQ(encryptor.encryptInit(streamIv), OpenABE_NOERROR);
   ASSERT_EQ(encryptor.encryptUpdate(input, streamCiphertext), OpenABE_NOERROR);
   ASSERT_EQ(encryptor.encryptFinalize(streamCiphertext, streamTag), OpenABE_NOERROR);
-  abe_lsss::AesGcmStream decryptor(DEFAULT_AES_SEC_LEVEL, key);
+  abe_lsss::AES_GCM_Stream decryptor(DEFAULT_AES_SEC_LEVEL, key);
   ASSERT_EQ(decryptor.decryptInit(streamIv, streamTag), OpenABE_NOERROR);
   ASSERT_EQ(decryptor.decryptUpdate(streamCiphertext, output), OpenABE_NOERROR);
   ASSERT_EQ(decryptor.decryptFinalize(output), OpenABE_NOERROR);
   EXPECT_EQ(output, input);
 }
 
-TEST(AbeLsssApi, HybridRoundTripsAndRejectsTampering) {
+TEST(ABE_LSSS_API, HybridRoundTripsAndRejectsTampering) {
   for (auto scheme : {abe_lsss::cp_waters, abe_lsss::kp_gpsw}) {
     SCOPED_TRACE(scheme);
     auto context = abe_lsss::create_hybrid_context(scheme);
@@ -207,7 +207,7 @@ TEST(AbeLsssApi, HybridRoundTripsAndRejectsTampering) {
   }
 }
 
-TEST(AbeLsssApi, HybridRejectsMalformedKpKemComponents) {
+TEST(ABE_LSSS_API, HybridRejectsMalformed_KP_KEM_Components) {
   auto context = abe_lsss::create_hybrid_context(abe_lsss::kp_gpsw);
   ASSERT_TRUE(context);
   ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
@@ -237,7 +237,7 @@ TEST(AbeLsssApi, HybridRejectsMalformedKpKemComponents) {
   EXPECT_TRUE(output.empty());
 }
 
-TEST(AbeLsssApi, HybridStreamingRoundTripAndOneShotCompatibility) {
+TEST(ABE_LSSS_API, HybridStreamingRoundTripAndOneShotCompatibility) {
   for (auto scheme : {abe_lsss::cp_waters, abe_lsss::kp_gpsw}) {
     SCOPED_TRACE(scheme);
     auto context = abe_lsss::create_hybrid_context(scheme);
@@ -310,7 +310,7 @@ TEST(AbeLsssApi, HybridStreamingRoundTripAndOneShotCompatibility) {
   }
 }
 
-TEST(AbeLsssApi, HybridStreamingAuthenticationAndEmptyMessages) {
+TEST(ABE_LSSS_API, HybridStreamingAuthenticationAndEmptyMessages) {
   auto context = abe_lsss::create_hybrid_context(abe_lsss::cp_waters);
   ASSERT_TRUE(context);
   ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
@@ -378,7 +378,7 @@ TEST(AbeLsssApi, HybridStreamingAuthenticationAndEmptyMessages) {
   EXPECT_EQ(block, plaintext);
 }
 
-TEST(AbeLsssApi, DISABLED_HybridStreamingOneGiB) {
+TEST(ABE_LSSS_API, DISABLED_HybridStreamingOneGiB) {
   auto context = abe_lsss::create_hybrid_context(abe_lsss::cp_waters);
   ASSERT_TRUE(context);
   ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
@@ -408,7 +408,7 @@ TEST(AbeLsssApi, DISABLED_HybridStreamingOneGiB) {
   EXPECT_TRUE(allMatch);
 }
 
-TEST(AbeLsssApi, HybridRejectsMissingAndInvalidComponents) {
+TEST(ABE_LSSS_API, HybridRejectsMissingAndInvalidComponents) {
   auto context = abe_lsss::create_hybrid_context(abe_lsss::cp_waters);
   ASSERT_EQ(context->generateParams("mpk", "msk"), OpenABE_NOERROR);
   auto policy = abe_lsss::parse_policy("(A and B)");
@@ -444,7 +444,7 @@ TEST(AbeLsssApi, HybridRejectsMissingAndInvalidComponents) {
   EXPECT_TRUE(output.empty());
 }
 
-TEST(AbeLsssApi, GroupElementSerializationRoundTrips) {
+TEST(ABE_LSSS_API, GroupElementSerializationRoundTrips) {
   G1 g1;
   g1.setGenerator();
   abe_lsss::ByteString g1Blob;
@@ -493,7 +493,7 @@ Outcome classify(Fn&& attempt, const abe_lsss::ByteString& expected) {
 
 }
 
-TEST(AbeLsssApi, MalformedCiphertextIsHandledWithoutCrashing) {
+TEST(ABE_LSSS_API, MalformedCiphertextIsHandledWithoutCrashing) {
   auto context = abe_lsss::create_context(abe_lsss::cp_waters);
   ASSERT_EQ(context->generateParams("mal_mpk", "mal_msk"), OpenABE_NOERROR);
   auto attrs = abe_lsss::parse_attributes("A|B");
@@ -532,7 +532,7 @@ TEST(AbeLsssApi, MalformedCiphertextIsHandledWithoutCrashing) {
   }
 }
 
-TEST(AbeLsssApi, MalformedKeyBlobsDoNotCrashLoaders) {
+TEST(ABE_LSSS_API, MalformedKeyBlobsDoNotCrashLoaders) {
   auto context = abe_lsss::create_context(abe_lsss::cp_waters);
   ASSERT_EQ(context->generateParams("key_mpk", "key_msk"), OpenABE_NOERROR);
   auto attrs = abe_lsss::parse_attributes("A|B");

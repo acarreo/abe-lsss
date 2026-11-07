@@ -38,7 +38,7 @@ std::unique_ptr<OpenABEContextSchemeCPA> createContextABESchemeCPA(OpenABE_SCHEM
   return std::unique_ptr<OpenABEContextSchemeCPA>(new OpenABEContextSchemeCPA(std::move(kemContext)));
 }
 
-std::unique_ptr<abe_lsss::CpaContext> abe_lsss::create_context(Scheme scheme) {
+std::unique_ptr<abe_lsss::CPAContext> abe_lsss::create_context(Scheme scheme) {
   return createContextABESchemeCPA(scheme);
 }
 

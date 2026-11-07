@@ -192,13 +192,16 @@ it in blocks.
 
 ## Main concepts
 
-- `abe_lsss::CpaContext` is the common context for the available CPA schemes.
+- `abe_lsss::CPAContext` is the common context for the available CPA schemes.
 - `abe_lsss::HybridContext` combines the ABE KEM with AES-256-GCM.
 - `abe_lsss::create_context` creates CP-Waters or KP-GPSW contexts; unsupported schemes return an empty pointer.
 - `abe_lsss::FunctionInput` is the common input abstraction. `parse_policy` parses policy expressions; `parse_attributes` parses pipe-separated labels. A parse failure returns an empty pointer.
 - `keygen`, `encrypt` and `decrypt` return `OpenABE_ERROR` values. Check each result; do not treat a failed decryption as a valid plaintext.
 - `abe_lsss::ByteString` is used for binary messages, keys and serialized blobs.
-- `abe_lsss::SymmetricKey`, `abe_lsss::AesGcm` and `abe_lsss::AesGcmStream`
+- `abe_lsss::SymmetricKey`, `abe_lsss::AES_GCM` and `abe_lsss::AES_GCM_Stream`
   alias the symmetric key and AES-GCM classes, including streaming operations.
+
+The previous `CpaContext`, `AesGcm` and `AesGcmStream` aliases remain available
+for source compatibility but are deprecated.
 
 The public API currently has no CCA ABE context or multi-authority factory. OpenABE type and function aliases remain for source compatibility.

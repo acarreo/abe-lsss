@@ -11,6 +11,7 @@
 #include <random>
 
 #include <abe_lsss.h>
+#include <abe_lsss/abe.h>
 #include "../utils/utils.h"
 #include "policy_generators.h"
 
@@ -32,7 +33,7 @@ enum class PolicyType {
  * Encapsulates all parameters for a benchmark run
  */
 typedef struct {
-    OpenABE_SCHEME scheme;
+    abe_lsss::Scheme scheme;
     string enc_input;
     string key_input;
     int msg_size;
@@ -60,9 +61,9 @@ static void addInputSizeCounters(benchmark::State& state, const BenchmarkInput& 
 }
 
 static bool addSerializedSizeCounters(benchmark::State& state,
-        OpenABEContextSchemeCPA& schemeContext, const BenchmarkInput& input) {
-    OpenABEByteString mpk, userKey, plaintext, ciphertextBytes;
-    OpenABECiphertext ciphertext;
+        abe_lsss::CPAContext& schemeContext, const BenchmarkInput& input) {
+    abe_lsss::ByteString mpk, userKey, plaintext, ciphertextBytes;
+    abe_lsss::Ciphertext ciphertext;
     auto keyInput = getKeyInput(input.scheme, input.key_input);
     auto encInput = getEncInput(input.scheme, input.enc_input);
 
@@ -97,7 +98,7 @@ static void BM_Setup(benchmark::State& state, BenchmarkInput input) {
             state.ResumeTiming();
             countersInitialized = true;
         }
-        auto schemeContext = createContextABESchemeCPA(input.scheme);
+        auto schemeContext = abe_lsss::create_context(input.scheme);
         if (!schemeContext ||
             schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
             state.SkipWithError("ABE setup failed");
@@ -109,14 +110,14 @@ static void BM_Setup(benchmark::State& state, BenchmarkInput input) {
 static void BM_Keygen(benchmark::State& state, BenchmarkInput input) {
     state.SetLabel(getPolicyTypeLabel(input.policy_type));
 
-    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
-    std::unique_ptr<OpenABEFunctionInput> keyInput;
+    std::unique_ptr<abe_lsss::CPAContext> schemeContext;
+    std::unique_ptr<abe_lsss::FunctionInput> keyInput;
     size_t keyIndex = 0;
     bool initialized = false;
     for (auto _ : state) {
         if (!initialized) {
             state.PauseTiming();
-            schemeContext = createContextABESchemeCPA(input.scheme);
+            schemeContext = abe_lsss::create_context(input.scheme);
             keyInput = getKeyInput(input.scheme, input.key_input);
             if (!schemeContext || !keyInput ||
                 schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
@@ -145,15 +146,15 @@ static void BM_Keygen(benchmark::State& state, BenchmarkInput input) {
 static void BM_Encrypt(benchmark::State& state, BenchmarkInput input) {
     state.SetLabel(getPolicyTypeLabel(input.policy_type));
 
-    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
-    std::unique_ptr<OpenABEFunctionInput> encInput;
-    OpenABEByteString plaintext;
+    std::unique_ptr<abe_lsss::CPAContext> schemeContext;
+    std::unique_ptr<abe_lsss::FunctionInput> encInput;
+    abe_lsss::ByteString plaintext;
     bool initialized = false;
 
     for (auto _ : state) {
         if (!initialized) {
             state.PauseTiming();
-            schemeContext = createContextABESchemeCPA(input.scheme);
+            schemeContext = abe_lsss::create_context(input.scheme);
             if (!schemeContext ||
                 schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
                 state.SkipWithError("ABE encryption setup failed");
@@ -169,7 +170,7 @@ static void BM_Encrypt(benchmark::State& state, BenchmarkInput input) {
             state.ResumeTiming();
             initialized = true;
         }
-        OpenABECiphertext ct;
+        abe_lsss::Ciphertext ct;
         if (schemeContext->encrypt("MPK", encInput.get(), plaintext, ct) != OpenABE_NOERROR) {
             state.SkipWithError("ABE encryption failed");
             break;
@@ -183,15 +184,15 @@ static void BM_Encrypt(benchmark::State& state, BenchmarkInput input) {
 static void BM_Decrypt(benchmark::State& state, BenchmarkInput input) {
     state.SetLabel(getPolicyTypeLabel(input.policy_type));
 
-    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
-    OpenABEByteString plaintext;
-    OpenABECiphertext ct;
+    std::unique_ptr<abe_lsss::CPAContext> schemeContext;
+    abe_lsss::ByteString plaintext;
+    abe_lsss::Ciphertext ct;
     bool initialized = false;
 
     for (auto _ : state) {
         if (!initialized) {
             state.PauseTiming();
-            schemeContext = createContextABESchemeCPA(input.scheme);
+            schemeContext = abe_lsss::create_context(input.scheme);
             if (!schemeContext ||
                 schemeContext->generateParams("MPK", "MSK") != OpenABE_NOERROR) {
                 state.SkipWithError("ABE decryption setup failed");
@@ -218,7 +219,7 @@ static void BM_Decrypt(benchmark::State& state, BenchmarkInput input) {
             state.ResumeTiming();
             initialized = true;
         }
-        OpenABEByteString recovered;
+        abe_lsss::ByteString recovered;
         if (schemeContext->decrypt("MPK", "DecKey", recovered, ct) != OpenABE_NOERROR) {
             state.SkipWithError("ABE decryption failed");
             break;
@@ -278,7 +279,7 @@ static string createAttributeListString(int attributeCount, int policyAttributeC
     return formatAttributeList(attributeList);
 }
 
-static BenchmarkInput createVaryingInput(OpenABE_SCHEME scheme,
+static BenchmarkInput createVaryingInput(abe_lsss::Scheme scheme,
         int policyAttributeCount, int attributeListCount, PolicyType policyType) {
     const string policy = createPolicy(policyType, policyAttributeCount);
     const string attributes = createAttributeListString(attributeListCount, policyAttributeCount);
@@ -299,20 +300,20 @@ static void BM_ABE_CompleteCycle(benchmark::State& state, BenchmarkInput input) 
     state.SetLabel(getPolicyTypeLabel(input.policy_type));
 
     for (auto _ : state) {
-        auto schemeContext = createContextABESchemeCPA(input.scheme);
+        auto schemeContext = abe_lsss::create_context(input.scheme);
         schemeContext->generateParams("MPK", "MSK");
 
-        OpenABEByteString plaintext;
+        abe_lsss::ByteString plaintext;
         getRandomBytes(plaintext, input.msg_size);
         auto encInput = getEncInput(input.scheme, input.enc_input);
         auto keyInput = getKeyInput(input.scheme, input.key_input);
 
         schemeContext->keygen(keyInput.get(), "DecKey", "MPK", "MSK");
 
-        OpenABECiphertext ct;
+        abe_lsss::Ciphertext ct;
         schemeContext->encrypt("MPK", encInput.get(), plaintext, ct);
 
-        OpenABEByteString recovered;
+        abe_lsss::ByteString recovered;
         schemeContext->decrypt("MPK", "DecKey", recovered, ct);
 
         // Optional: Verify correctness (can be commented out for pure performance benchmarking)
@@ -323,15 +324,15 @@ static void BM_ABE_CompleteCycle(benchmark::State& state, BenchmarkInput input) 
 
 static void BM_Encrypt_VaryingFileSize(benchmark::State& state) {
     const int msgSize = state.range(0);
-    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
-    OpenABEByteString plaintext;
+    std::unique_ptr<abe_lsss::CPAContext> schemeContext;
+    abe_lsss::ByteString plaintext;
     std::unique_ptr<OpenABEPolicy> encInput;
     bool initialized = false;
 
     for (auto _ : state) {
         if (!initialized) {
             state.PauseTiming();
-            schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
+            schemeContext = abe_lsss::create_context(OpenABE_SCHEME_CP_WATERS);
             if (!schemeContext ||
                 schemeContext->generateParams("testMPK", "testMSK") != OpenABE_NOERROR) {
                 state.SkipWithError("ABE encryption setup failed");
@@ -346,7 +347,7 @@ static void BM_Encrypt_VaryingFileSize(benchmark::State& state) {
             state.ResumeTiming();
             initialized = true;
         }
-        OpenABECiphertext ct;
+        abe_lsss::Ciphertext ct;
         if (schemeContext->encrypt("testMPK", encInput.get(), plaintext, ct) != OpenABE_NOERROR) {
             state.SkipWithError("ABE encryption failed");
             break;
@@ -360,16 +361,16 @@ BENCHMARK(BM_Encrypt_VaryingFileSize)
 
 static void BM_Decrypt_VaryingFileSize(benchmark::State& state) {
     const int msgSize = state.range(0);
-    std::unique_ptr<OpenABEContextSchemeCPA> schemeContext;
-    OpenABEByteString plaintext;
-    OpenABECiphertext ct;
+    std::unique_ptr<abe_lsss::CPAContext> schemeContext;
+    abe_lsss::ByteString plaintext;
+    abe_lsss::Ciphertext ct;
     std::unique_ptr<OpenABEPolicy> encInput;
     bool initialized = false;
 
     for (auto _ : state) {
         if (!initialized) {
             state.PauseTiming();
-            schemeContext = createContextABESchemeCPA(OpenABE_SCHEME_CP_WATERS);
+            schemeContext = abe_lsss::create_context(OpenABE_SCHEME_CP_WATERS);
             if (!schemeContext ||
                 schemeContext->generateParams("testMPK", "testMSK") != OpenABE_NOERROR) {
                 state.SkipWithError("ABE decryption setup failed");
@@ -394,7 +395,7 @@ static void BM_Decrypt_VaryingFileSize(benchmark::State& state) {
             state.ResumeTiming();
             initialized = true;
         }
-        OpenABEByteString recovered;
+        abe_lsss::ByteString recovered;
         if (schemeContext->decrypt("testMPK", "DecKey", recovered, ct) != OpenABE_NOERROR) {
             state.SkipWithError("ABE decryption failed");
             break;
@@ -406,7 +407,7 @@ BENCHMARK(BM_Decrypt_VaryingFileSize)
     ->RangeMultiplier(16)
     ->Range(1024, 1024 * 1024);
 
-static void registerVaryingInputBenchmarks(OpenABE_SCHEME scheme,
+static void registerVaryingInputBenchmarks(abe_lsss::Scheme scheme,
         const vector<int>& policySizes, const vector<int>& attributeListSizes) {
     const string schemeName = scheme == OpenABE_SCHEME_CP_WATERS ? "CP-ABE" : "KP-ABE";
 
