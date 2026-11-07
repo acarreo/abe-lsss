@@ -84,6 +84,30 @@ target_link_libraries(my_app PRIVATE abe-lsss::abe_lsss)
 
 The installed `abe-lsss.pc` file is also available to pkg-config consumers.
 
+## Large-message examples
+
+Build the two CP-ABE examples with `-DEXAMPLES=ON`:
+
+```bash
+cmake -S . -B build -DCLI=OFF -DTESTS=OFF -DBENCH=OFF -DEXAMPLES=ON
+cmake --build build --target abe_large_message abe_aead_large_message -j2
+mkdir -p /tmp/abe-lsss-large-message
+cd /tmp/abe-lsss-large-message
+/path/to/abe-lsss/build/docs/examples/abe_large_message
+/path/to/abe-lsss/build/docs/examples/abe_aead_large_message
+```
+
+Each example generates a deterministic 1 GiB `file-1GB.dat` input by default
+and verifies the recovered output. Pass a size in MiB for a smaller test run,
+for example `abe_aead_large_message 1`. `abe_large_message` passes the whole
+file through the ABE byte-string API. `abe_aead_large_message` ABE-encrypts a
+random 32-byte AES key, then encrypts and decrypts the file with the library's
+streaming AES-GCM implementation. It writes the wrapped key to
+`file-1GB.aesgcm.key`, the authenticated ciphertext to `file-1GB.aesgcm`, and
+the recovered file to `file-1GB.aead-recovered.dat`.
+The direct ABE example keeps the message in memory; the AEAD example processes
+it in blocks.
+
 ## Main concepts
 
 - `abe_lsss::CpaContext` is the common context for the available CPA schemes.

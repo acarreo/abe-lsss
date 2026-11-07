@@ -207,3 +207,8 @@ if(BENCH)
     find_package(benchmark REQUIRED)
     add_subdirectory(bench)
 endif()
+
+option(EXAMPLES "Build the large-message examples" OFF)
+if(EXAMPLES)
+    add_subdirectory(docs/examples)
+endif()
