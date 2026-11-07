@@ -80,6 +80,31 @@ TEST(AbeLsssApi, LongMessageRoundTripsForBothSchemes) {
                         messageSize));
 }
 
+TEST(AbeLsssApi, AesGcmAliasesRoundTrip) {
+  auto key = std::make_shared<abe_lsss::SymmetricKey>();
+  ASSERT_TRUE(key->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES));
+  abe_lsss::ByteString iv, ciphertext, tag;
+  const std::string plaintext = "AES-GCM aliases";
+
+  abe_lsss::AesGcm cipher(DEFAULT_AES_SEC_LEVEL, key->getKeyBytes());
+  ASSERT_EQ(cipher.encrypt(plaintext, iv, ciphertext, tag), OpenABE_NOERROR);
+  std::string recovered;
+  ASSERT_TRUE(cipher.decrypt(recovered, iv, ciphertext, tag));
+  EXPECT_EQ(recovered, plaintext);
+
+  abe_lsss::ByteString input, streamIv, streamCiphertext, streamTag, output;
+  input.fromString(plaintext);
+  abe_lsss::AesGcmStream encryptor(DEFAULT_AES_SEC_LEVEL, key);
+  ASSERT_EQ(encryptor.encryptInit(streamIv), OpenABE_NOERROR);
+  ASSERT_EQ(encryptor.encryptUpdate(input, streamCiphertext), OpenABE_NOERROR);
+  ASSERT_EQ(encryptor.encryptFinalize(streamCiphertext, streamTag), OpenABE_NOERROR);
+  abe_lsss::AesGcmStream decryptor(DEFAULT_AES_SEC_LEVEL, key);
+  ASSERT_EQ(decryptor.decryptInit(streamIv, streamTag), OpenABE_NOERROR);
+  ASSERT_EQ(decryptor.decryptUpdate(streamCiphertext, output), OpenABE_NOERROR);
+  ASSERT_EQ(decryptor.decryptFinalize(output), OpenABE_NOERROR);
+  EXPECT_EQ(output, input);
+}
+
 TEST(AbeLsssApi, GroupElementSerializationRoundTrips) {
   G1 g1;
   g1.setGenerator();

@@ -34,8 +34,8 @@ private:
 
 void encryptFile(const std::filesystem::path& inputPath,
                  const std::filesystem::path& outputPath,
-                 const std::shared_ptr<OpenABESymKey>& key,
-                 const OpenABEByteString& aad) {
+                 const std::shared_ptr<abe_lsss::SymmetricKey>& key,
+                 const abe_lsss::ByteString& aad) {
   std::ifstream input(inputPath, std::ios::binary);
   std::fstream output(outputPath, std::ios::binary | std::ios::out |
                                       std::ios::trunc);
@@ -47,8 +47,8 @@ void encryptFile(const std::filesystem::path& inputPath,
   std::array<char, kIvSize + kTagSize> placeholder{};
   output.write(placeholder.data(), placeholder.size());
 
-  OpenABESymKeyAuthEncStream stream(DEFAULT_AES_SEC_LEVEL, key);
-  OpenABEByteString iv;
+  abe_lsss::AesGcmStream stream(DEFAULT_AES_SEC_LEVEL, key);
+  abe_lsss::ByteString iv;
   large_message_example::requireSuccess(stream.encryptInit(iv),
                                         "Starting AES-GCM encryption");
   large_message_example::addAad(stream, aad);
@@ -61,10 +61,10 @@ void encryptFile(const std::filesystem::path& inputPath,
       break;
     }
 
-    OpenABEByteString plaintextBlock;
+    abe_lsss::ByteString plaintextBlock;
     plaintextBlock.appendArray(inputBuffer.data(),
                                static_cast<uint32_t>(bytesRead));
-    OpenABEByteString ciphertextBlock;
+    abe_lsss::ByteString ciphertextBlock;
     large_message_example::requireSuccess(
         stream.encryptUpdate(plaintextBlock, ciphertextBlock),
         "Encrypting an AES-GCM block");
@@ -78,7 +78,7 @@ void encryptFile(const std::filesystem::path& inputPath,
     throw std::runtime_error("Failed reading the input message");
   }
 
-  OpenABEByteString finalBlock, tag;
+  abe_lsss::ByteString finalBlock, tag;
   large_message_example::requireSuccess(
       stream.encryptFinalize(finalBlock, tag), "Finalizing AES-GCM encryption");
   output.write(reinterpret_cast<const char*>(finalBlock.data()),
@@ -97,15 +97,15 @@ void encryptFile(const std::filesystem::path& inputPath,
 
 void decryptFile(const std::filesystem::path& inputPath,
                  const std::filesystem::path& outputPath,
-                 const std::shared_ptr<OpenABESymKey>& key,
-                 const OpenABEByteString& aad) {
+                 const std::shared_ptr<abe_lsss::SymmetricKey>& key,
+                 const abe_lsss::ByteString& aad) {
   std::ifstream input(inputPath, std::ios::binary);
   if (!input) {
     throw std::runtime_error("Cannot open AES-GCM ciphertext");
   }
 
   std::array<char, sizeof(kCipherMagic) - 1> magic{};
-  OpenABEByteString iv, tag;
+  abe_lsss::ByteString iv, tag;
   iv.resize(kIvSize);
   tag.resize(kTagSize);
   input.read(magic.data(), magic.size());
@@ -122,7 +122,7 @@ void decryptFile(const std::filesystem::path& inputPath,
     throw std::runtime_error("Cannot create " + temporaryPath.string());
   }
 
-  OpenABESymKeyAuthEncStream stream(DEFAULT_AES_SEC_LEVEL, key);
+  abe_lsss::AesGcmStream stream(DEFAULT_AES_SEC_LEVEL, key);
   large_message_example::requireSuccess(stream.decryptInit(iv, tag),
                                         "Starting AES-GCM decryption");
   large_message_example::addAad(stream, aad);
@@ -135,10 +135,10 @@ void decryptFile(const std::filesystem::path& inputPath,
       break;
     }
 
-    OpenABEByteString ciphertextBlock;
+    abe_lsss::ByteString ciphertextBlock;
     ciphertextBlock.appendArray(inputBuffer.data(),
                                 static_cast<uint32_t>(bytesRead));
-    OpenABEByteString plaintextBlock;
+    abe_lsss::ByteString plaintextBlock;
     large_message_example::requireSuccess(
         stream.decryptUpdate(ciphertextBlock, plaintextBlock),
         "Decrypting an AES-GCM block");
@@ -152,7 +152,7 @@ void decryptFile(const std::filesystem::path& inputPath,
     throw std::runtime_error("Failed reading AES-GCM ciphertext");
   }
 
-  OpenABEByteString finalBlock;
+  abe_lsss::ByteString finalBlock;
   large_message_example::requireSuccess(stream.decryptFinalize(finalBlock),
                                         "Verifying the AES-GCM tag");
   output.write(reinterpret_cast<const char*>(finalBlock.data()),
@@ -179,25 +179,25 @@ void runExample(std::uint64_t messageSize) {
     throw std::runtime_error("Could not parse the CP-ABE policy");
   }
 
-  auto generatedKey = std::make_shared<OpenABESymKey>();
+  auto generatedKey = std::make_shared<abe_lsss::SymmetricKey>();
   if (!generatedKey->generateSymmetricKey(DEFAULT_SYM_KEY_BYTES)) {
     throw std::runtime_error("Could not generate an AES-256 key");
   }
-  OpenABEByteString keyBytes = generatedKey->getKeyBytes();
-  OpenABECiphertext encryptedKey;
+  abe_lsss::ByteString keyBytes = generatedKey->getKeyBytes();
+  abe_lsss::Ciphertext encryptedKey;
   large_message_example::requireSuccess(
       context->encrypt("mpk", policy.get(), keyBytes, encryptedKey),
       "Encrypting the AES key with CP-ABE");
 
-  OpenABEByteString serializedKey;
+  abe_lsss::ByteString serializedKey;
   encryptedKey.exportToBytes(serializedKey);
   large_message_example::writeBytes(keyCipherPath, serializedKey);
 
-  OpenABECiphertext loadedEncryptedKey;
-  OpenABEByteString storedKeyCipher =
+  abe_lsss::Ciphertext loadedEncryptedKey;
+  abe_lsss::ByteString storedKeyCipher =
       large_message_example::readBytes(keyCipherPath);
   loadedEncryptedKey.loadFromBytes(storedKeyCipher);
-  OpenABEByteString recoveredKeyBytes;
+  abe_lsss::ByteString recoveredKeyBytes;
   large_message_example::requireSuccess(
       context->decrypt("mpk", "alice", recoveredKeyBytes, loadedEncryptedKey),
       "Decrypting the AES key with CP-ABE");
@@ -205,9 +205,9 @@ void runExample(std::uint64_t messageSize) {
     throw std::runtime_error("The decrypted AES key has an invalid size");
   }
 
-  auto recoveredKey = std::make_shared<OpenABESymKey>();
+  auto recoveredKey = std::make_shared<abe_lsss::SymmetricKey>();
   recoveredKey->setSymmetricKey(recoveredKeyBytes);
-  OpenABEByteString aad;
+  abe_lsss::ByteString aad;
   loadedEncryptedKey.getHeader(aad);
   encryptFile(messagePath, encryptedPath, generatedKey, aad);
   decryptFile(encryptedPath, recoveredPath, recoveredKey, aad);

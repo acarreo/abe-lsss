@@ -115,5 +115,7 @@ it in blocks.
 - `abe_lsss::FunctionInput` is the common input abstraction. `parse_policy` parses policy expressions; `parse_attributes` parses pipe-separated labels. A parse failure returns an empty pointer.
 - `keygen`, `encrypt` and `decrypt` return `OpenABE_ERROR` values. Check each result; do not treat a failed decryption as a valid plaintext.
 - `abe_lsss::ByteString` is used for binary messages, keys and serialized blobs.
+- `abe_lsss::SymmetricKey`, `abe_lsss::AesGcm` and `abe_lsss::AesGcmStream`
+  alias the symmetric key and AES-GCM classes, including streaming operations.
 
 The public API currently has no CCA ABE context or multi-authority factory. OpenABE type and function aliases remain for source compatibility.

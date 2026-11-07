@@ -10,19 +10,19 @@ void runExample(std::uint64_t messageSize) {
   large_message_example::createMessageFile(messagePath, messageSize);
   auto context = large_message_example::createCpContext();
 
-  OpenABEByteString plaintext =
+  abe_lsss::ByteString plaintext =
       large_message_example::readMessageFile(messagePath, messageSize);
   auto policy = abe_lsss::parse_policy(large_message_example::kPolicy);
   if (!policy) {
     throw std::runtime_error("Could not parse the CP-ABE policy");
   }
 
-  OpenABECiphertext ciphertext;
+  abe_lsss::Ciphertext ciphertext;
   large_message_example::requireSuccess(
       context->encrypt("mpk", policy.get(), plaintext, ciphertext),
       "Encrypting the message with CP-ABE");
 
-  OpenABEByteString recovered;
+  abe_lsss::ByteString recovered;
   large_message_example::requireSuccess(
       context->decrypt("mpk", "alice", recovered, ciphertext),
       "Decrypting the message with CP-ABE");

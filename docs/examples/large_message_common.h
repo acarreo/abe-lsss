@@ -50,7 +50,7 @@ inline void createMessageFile(const std::filesystem::path& path,
   }
 }
 
-inline OpenABEByteString readMessageFile(const std::filesystem::path& path,
+inline abe_lsss::ByteString readMessageFile(const std::filesystem::path& path,
                                          std::uint64_t messageSize) {
   if (std::filesystem::file_size(path) != messageSize) {
     throw std::runtime_error(path.string() + " has an unexpected size");
@@ -61,7 +61,7 @@ inline OpenABEByteString readMessageFile(const std::filesystem::path& path,
     throw std::runtime_error("Message size exceeds the byte-string API limit");
   }
 
-  OpenABEByteString contents;
+  abe_lsss::ByteString contents;
   contents.resize(static_cast<std::size_t>(messageSize));
   std::ifstream input(path, std::ios::binary);
   if (!input) {
@@ -93,12 +93,12 @@ inline std::uint64_t messageSizeFromArgs(int argc, char** argv) {
   return sizeMiB * 1024ULL * 1024;
 }
 
-inline OpenABEByteString readBytes(const std::filesystem::path& path) {
+inline abe_lsss::ByteString readBytes(const std::filesystem::path& path) {
   const std::uint64_t size = std::filesystem::file_size(path);
   if (size > std::numeric_limits<std::uint32_t>::max()) {
     throw std::runtime_error(path.string() + " is too large to load");
   }
-  OpenABEByteString contents;
+  abe_lsss::ByteString contents;
   contents.resize(static_cast<std::size_t>(size));
   std::ifstream input(path, std::ios::binary);
   if (!input) {
@@ -113,7 +113,7 @@ inline OpenABEByteString readBytes(const std::filesystem::path& path) {
 }
 
 inline void writeBytes(const std::filesystem::path& path,
-                       const OpenABEByteString& contents) {
+                       const abe_lsss::ByteString& contents) {
   std::ofstream output(path, std::ios::binary | std::ios::trunc);
   if (!output) {
     throw std::runtime_error("Cannot create " + path.string());
@@ -143,9 +143,9 @@ inline std::unique_ptr<abe_lsss::CpaContext> createCpContext() {
   return context;
 }
 
-inline void addAad(OpenABESymKeyAuthEncStream& stream,
-                   const OpenABEByteString& aad) {
-  OpenABEByteString mutableAad = aad;
+inline void addAad(abe_lsss::AesGcmStream& stream,
+                   const abe_lsss::ByteString& aad) {
+  abe_lsss::ByteString mutableAad = aad;
   stream.initAddAuthData(mutableAad.data(),
                          static_cast<uint32_t>(mutableAad.size()));
   requireSuccess(stream.setAddAuthData(), "Setting AES-GCM associated data");
