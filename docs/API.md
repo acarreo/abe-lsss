@@ -84,6 +84,74 @@ target_link_libraries(my_app PRIVATE abe-lsss::abe_lsss)
 
 The installed `abe-lsss.pc` file is also available to pkg-config consumers.
 
+## Hybrid ABE and AES-GCM context
+
+`abe_lsss::create_hybrid_context` creates a context for either `cp_waters` or
+`kp_gpsw`, with the same setup, key management and input conventions as the CPA
+context. Its `encrypt` and `decrypt` accept `ByteString` messages and one
+`Ciphertext`. The ABE KEM derives the AES-256-GCM key; the ciphertext contains
+the KEM components, GCM IV, encrypted payload and tag. The ABE header
+(library version, scheme and UID) is authenticated as associated data.
+
+```cpp
+auto context = abe_lsss::create_hybrid_context(abe_lsss::cp_waters);
+auto policy = abe_lsss::parse_policy("(Engineering and ProjectA)");
+auto attributes = abe_lsss::parse_attributes("Engineering|ProjectA");
+if (!context || !policy || !attributes) {
+  throw std::runtime_error("Invalid context or inputs");
+}
+if (context->generateParams("mpk", "msk") != OpenABE_NOERROR ||
+    context->keygen(attributes.get(), "alice", "mpk", "msk") != OpenABE_NOERROR) {
+  throw std::runtime_error("ABE setup failed");
+}
+abe_lsss::ByteString message, recovered;
+message.fromString("Hello");
+abe_lsss::Ciphertext ciphertext;
+if (context->encrypt("mpk", policy.get(), message, ciphertext) != OpenABE_NOERROR ||
+    context->decrypt("mpk", "alice", recovered, ciphertext) != OpenABE_NOERROR) {
+  throw std::runtime_error("Hybrid encryption or authentication failed");
+}
+```
+
+Decryption returns no plaintext on failure, including when GCM authentication
+fails. Empty and binary messages are supported. The one-shot API operates in
+memory and individual payloads are limited to `INT_MAX` bytes.
+Hybrid ciphertexts are not interchangeable with CPA ciphertexts.
+The GCM tag authenticates the payload and ABE header; it does not directly
+authenticate all KEM components. The hybrid context does not claim CCA security.
+
+### Hybrid streaming
+
+The same context supports streaming via `encryptInit` and `decryptInit`. The
+ABE KEM ciphertext and IV are separate from the encrypted payload blocks;
+`finalize` produces or verifies the tag. Store or transmit all four pieces:
+the serialized KEM ciphertext, IV, ordered payload blocks and tag. Each `update`
+replaces its output buffer and accepts at most `INT_MAX` bytes; input and output
+must be different objects. An empty stream is valid. The total payload limit is
+2^36 - 32 bytes per stream.
+
+On encryption, initialize with an empty stream pointer, call `update` for each
+block and then `finalize(tag)`. On decryption, initialize with the KEM
+ciphertext and IV, call `update` for each ciphertext block, then call
+`finalize(tag)`. Each method returns an `OpenABE_ERROR`; check every result.
+Successful or failed finalization closes the stream. Destroy or reset its
+pointer before initializing another operation.
+
+**Decrypted blocks are provisional until `finalize(tag)` succeeds.** Keep
+them in a quarantine buffer or temporary file inaccessible to consumers, and
+discard them if any operation or authentication fails. A single GCM tag at
+the end does not authenticate individual blocks as they arrive. A stream owns
+its cryptographic state and may outlive the context used to initialize it.
+
+See [`abe_hybrid_stream.cpp`](examples/abe_hybrid_stream.cpp) for a minimal
+two-block example:
+
+```bash
+cmake -S . -B build -DEXAMPLES=ON
+cmake --build build --target abe_hybrid_stream -j2
+build/docs/examples/abe_hybrid_stream
+```
+
 ## CP-ABE and AES-GCM kickstart
 
 [`abe_aead_kickstart.cpp`](examples/abe_aead_kickstart.cpp) demonstrates how
@@ -124,12 +192,16 @@ it in blocks.
 
 ## Main concepts
 
-- `abe_lsss::CpaContext` is the common context for the available CPA schemes.
+- `abe_lsss::CPAContext` is the common context for the available CPA schemes.
+- `abe_lsss::HybridContext` combines the ABE KEM with AES-256-GCM.
 - `abe_lsss::create_context` creates CP-Waters or KP-GPSW contexts; unsupported schemes return an empty pointer.
 - `abe_lsss::FunctionInput` is the common input abstraction. `parse_policy` parses policy expressions; `parse_attributes` parses pipe-separated labels. A parse failure returns an empty pointer.
 - `keygen`, `encrypt` and `decrypt` return `OpenABE_ERROR` values. Check each result; do not treat a failed decryption as a valid plaintext.
 - `abe_lsss::ByteString` is used for binary messages, keys and serialized blobs.
-- `abe_lsss::SymmetricKey`, `abe_lsss::AesGcm` and `abe_lsss::AesGcmStream`
+- `abe_lsss::SymmetricKey`, `abe_lsss::AES_GCM` and `abe_lsss::AES_GCM_Stream`
   alias the symmetric key and AES-GCM classes, including streaming operations.
+
+The previous `CpaContext`, `AesGcm` and `AesGcmStream` aliases remain available
+for source compatibility but are deprecated.
 
 The public API currently has no CCA ABE context or multi-authority factory. OpenABE type and function aliases remain for source compatibility.

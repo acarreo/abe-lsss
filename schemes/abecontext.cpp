@@ -38,8 +38,17 @@ std::unique_ptr<OpenABEContextSchemeCPA> createContextABESchemeCPA(OpenABE_SCHEM
   return std::unique_ptr<OpenABEContextSchemeCPA>(new OpenABEContextSchemeCPA(std::move(kemContext)));
 }
 
-std::unique_ptr<abe_lsss::CpaContext> abe_lsss::create_context(Scheme scheme) {
+std::unique_ptr<abe_lsss::CPAContext> abe_lsss::create_context(Scheme scheme) {
   return createContextABESchemeCPA(scheme);
+}
+
+std::unique_ptr<abe_lsss::HybridContext> abe_lsss::create_hybrid_context(
+    Scheme scheme) {
+  auto kem = createContextABE(scheme);
+  if (!kem) {
+    return nullptr;
+  }
+  return std::make_unique<HybridContext>(std::move(kem));
 }
 
 std::unique_ptr<abe_lsss::FunctionInput> abe_lsss::parse_policy(const std::string& policy) {

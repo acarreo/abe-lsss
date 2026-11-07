@@ -6,7 +6,7 @@
 
 `abe-lsss` is a C++ attribute-based encryption library derived from [Zeutro's OpenABE](https://github.com/zeutro/openabe). It combines the Waters ciphertext-policy and GPSW key-policy ABE constructions with an LSSS policy engine, using [RELIC](https://github.com/relic-toolkit/relic) for pairing-based arithmetic.
 
-The factory exposes the CPA-secure CP-ABE and KP-ABE constructions. Its `encrypt` API uses a Key Encapsulation Mechanism (KEM) to encrypt variable-length messages, including symmetric keys. For payload integrity, encrypt a symmetric key with ABE and use it with an AEAD to encrypt the data. CCA variants and multi-authority ABE are not enabled.
+The factory exposes the CPA-secure CP-ABE and KP-ABE constructions. The CPA context uses a Key Encapsulation Mechanism (KEM) to encrypt variable-length messages, including symmetric keys. A separate hybrid context combines the ABE KEM with AES-GCM for authenticated payload encryption. CCA variants and multi-authority ABE are not enabled.
 
 ## Documentation
 
@@ -154,7 +154,7 @@ For in-tree C++ examples, see [abe_quickstart.cpp](docs/examples/abe_quickstart.
 
 ## Benchmarking
 
-The Google Benchmark harness in `bench/` measures setup, key generation, encryption and decryption, reports policy/attribute counts, and records serialized master-public-key, user-key and ciphertext sizes. It uses 32-byte messages for the ABE workload. `bench_payload` compares direct ABE message encryption with ABE-wrapped AES-256 keys and streaming AES-GCM, for 32 B, 1 MiB, 16 MiB and 1 GiB payloads. Install Google Benchmark first; `bench/google-benchmark.sh` shows one upstream build/install route.
+The Google Benchmark harness in `bench/` measures setup, key generation, encryption and decryption, reports policy/attribute counts, and records serialized master-public-key, user-key and ciphertext sizes. It uses 32-byte messages for the ABE workload. `bench_payload` measures direct CP-ABE, a separately ABE-wrapped AES-256 key with AES-GCM, and the hybrid context (one-shot and streaming, with CP-Waters and KP-GPSW) for 32 B, 1 MiB, 16 MiB and 1 GiB payloads. Install Google Benchmark first; `bench/google-benchmark.sh` shows one upstream build/install route.
 
 ```bash
 cmake -S . -B build-bench -DCLI=OFF -DTESTS=OFF -DBENCH=ON
@@ -180,10 +180,15 @@ build-bench/bench/bench_payload \
 The benchmark runs one iteration per size and repetition and reports encryption
 and decryption separately. Setup, key generation and payload generation are
 excluded from the timed section; ABE encapsulation/decapsulation of the data
-key and AES-GCM processing are included for the hybrid approach. The 1 GiB
-direct-ABE cases require substantial memory. The recovered payload is compared
-with the original after the timed section, and AES-GCM tag verification remains
-part of decryption. These benchmarks operate on in-memory payloads, not files.
+key and AES-GCM processing are included for the hybrid approaches. The 1 GiB
+cases require substantial memory. The recovered payload is compared with the
+original after the timed section, and AES-GCM tag verification remains part of
+decryption. Streaming uses 64 KiB blocks and accumulates the output in memory,
+including provisional plaintext until authentication succeeds. These benchmarks
+measure buffer copies and allocations as well as cryptography, not file I/O.
+Filter hybrid cases with `--benchmark_filter='BM_Hybrid'`; names distinguish
+one-shot versus streaming, CP-Waters versus KP-GPSW, and encryption versus
+decryption.
 
 The following is a single local run on 22 October 2026, using RELIC `bls12-381`, mixed monotone policies with 10 leaves/10 attributes, 32-byte messages, three repetitions and 50 ms minimum per repetition. The host reported 20 CPUs at 4.8 GHz with CPU frequency scaling enabled. Values are the mean CPU/wall time in milliseconds; treat them as a reproducibility example, not a cross-machine performance claim.
 

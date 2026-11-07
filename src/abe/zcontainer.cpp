@@ -99,14 +99,12 @@ void OpenABEContainer::setComponent(const string &name, const ZObject *component
  */
 
 ZObject *OpenABEContainer::getComponent(const string &name) {
-  ZObject *result = this->val[name];
-
-  if (result == nullptr) {
+  const auto it = this->val.find(name);
+  if (it == this->val.end() || it->second == nullptr) {
     cerr << "OpenABEContainer::getComponent: missing '" << name << "'" << endl;
     throw OpenABE_ERROR_ELEMENT_NOT_FOUND;
   }
-
-  return result;
+  return it->second;
 }
 
 OpenABE_ERROR

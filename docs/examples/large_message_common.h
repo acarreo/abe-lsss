@@ -125,7 +125,7 @@ inline void writeBytes(const std::filesystem::path& path,
   }
 }
 
-inline std::unique_ptr<abe_lsss::CpaContext> createCpContext() {
+inline std::unique_ptr<abe_lsss::CPAContext> createCPContext() {
   auto context = abe_lsss::create_context(abe_lsss::cp_waters);
   if (!context) {
     throw std::runtime_error("Could not create the CP-ABE context");
@@ -143,11 +143,11 @@ inline std::unique_ptr<abe_lsss::CpaContext> createCpContext() {
   return context;
 }
 
-inline void addAad(abe_lsss::AesGcmStream& stream,
+inline void addAAD(abe_lsss::AES_GCM_Stream& stream,
                    const abe_lsss::ByteString& aad) {
-  abe_lsss::ByteString mutableAad = aad;
-  stream.initAddAuthData(mutableAad.data(),
-                         static_cast<uint32_t>(mutableAad.size()));
+  abe_lsss::ByteString mutableAAD = aad;
+  stream.initAddAuthData(mutableAAD.data(),
+                         static_cast<uint32_t>(mutableAAD.size()));
   requireSuccess(stream.setAddAuthData(), "Setting AES-GCM associated data");
 }
 

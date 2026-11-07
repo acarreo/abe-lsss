@@ -22,10 +22,17 @@ using Scheme = ::OpenABE_SCHEME;
 using ByteString = ::OpenABEByteString;
 using Ciphertext = ::OpenABECiphertext;
 using FunctionInput = ::OpenABEFunctionInput;
-using CpaContext = ::OpenABEContextSchemeCPA;
+using CPAContext = ::OpenABEContextSchemeCPA;
+using HybridContext = ::OpenABEContextSchemeHybrid;
+using HybridEncryptStream = ::OpenABEHybridEncryptStream;
+using HybridDecryptStream = ::OpenABEHybridDecryptStream;
 using SymmetricKey = ::OpenABESymKey;
-using AesGcm = ::OpenABESymKeyAuthEnc;
-using AesGcmStream = ::OpenABESymKeyAuthEncStream;
+using AES_GCM = ::OpenABESymKeyAuthEnc;
+using AES_GCM_Stream = ::OpenABESymKeyAuthEncStream;
+
+using CpaContext [[deprecated("Use CPAContext")]] = CPAContext;
+using AesGcm [[deprecated("Use AES_GCM")]] = AES_GCM;
+using AesGcmStream [[deprecated("Use AES_GCM_Stream")]] = AES_GCM_Stream;
 
 inline constexpr Scheme cp_waters = OpenABE_SCHEME_CP_WATERS;
 inline constexpr Scheme kp_gpsw = OpenABE_SCHEME_KP_GPSW;
@@ -35,7 +42,14 @@ inline constexpr Scheme kp_gpsw = OpenABE_SCHEME_KP_GPSW;
  *
  * Returns an empty pointer when the scheme is not implemented.
  */
-std::unique_ptr<CpaContext> create_context(Scheme scheme);
+std::unique_ptr<CPAContext> create_context(Scheme scheme);
+
+/**
+ * @brief Create a CP- or KP-ABE KEM with an AES-256-GCM payload.
+ *
+ * Returns an empty pointer when the scheme is not implemented.
+ */
+std::unique_ptr<HybridContext> create_hybrid_context(Scheme scheme);
 
 /**
  * @brief Parse a monotone ABE policy.
